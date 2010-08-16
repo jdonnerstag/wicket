@@ -16,6 +16,84 @@
  */
 package org.apache.wicket.event;
 
+import java.awt.Component;
+
+import org.apache.wicket.Application;
+import org.apache.wicket.Page;
+import org.apache.wicket.Session;
+import org.apache.wicket.request.cycle.RequestCycle;
+
+/**
+ * Defines the event broadcast type.
+ * 
+ * @author igor
+ */
 public enum BroadcastType {
-	BREADTH, DEPTH, BUBBLE;
+	/**
+	 * Breadth first traversal. Supported sinks in order of traversal:
+	 * 
+	 * <ol>
+	 * <li>{@link Application}</li>
+	 * <li>{@link Session}</li>
+	 * <li>{@link RequestCycle}</li>
+	 * <li>{@link Page}</li>
+	 * <li>{@link Component}s</li>
+	 * </ol>
+	 * 
+	 * Any sink along the path can be specified and traversal will start with the specified sink as
+	 * root, eg:
+	 * 
+	 * <ul>
+	 * <li>If a component inside the page is specified then only the component and all its children
+	 * will receive the event</li>
+	 * <li>If Session is specified then the session, the request cycle, the page and all its
+	 * components will receive the event</li>
+	 * </ul>
+	 */
+	BREADTH,
+	/**
+	 * Depth first traversal. Supported sinks in order of traversal:
+	 * 
+	 * <ol>
+	 * <li>{@link Component}s</li>
+	 * <li>{@link Page}</li>
+	 * <li>{@link RequestCycle}</li>
+	 * <li>{@link Session}</li>
+	 * <li>{@link Application}</li>
+	 * </ol>
+	 * 
+	 * Any sink along the path can be specified and traversal will start with the specified sink as
+	 * root, eg:
+	 * 
+	 * <ul>
+	 * <li>If a component inside the page is specified then only the component and all its children
+	 * will receive the event</li>
+	 * <li>If Session is specified then the session, the request cycle, the page and all its
+	 * components will receive the event</li>
+	 * </ul>
+	 * 
+	 */
+	DEPTH,
+	/**
+	 * A bubble-up traversal. In a bubble-up traversal only the sink and its parents are notified.
+	 * 
+	 * Supported sinks in order of traversal are:
+	 * <ol>
+	 * <li>{@link Component}s</li>
+	 * <li>{@link Page}</li>
+	 * <li>{@link RequestCycle}</li>
+	 * <li>{@link Session}</li>
+	 * <li>{@link Application}</li>
+	 * </ol>
+	 * 
+	 * Any sink along the path can be specified and traversal will start at the specified sink and
+	 * work its way up to the {@link Application}, eg:
+	 * 
+	 * <ul>
+	 * <li>If a component inside the page is specified then only the component, its parents, the
+	 * request cycle, the session, and the application will be notified.
+	 * <li>If Session is specified then the session, the application will be notified</li>
+	 * </ul>
+	 */
+	BUBBLE;
 }
