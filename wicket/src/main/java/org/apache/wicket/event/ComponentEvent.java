@@ -33,9 +33,9 @@ class ComponentEvent implements IEvent
 		return type;
 	}
 
-	public Object getPayload()
+	public <T> T getPayload()
 	{
-		return payload;
+		return (T)payload;
 	}
 
 	public void dontBroadcastDeeper()

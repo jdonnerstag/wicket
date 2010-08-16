@@ -26,5 +26,5 @@ public interface IEvent
 
 	IEventSource getSource();
 
-	Object getPayload();
+	<T> T getPayload();
 }
