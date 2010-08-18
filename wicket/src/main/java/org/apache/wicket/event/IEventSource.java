@@ -16,7 +16,23 @@
  */
 package org.apache.wicket.event;
 
+/**
+ * Objects that can send events
+ * 
+ * @author Igor Vaynberg (ivaynberg)
+ */
 public interface IEventSource
 {
-	void send(IEventSink sink, BroadcastType type, Object payload);
+	/**
+	 * Sends an event
+	 * 
+	 * @param sink
+	 *            object that will receive the event
+	 * @param broadcast
+	 *            if the object that receives the event needs to broadcast it to others, this is the
+	 *            type of broadcast that should be used
+	 * @param payload
+	 *            event payload
+	 */
+	void send(IEventSink sink, Broadcast broadcast, Object payload);
 }

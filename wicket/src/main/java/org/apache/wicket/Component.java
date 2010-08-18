@@ -30,8 +30,7 @@ import org.apache.wicket.authorization.AuthorizationException;
 import org.apache.wicket.authorization.IAuthorizationStrategy;
 import org.apache.wicket.authorization.UnauthorizedActionException;
 import org.apache.wicket.behavior.IBehavior;
-import org.apache.wicket.event.BroadcastType;
-import org.apache.wicket.event.EventSender;
+import org.apache.wicket.event.Broadcast;
 import org.apache.wicket.event.IEvent;
 import org.apache.wicket.event.IEventSink;
 import org.apache.wicket.event.IEventSource;
@@ -64,6 +63,7 @@ import org.apache.wicket.request.http.WebRequest;
 import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.apache.wicket.request.resource.ResourceReference;
 import org.apache.wicket.settings.IDebugSettings;
+import org.apache.wicket.util.IHierarchical;
 import org.apache.wicket.util.convert.IConverter;
 import org.apache.wicket.util.lang.Classes;
 import org.apache.wicket.util.lang.WicketObjects;
@@ -224,6 +224,7 @@ public abstract class Component
 		IConverterLocator,
 		IRequestableComponent,
 		IHeaderContributor,
+		IHierarchical<Component>,
 		IEventSink,
 		IEventSource
 {
@@ -4498,19 +4499,21 @@ public abstract class Component
 		return isEnabledInHierarchy() && isVisibleInHierarchy();
 	}
 
+	/** {@inheritDoc} */
 	public void renderHead(IHeaderResponse response)
 	{
 		// noop
 	}
 
-	// TODO EVENTS JAVADOC
+	/** {@inheritDoc} */
 	public void onEvent(IEvent event)
 	{
 	}
 
-	public final void send(IEventSink sink, BroadcastType type, Object payload)
+	/** {@inheritDoc} */
+	public final void send(IEventSink sink, Broadcast type, Object payload)
 	{
-		new EventSender(this).send(sink, type, payload);
+		new ComponentEventSender(this).send(sink, type, payload);
 	}
 
 }

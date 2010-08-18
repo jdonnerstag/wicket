@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.wicket.event.BroadcastType;
+import org.apache.wicket.event.Broadcast;
 import org.apache.wicket.event.IEvent;
 import org.apache.wicket.markup.html.WebComponent;
 import org.apache.wicket.markup.html.WebMarkupContainer;
@@ -96,42 +96,42 @@ public class ComponentEventsTest
 	@Test
 	public void testBreadth()
 	{
-		page.send(tester.getApplication(), BroadcastType.BREADTH, new Payload());
+		page.send(tester.getApplication(), Broadcast.BREADTH, new Payload());
 		assertPath(application, session, cycle, page, c1, c12, c13, c134, c135, c6);
 	}
 
 	@Test
 	public void testDepth()
 	{
-		page.send(tester.getApplication(), BroadcastType.DEPTH, new Payload());
+		page.send(tester.getApplication(), Broadcast.DEPTH, new Payload());
 		assertPath(c12, c134, c135, c13, c1, c6, page, cycle, session, application);
 	}
 
 	@Test
 	public void testBubble_Component()
 	{
-		c6.send(c6, BroadcastType.BUBBLE, new Payload());
+		c6.send(c6, Broadcast.BUBBLE, new Payload());
 		assertPath(c6, page, cycle, session, application);
 	}
 
 	@Test
 	public void testBubble_Page()
 	{
-		c6.send(page, BroadcastType.BUBBLE, new Payload());
+		c6.send(page, Broadcast.BUBBLE, new Payload());
 		assertPath(page, cycle, session, application);
 	}
 
 	@Test
 	public void testBubble_Cycle()
 	{
-		c6.send(cycle, BroadcastType.BUBBLE, new Payload());
+		c6.send(cycle, Broadcast.BUBBLE, new Payload());
 		assertPath(cycle, session, application);
 	}
 
 	@Test
 	public void testBubble_Session()
 	{
-		c6.send(session, BroadcastType.BUBBLE, new Payload());
+		c6.send(session, Broadcast.BUBBLE, new Payload());
 		assertPath(session, application);
 	}
 
@@ -139,7 +139,7 @@ public class ComponentEventsTest
 	@Test
 	public void testBubble_Application()
 	{
-		c6.send(application, BroadcastType.BUBBLE, new Payload());
+		c6.send(application, Broadcast.BUBBLE, new Payload());
 		assertPath(application);
 	}
 
