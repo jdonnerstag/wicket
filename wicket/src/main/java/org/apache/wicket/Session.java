@@ -26,8 +26,6 @@ import java.util.Map;
 
 import org.apache.wicket.application.IClassResolver;
 import org.apache.wicket.authorization.IAuthorizationStrategy;
-import org.apache.wicket.event.IEvent;
-import org.apache.wicket.event.IEventSink;
 import org.apache.wicket.feedback.FeedbackMessage;
 import org.apache.wicket.feedback.FeedbackMessages;
 import org.apache.wicket.page.IPageManager;
@@ -107,7 +105,7 @@ import org.slf4j.LoggerFactory;
  * @author Eelco Hillenius
  * @author Igor Vaynberg (ivaynberg)
  */
-public abstract class Session implements IClusterable, IEventSink
+public abstract class Session implements IClusterable
 {
 	private static final long serialVersionUID = 1L;
 
@@ -841,10 +839,5 @@ public abstract class Session implements IClusterable, IEventSink
 	public final IPageManager getPageManager()
 	{
 		return getApplication().getPageManager();
-	}
-
-	// TODO EVENTS JAVADOC
-	public void onEvent(IEvent event)
-	{
 	}
 }

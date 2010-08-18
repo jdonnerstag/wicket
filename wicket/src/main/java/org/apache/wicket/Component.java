@@ -30,11 +30,6 @@ import org.apache.wicket.authorization.AuthorizationException;
 import org.apache.wicket.authorization.IAuthorizationStrategy;
 import org.apache.wicket.authorization.UnauthorizedActionException;
 import org.apache.wicket.behavior.IBehavior;
-import org.apache.wicket.event.BroadcastType;
-import org.apache.wicket.event.EventSender;
-import org.apache.wicket.event.IEvent;
-import org.apache.wicket.event.IEventSink;
-import org.apache.wicket.event.IEventSource;
 import org.apache.wicket.feedback.FeedbackMessage;
 import org.apache.wicket.feedback.IFeedback;
 import org.apache.wicket.markup.ComponentTag;
@@ -223,9 +218,7 @@ public abstract class Component
 		IClusterable,
 		IConverterLocator,
 		IRequestableComponent,
-		IHeaderContributor,
-		IEventSink,
-		IEventSource
+		IHeaderContributor
 {
 
 	/** True when component has been configured, had {@link #onConfigure()} called */
@@ -4502,15 +4495,4 @@ public abstract class Component
 	{
 		// noop
 	}
-
-	// TODO EVENTS JAVADOC
-	public void onEvent(IEvent event)
-	{
-	}
-
-	public final void send(IEventSink sink, BroadcastType type, Object payload)
-	{
-		new EventSender(this).send(sink, type, payload);
-	}
-
 }

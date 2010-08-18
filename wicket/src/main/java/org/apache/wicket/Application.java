@@ -32,8 +32,6 @@ import java.util.Set;
 import org.apache.wicket.application.IComponentInstantiationListener;
 import org.apache.wicket.application.IComponentOnAfterRenderListener;
 import org.apache.wicket.application.IComponentOnBeforeRenderListener;
-import org.apache.wicket.event.IEvent;
-import org.apache.wicket.event.IEventSink;
 import org.apache.wicket.javascript.DefaultJavascriptCompressor;
 import org.apache.wicket.markup.MarkupParser;
 import org.apache.wicket.markup.html.EmptySrcAttributeCheckFilter;
@@ -138,7 +136,7 @@ import org.slf4j.LoggerFactory;
  * @see org.apache.wicket.protocol.http.WebApplication
  * @author Jonathan Locke
  */
-public abstract class Application implements UnboundListener, IEventSink
+public abstract class Application implements UnboundListener
 {
 	/** Configuration constant for the 2 types */
 	public static final String CONFIGURATION = "configuration";
@@ -1587,11 +1585,6 @@ public abstract class Application implements UnboundListener, IEventSink
 	public String getMimeType(String fileName)
 	{
 		return URLConnection.getFileNameMap().getContentTypeFor(fileName);
-	}
-
-	// TODO EVENTS JAVADOC
-	public void onEvent(IEvent event)
-	{
 	}
 
 	private class DefaultPageManagerProvider implements IPageManagerProvider
