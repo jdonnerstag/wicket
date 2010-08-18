@@ -14,36 +14,55 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.wicket.examples.portlet.menu;
+package org.apache.wicket.examples.compref;
 
-import javax.portlet.PortletSession;
-
-import org.apache.wicket.RequestContext;
-import org.apache.wicket.markup.html.WebPage;
-import org.apache.wicket.markup.html.link.Link;
-import org.apache.wicket.protocol.http.portlet.PortletRequestContext;
+import org.apache.wicket.IClusterable;
 
 /**
- * @author Ate Douma
+ * A class for counting things.
+ * 
+ * @author Jonathan Locke
+ * @since 1.2.6
  */
-public class HeaderPage extends WebPage
+final class Count implements IClusterable
 {
+	private static final long serialVersionUID = 1L;
+
+	/** the count */
+	private int count = 0;
+
 	/**
-	 * Construct.
+	 * Retrieves the current count value.
+	 * 
+	 * @return the count value
 	 */
-	public HeaderPage()
+	public int getCount()
 	{
-		add(new Link("menu")
-		{
-			@Override
-			public void onClick()
-			{
-				this.setResponsePage(MenuPage.class);
-				ExampleApplication ea = WicketExamplesMenuApplication.getExamples().get(0);
-				PortletSession session = ((PortletRequestContext)RequestContext.get()).getPortletRequest()
-					.getPortletSession();
-				session.setAttribute(WicketExamplesMenuPortlet.EXAMPLE_APPLICATION_ATTR, ea);
-			}
-		});
+		return count;
+	}
+
+	/**
+	 * Increases the count value by one.
+	 */
+	public void increment()
+	{
+		count++;
+	}
+
+	/**
+	 * Decreases the count value by one.
+	 */
+	public void decrement()
+	{
+		count--;
+	}
+
+	/**
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString()
+	{
+		return Integer.toString(count);
 	}
 }

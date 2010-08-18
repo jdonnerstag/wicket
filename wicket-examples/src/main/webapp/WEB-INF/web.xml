@@ -55,19 +55,6 @@
 	</context-param>
 
 	<filter>
-		<filter-name>WicketExamplesMenuApplication</filter-name>
-		<filter-class>org.apache.wicket.protocol.http.WicketFilter</filter-class>
-		<init-param>
-            <param-name>applicationClassName</param-name>
-            <param-value>org.apache.wicket.examples.portlet.menu.WicketExamplesMenuApplication</param-value>
-		</init-param>
-		<init-param>
-            <param-name>portletOnlyFilter</param-name>
-            <param-value>true</param-value>
-		</init-param>
-	</filter>
-
-	<filter>
 		<filter-name>AjaxPrototypeApplication</filter-name>
 		<filter-class>org.apache.wicket.protocol.http.WicketFilter</filter-class>
 		<init-param>
@@ -432,14 +419,6 @@
 		</init-param>
 	</filter>
 
-
-	<filter-mapping>
-		<filter-name>WicketExamplesMenuApplication</filter-name>
-        <url-pattern>/examples/*</url-pattern>
-        <dispatcher>REQUEST</dispatcher>
-        <dispatcher>INCLUDE</dispatcher>
-	</filter-mapping>
-
 	<!-- couple the session filter to the helloworld servlet -->
 
 	<filter-mapping>
@@ -717,6 +696,24 @@
         <dispatcher>REQUEST</dispatcher>
         <dispatcher>INCLUDE</dispatcher>
 	</filter-mapping>
+
+
+	<!-- EVENTS APP -->
+	<filter>
+		<filter-name>EventsApplication</filter-name>
+		<filter-class>org.apache.wicket.protocol.http.WicketFilter</filter-class>
+		<init-param>
+		  <param-name>applicationClassName</param-name>
+		  <param-value>org.apache.wicket.examples.events.EventsApplication</param-value>
+		</init-param>
+	</filter>
+	<filter-mapping>
+		<filter-name>EventsApplication</filter-name>
+        <url-pattern>/events/*</url-pattern>
+	</filter-mapping>
+
+
+
 
 	<listener>
 		<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>

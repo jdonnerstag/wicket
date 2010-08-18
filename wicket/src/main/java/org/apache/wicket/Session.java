@@ -26,6 +26,8 @@ import java.util.Map;
 
 import org.apache.wicket.application.IClassResolver;
 import org.apache.wicket.authorization.IAuthorizationStrategy;
+import org.apache.wicket.event.IEvent;
+import org.apache.wicket.event.IEventSink;
 import org.apache.wicket.feedback.FeedbackMessage;
 import org.apache.wicket.feedback.FeedbackMessages;
 import org.apache.wicket.page.IPageManager;
@@ -105,7 +107,7 @@ import org.slf4j.LoggerFactory;
  * @author Eelco Hillenius
  * @author Igor Vaynberg (ivaynberg)
  */
-public abstract class Session implements IClusterable
+public abstract class Session implements IClusterable, IEventSink
 {
 	private static final long serialVersionUID = 1L;
 
@@ -155,7 +157,7 @@ public abstract class Session implements IClusterable
 	 * Cached instance of agent info which is typically designated by calling
 	 * {@link RequestCycle#newClientInfo()}.
 	 */
-	private ClientInfo clientInfo;
+	protected ClientInfo clientInfo;
 
 	/** True if session state has been changed */
 	private transient boolean dirty = false;
@@ -320,14 +322,7 @@ public abstract class Session implements IClusterable
 	 * 
 	 * @return the client info object based on this request
 	 */
-	public ClientInfo getClientInfo()
-	{
-		if (clientInfo == null)
-		{
-			clientInfo = RequestCycle.get().newClientInfo();
-		}
-		return clientInfo;
-	}
+	public abstract ClientInfo getClientInfo();
 
 	/**
 	 * Gets feedback messages stored in session
@@ -839,5 +834,10 @@ public abstract class Session implements IClusterable
 	public final IPageManager getPageManager()
 	{
 		return getApplication().getPageManager();
+	}
+
+	/** {@inheritDoc} */
+	public void onEvent(IEvent<?> event)
+	{
 	}
 }

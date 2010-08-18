@@ -14,55 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.wicket.util.value;
+package org.apache.wicket.examples.events;
 
-import org.apache.wicket.IClusterable;
 
 /**
- * A class for counting things.
- * 
- * @author Jonathan Locke
- * @since 1.2.6
+ * @author igor
  */
-public final class Count implements IClusterable
+public class IndexPage extends BasePage
 {
-	private static final long serialVersionUID = 1L;
 
-	/** the count */
-	private int count = 0;
-
-	/**
-	 * Retrieves the current count value.
-	 * 
-	 * @return the count value
-	 */
-	public int getCount()
-	{
-		return count;
-	}
-
-	/**
-	 * Increases the count value by one.
-	 */
-	public void increment()
-	{
-		count++;
-	}
-
-	/**
-	 * Decreases the count value by one.
-	 */
-	public void decrement()
-	{
-		count--;
-	}
-
-	/**
-	 * @see java.lang.Object#toString()
-	 */
-	@Override
-	public String toString()
-	{
-		return Integer.toString(count);
-	}
 }

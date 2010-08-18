@@ -24,8 +24,8 @@ import org.apache.wicket.MetaDataKey;
 import org.apache.wicket.Page;
 import org.apache.wicket.Session;
 import org.apache.wicket.ThreadContext;
-import org.apache.wicket.protocol.http.request.WebClientInfo;
-import org.apache.wicket.request.ClientInfo;
+import org.apache.wicket.event.IEvent;
+import org.apache.wicket.event.IEventSink;
 import org.apache.wicket.request.IExceptionMapper;
 import org.apache.wicket.request.IRequestCycle;
 import org.apache.wicket.request.IRequestHandler;
@@ -64,7 +64,7 @@ import org.slf4j.LoggerFactory;
  * @author Matej Knopp
  * @author igor.vaynberg
  */
-public class RequestCycle extends RequestHandlerStack implements IRequestCycle
+public class RequestCycle extends RequestHandlerStack implements IRequestCycle, IEventSink
 {
 	private static final Logger log = LoggerFactory.getLogger(RequestCycle.class);
 
@@ -563,26 +563,6 @@ public class RequestCycle extends RequestHandlerStack implements IRequestCycle
 			RenderPageRequestHandler.RedirectPolicy.AUTO_REDIRECT));
 	}
 
-
-	/**
-	 * Creates a new agent info object based on this request. Typically, this method is called once
-	 * by the session and the returned object will be cached in the session after that call; we can
-	 * expect the client to stay the same for the whole session, and implementations of
-	 * {@link #newClientInfo()} might be relatively expensive.
-	 * 
-	 * @return the agent info object based on this request
-	 */
-	// TODO WICKET-NG Get this out of here!
-	public ClientInfo newClientInfo()
-	{
-		return new WebClientInfo(this);
-	}
-
-	public ClientInfo getClientInfo()
-	{
-		return newClientInfo();
-	}
-
 	public boolean isCleanupFeedbackMessagesOnDetach()
 	{
 		return cleanupFeedbackMessagesOnDetach;
@@ -599,5 +579,10 @@ public class RequestCycle extends RequestHandlerStack implements IRequestCycle
 	public final long getStartTime()
 	{
 		return startTime;
+	}
+
+	/** {@inheritDoc} */
+	public void onEvent(IEvent<?> event)
+	{
 	}
 }

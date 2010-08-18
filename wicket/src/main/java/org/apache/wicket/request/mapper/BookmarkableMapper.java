@@ -102,10 +102,15 @@ public class BookmarkableMapper extends AbstractBookmarkableMapper
 			String className = url.getSegments().get(2);
 			Class<? extends IRequestablePage> pageClass = getPageClass(className);
 
-			// extract the PageParameters from URL if there are any
-			PageParameters pageParameters = extractPageParameters(request, 3, pageParametersEncoder);
+			if (pageClass != null && IRequestablePage.class.isAssignableFrom(pageClass))
+			{
 
-			return new UrlInfo(info, pageClass, pageParameters);
+				// extract the PageParameters from URL if there are any
+				PageParameters pageParameters = extractPageParameters(request, 3,
+					pageParametersEncoder);
+
+				return new UrlInfo(info, pageClass, pageParameters);
+			}
 		}
 		return null;
 	}

@@ -30,6 +30,10 @@ import org.apache.wicket.authorization.AuthorizationException;
 import org.apache.wicket.authorization.IAuthorizationStrategy;
 import org.apache.wicket.authorization.UnauthorizedActionException;
 import org.apache.wicket.behavior.IBehavior;
+import org.apache.wicket.event.Broadcast;
+import org.apache.wicket.event.IEvent;
+import org.apache.wicket.event.IEventSink;
+import org.apache.wicket.event.IEventSource;
 import org.apache.wicket.feedback.FeedbackMessage;
 import org.apache.wicket.feedback.IFeedback;
 import org.apache.wicket.markup.ComponentTag;
@@ -59,6 +63,7 @@ import org.apache.wicket.request.http.WebRequest;
 import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.apache.wicket.request.resource.ResourceReference;
 import org.apache.wicket.settings.IDebugSettings;
+import org.apache.wicket.util.IHierarchical;
 import org.apache.wicket.util.convert.IConverter;
 import org.apache.wicket.util.lang.Classes;
 import org.apache.wicket.util.lang.WicketObjects;
@@ -218,7 +223,10 @@ public abstract class Component
 		IClusterable,
 		IConverterLocator,
 		IRequestableComponent,
-		IHeaderContributor
+		IHeaderContributor,
+		IHierarchical<Component>,
+		IEventSink,
+		IEventSource
 {
 
 	/** True when component has been configured, had {@link #onConfigure()} called */
@@ -986,7 +994,7 @@ public abstract class Component
 				throw new IllegalStateException(Component.class.getName() +
 					" has not been properly initialized. Something in the hierarchy of " +
 					getClass().getName() +
-					" has not called super.onInitializer() in the override of onInitialize() method");
+					" has not called super.onInitialize() in the override of onInitialize() method");
 			}
 			setFlag(FLAG_INITIALIZE_SUPER_CALL_VERIFIED, false);
 		}
@@ -1046,7 +1054,7 @@ public abstract class Component
 	 * 
 	 * @return unmodified list of behaviors which may contain null entries
 	 */
-	public final List<IBehavior> getBehaviorsRawList()
+	public final List<? extends IBehavior> getBehaviorsRawList()
 	{
 		if (data != null)
 		{
@@ -1446,7 +1454,7 @@ public abstract class Component
 	 * 
 	 * @return The currently coupled behaviors as a unmodifiable list
 	 */
-	public final List<IBehavior> getBehaviors()
+	public final List<? extends IBehavior> getBehaviors()
 	{
 		return getBehaviors(IBehavior.class);
 	}
@@ -1670,7 +1678,6 @@ public abstract class Component
 		}
 
 		String markupIdPostfix = Integer.toHexString(generatedMarkupId).toLowerCase();
-		markupIdPostfix = RequestContext.get().encodeMarkupId(markupIdPostfix);
 
 		String markupId = markupIdPrefix + markupIdPostfix;
 
@@ -3684,7 +3691,7 @@ public abstract class Component
 	@SuppressWarnings("unchecked")
 	protected <M extends IBehavior> List<M> getBehaviors(Class<M> type)
 	{
-		List<IBehavior> behaviors = getBehaviorsRawList();
+		List<? extends IBehavior> behaviors = getBehaviorsRawList();
 		if (behaviors == null)
 		{
 			return Collections.emptyList();
@@ -4025,7 +4032,7 @@ public abstract class Component
 		if (needToRenderTag(tag))
 		{
 			// Apply behavior modifiers
-			List<IBehavior> behaviors = getBehaviors();
+			List<? extends IBehavior> behaviors = getBehaviors();
 			if ((behaviors != null) && !behaviors.isEmpty() && !tag.isClose() &&
 				(isIgnoreAttributeModifier() == false))
 			{
@@ -4491,8 +4498,21 @@ public abstract class Component
 		return isEnabledInHierarchy() && isVisibleInHierarchy();
 	}
 
+	/** {@inheritDoc} */
 	public void renderHead(IHeaderResponse response)
 	{
 		// noop
 	}
+
+	/** {@inheritDoc} */
+	public void onEvent(IEvent<?> event)
+	{
+	}
+
+	/** {@inheritDoc} */
+	public final void send(IEventSink sink, Broadcast type, Object payload)
+	{
+		new ComponentEventSender(this).send(sink, type, payload);
+	}
+
 }

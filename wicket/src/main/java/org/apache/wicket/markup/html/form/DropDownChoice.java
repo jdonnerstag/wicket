@@ -18,7 +18,6 @@ package org.apache.wicket.markup.html.form;
 
 import java.util.List;
 
-import org.apache.wicket.RequestContext;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
 import org.apache.wicket.markup.ComponentTag;
 import org.apache.wicket.model.IModel;
@@ -184,22 +183,10 @@ public class DropDownChoice<T> extends AbstractSingleSelectChoice<T> implements 
 			Form<?> form = findParent(Form.class);
 			if (form != null)
 			{
-				RequestContext rc = RequestContext.get();
-				if (rc.isPortletRequest())
-				{
-					// restore url back to real wicket path as its going to be interpreted by the
-					// form itself
-					// TODO NG
-					// url = ((PortletRequestContext)rc).getLastEncodedPath();
-				}
 				tag.put("onchange", form.getJsForInterfaceUrl(url.toString()));
 			}
 			else
 			{
-
-				// TODO: following doesn't work with portlets, should be posted to a dynamic hidden
-				// form
-				// with an ActionURL or something
 				tag.put("onchange", "window.location.href='" + url +
 					(url.toString().indexOf('?') > -1 ? "&amp;" : "?") + getInputName() +
 					"=' + this.options[this.selectedIndex].value;");
