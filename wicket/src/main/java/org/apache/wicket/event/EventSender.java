@@ -47,8 +47,8 @@ public class EventSender implements IEventSource
 			case BREADTH :
 				breadth(event);
 				break;
-			case DEPTH :
-				depth(event);
+			case DEAPTH :
+				deapth(event);
 				break;
 		}
 	}
@@ -112,20 +112,36 @@ public class EventSender implements IEventSource
 
 		if (cursor instanceof MarkupContainer)
 		{
-			((MarkupContainer)cursor).visitChildren(new ComponentEventVisitor(e));
+			((MarkupContainer)cursor).visitChildren(new IVisitor<Component, Void>()
+			{
+
+				public void component(Component object, IVisit<Void> visit)
+				{
+					object.onEvent(e);
+					if (e.isShallow())
+					{
+						visit.dontGoDeeper();
+						e.reset();
+					}
+					else if (e.isStop())
+					{
+						visit.stop();
+						e.reset();
+					}
+				}
+			});
 		}
 	}
 
-	private void depth(final ComponentEvent e)
+	private void deapth(final ComponentEvent e)
 	{
 		IEventSink sink = e.getSink();
 
 		boolean app = sink instanceof Application;
 		boolean ses = app || sink instanceof Session;
 		boolean rc = ses || sink instanceof RequestCycle;
-		boolean c = sink instanceof Component;
 
-		if (!(c) && !rc)
+		if (!(sink instanceof Component) && !rc)
 		{
 			sink.onEvent(e);
 			return;
@@ -147,18 +163,44 @@ public class EventSender implements IEventSource
 			Visits.visitComponentsPostOrder(cursor, new ComponentEventVisitor(e));
 		}
 
-		if (!e.isStop() && rc)
+
+		if (app)
 		{
-			source.getRequestCycle().onEvent(e);
+			source.getApplication().onEvent(e);
 		}
-		if (!e.isStop() && ses)
+		if (e.isStop())
+		{
+			return;
+		}
+		if (ses)
 		{
 			source.getSession().onEvent(e);
 		}
-		if (!e.isStop() && app)
+		if (e.isStop())
 		{
-			source.getApplication().onEvent(e);
+			return;
+		}
 
+		if (rc)
+		{
+			source.getRequestCycle().onEvent(e);
+			cursor = source.getPage();
+		}
+		else
+		{
+			cursor = (Component)sink;
+		}
+
+		if (e.isStop())
+		{
+			return;
+		}
+
+		cursor.onEvent(e);
+
+		if (e.isStop())
+		{
+			return;
 		}
 
 	}
@@ -168,9 +210,9 @@ public class EventSender implements IEventSource
 	{
 		IEventSink sink = e.getSink();
 
-		boolean rc = sink instanceof RequestCycle;
-		boolean ses = rc || sink instanceof Session;
-		boolean app = ses || sink instanceof Application;
+		boolean app = sink instanceof Application;
+		boolean ses = app || sink instanceof Session;
+		boolean rc = ses || sink instanceof RequestCycle;
 		boolean c = sink instanceof Component;
 		if (c)
 		{

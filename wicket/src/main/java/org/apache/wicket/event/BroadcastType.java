@@ -17,5 +17,5 @@
 package org.apache.wicket.event;
 
 public enum BroadcastType {
-	BREADTH, DEPTH, BUBBLE;
+	BREADTH, DEAPTH, BUBBLE;
 }
