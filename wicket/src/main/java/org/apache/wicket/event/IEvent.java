@@ -16,36 +16,15 @@
  */
 package org.apache.wicket.event;
 
-/**
- * An event
- * 
- * @author Igor Vaynberg (ivaynberg)
- */
 public interface IEvent
 {
-	/**
-	 * Stops any further broadcast of this event
-	 */
 	void stop();
 
-	/**
-	 * Stops the broadcast of this event any deeper into the hierarchy of the current sink
-	 */
 	void dontBroadcastDeeper();
 
-	/**
-	 * @return type of broadcast that should be used to pass this event on
-	 */
-	Broadcast getType();
+	BroadcastType getType();
 
-	/**
-	 * @return the source of event
-	 */
 	IEventSource getSource();
 
-	/**
-	 * @param <T>
-	 * @return payload
-	 */
 	<T> T getPayload();
 }

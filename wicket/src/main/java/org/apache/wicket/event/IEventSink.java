@@ -16,17 +16,7 @@
  */
 package org.apache.wicket.event;
 
-/**
- * Objects that can receive events
- * 
- * @author Igor Vaynberg (ivaynberg)
- */
 public interface IEventSink
 {
-	/**
-	 * Called when an event is sent to this sink
-	 * 
-	 * @param event
-	 */
 	void onEvent(IEvent event);
 }
