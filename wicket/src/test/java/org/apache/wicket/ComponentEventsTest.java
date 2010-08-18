@@ -272,7 +272,7 @@ public class ComponentEventsTest
 			super.onEvent(event);
 			Payload payload = event.getPayload();
 			sequence = payload.next();
-			System.out.println(getId());
+			// System.out.println(getId());
 		}
 
 	}
@@ -293,7 +293,7 @@ public class ComponentEventsTest
 			super.onEvent(event);
 			Payload payload = event.getPayload();
 			sequence = payload.next();
-			System.out.println(getId());
+			// System.out.println(getId());
 		}
 
 
@@ -318,7 +318,7 @@ public class ComponentEventsTest
 			super.onEvent(event);
 			Payload payload = event.getPayload();
 			sequence = payload.next();
-			System.out.println(getId());
+			// System.out.println(getId());
 		}
 
 
