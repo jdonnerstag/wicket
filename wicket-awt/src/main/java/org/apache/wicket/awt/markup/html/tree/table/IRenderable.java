@@ -14,40 +14,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.wicket.examples.ajax.builtin.tree;
+package org.apache.wicket.awt.markup.html.tree.table;
 
-import org.apache.wicket.awt.markup.html.tree.AbstractTree;
-import org.apache.wicket.awt.markup.html.tree.BaseTree;
-import org.apache.wicket.awt.markup.html.tree.LinkTree;
+import javax.swing.tree.TreeNode;
+
+import org.apache.wicket.IClusterable;
+import org.apache.wicket.request.Response;
 
 
 /**
- * Page that shuws a simple tree (not a table).
+ * Interface for lightweight cell renders. If you are concerned about server state size, have larger
+ * trees with read-only cells, implementing this interface and using it instead of e.g. Label can
+ * decrease the memory footprint of tree table.
  * 
- * @author Matej
- * 
+ * @author Matej Knopp
  */
-public class SimpleTreePage extends BaseTreePage
+public interface IRenderable extends IClusterable
 {
-	private static final long serialVersionUID = 1L;
-
-	private final BaseTree tree;
-
-	@Override
-	protected AbstractTree getTree()
-	{
-		return tree;
-	}
 
 	/**
-	 * Page constructor
+	 * Renders the content of the cell to the response.
 	 * 
+	 * @param node
+	 *            The node for the row. Will be null for header
+	 * 
+	 * @param response
+	 *            Response where the renderer is supposed to write the content.
 	 */
-	public SimpleTreePage()
-	{
-		tree = new LinkTree("tree", createTreeModel());
-		add(tree);
-		tree.getTreeState().collapseAll();
-	}
+	public void render(TreeNode node, Response response);
 
 }

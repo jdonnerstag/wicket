@@ -17,7 +17,6 @@
 package org.apache.wicket.examples.ajax.builtin.tree;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -26,8 +25,8 @@ import javax.swing.tree.TreeModel;
 
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.markup.html.AjaxLink;
+import org.apache.wicket.awt.markup.html.tree.AbstractTree;
 import org.apache.wicket.examples.ajax.builtin.BasePage;
-import org.apache.wicket.markup.html.tree.AbstractTree;
 
 
 /**
@@ -37,6 +36,7 @@ import org.apache.wicket.markup.html.tree.AbstractTree;
  */
 public abstract class BaseTreePage extends BasePage
 {
+	private static final long serialVersionUID = 1L;
 
 	/**
 	 * Default constructor
@@ -146,14 +146,14 @@ public abstract class BaseTreePage extends BasePage
 			if (obj instanceof List)
 			{
 				DefaultMutableTreeNode child = new DefaultMutableTreeNode(new ModelBean(
-						"subtree..."));
+					"subtree..."));
 				parent.add(child);
-				add(child, (List<Object>) obj);
+				add(child, (List<Object>)obj);
 			}
 			else
 			{
 				DefaultMutableTreeNode child = new DefaultMutableTreeNode(new ModelBean(
-						obj.toString()));
+					obj.toString()));
 				parent.add(child);
 			}
 		}

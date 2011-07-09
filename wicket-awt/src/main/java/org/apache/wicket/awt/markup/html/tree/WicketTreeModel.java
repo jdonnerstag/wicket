@@ -14,40 +14,42 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.wicket.examples.ajax.builtin.tree;
+package org.apache.wicket.awt.markup.html.tree;
 
-import org.apache.wicket.awt.markup.html.tree.AbstractTree;
-import org.apache.wicket.awt.markup.html.tree.BaseTree;
-import org.apache.wicket.awt.markup.html.tree.LinkTree;
+import javax.swing.tree.TreeModel;
 
+import org.apache.wicket.model.util.GenericBaseModel;
 
 /**
- * Page that shuws a simple tree (not a table).
- * 
- * @author Matej
- * 
+ * @author Timo Rantalaiho
  */
-public class SimpleTreePage extends BaseTreePage
+public class WicketTreeModel extends GenericBaseModel<TreeModel>
 {
 	private static final long serialVersionUID = 1L;
 
-	private final BaseTree tree;
-
-	@Override
-	protected AbstractTree getTree()
+	/**
+	 * Construct.
+	 */
+	public WicketTreeModel()
 	{
-		return tree;
 	}
 
 	/**
-	 * Page constructor
+	 * Construct.
 	 * 
+	 * @param treeModel
 	 */
-	public SimpleTreePage()
+	public WicketTreeModel(final TreeModel treeModel)
 	{
-		tree = new LinkTree("tree", createTreeModel());
-		add(tree);
-		tree.getTreeState().collapseAll();
+		setObject(treeModel);
 	}
 
+	/**
+	 * @see org.apache.wicket.model.util.GenericBaseModel#createSerializableVersionOf(java.lang.Object)
+	 */
+	@Override
+	protected TreeModel createSerializableVersionOf(TreeModel object)
+	{
+		return object;
+	}
 }

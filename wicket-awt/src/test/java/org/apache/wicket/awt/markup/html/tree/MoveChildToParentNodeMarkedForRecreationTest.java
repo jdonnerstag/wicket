@@ -14,40 +14,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.wicket.examples.ajax.builtin.tree;
+package org.apache.wicket.awt.markup.html.tree;
 
-import org.apache.wicket.awt.markup.html.tree.AbstractTree;
-import org.apache.wicket.awt.markup.html.tree.BaseTree;
-import org.apache.wicket.awt.markup.html.tree.LinkTree;
-
+import org.apache.wicket.WicketTestCase;
 
 /**
- * Page that shuws a simple tree (not a table).
+ * Try to move the c3 node to the c2 at the described tree model:
  * 
- * @author Matej
+ * - c1
  * 
+ * - c2
+ * 
+ * - - cc2
+ * 
+ * - c3
+ * 
+ * @see "http://issues.apache.org/jira/browse/WICKET-2888"
  */
-public class SimpleTreePage extends BaseTreePage
+public class MoveChildToParentNodeMarkedForRecreationTest extends WicketTestCase
 {
-	private static final long serialVersionUID = 1L;
-
-	private final BaseTree tree;
-
-	@Override
-	protected AbstractTree getTree()
-	{
-		return tree;
-	}
-
 	/**
-	 * Page constructor
-	 * 
+	 * test()
 	 */
-	public SimpleTreePage()
+	public void test()
 	{
-		tree = new LinkTree("tree", createTreeModel());
-		add(tree);
-		tree.getTreeState().collapseAll();
+		MoveChildToParentNodeMarkedForRecreationTestPage testPage = new MoveChildToParentNodeMarkedForRecreationTestPage();
+		tester.startPage(testPage);
+		tester.clickLink("moveC3ToC2");
+		assertTrue(testPage.c2.isNodeChild(testPage.c3));
 	}
-
 }

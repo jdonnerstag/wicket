@@ -14,39 +14,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.wicket.examples.ajax.builtin.tree;
+package org.apache.wicket.awt.markup.html.tree.table;
 
 import javax.swing.tree.TreeNode;
 
 import org.apache.wicket.Component;
 import org.apache.wicket.MarkupContainer;
-import org.apache.wicket.awt.markup.html.tree.table.ColumnLocation;
-import org.apache.wicket.awt.markup.html.tree.table.IColumn;
-import org.apache.wicket.awt.markup.html.tree.table.IRenderable;
-import org.apache.wicket.awt.markup.html.tree.table.PropertyRenderableColumn;
-import org.apache.wicket.model.PropertyModel;
 
 
 /**
- * Column, that either shows a readonly cell or an editable panel, depending on whether the current
- * row is selected.
+ * Convenience class for building tree columns, i.e. columns that contain the actual tree.
  * 
  * @author Matej Knopp
  * @param <T>
  *            the type of the property that is rendered in this column
  */
-public class PropertyEditableColumn<T> extends PropertyRenderableColumn<T>
+public class PropertyTreeColumn<T> extends AbstractPropertyColumn<T>
 {
 	private static final long serialVersionUID = 1L;
 
 	/**
-	 * Column constructor.
+	 * Creates new column. Checks if the column is not aligned in middle. In case it is, throws an
+	 * exception.
 	 * 
 	 * @param location
+	 *            Specifies how the column should be aligned and what his size should be
 	 * @param header
+	 *            Header caption
 	 * @param propertyExpression
+	 *            Expression for property access
 	 */
-	public PropertyEditableColumn(ColumnLocation location, String header, String propertyExpression)
+	public PropertyTreeColumn(final ColumnLocation location, final String header,
+		final String propertyExpression)
 	{
 		super(location, header, propertyExpression);
 	}
@@ -54,21 +53,25 @@ public class PropertyEditableColumn<T> extends PropertyRenderableColumn<T>
 	/**
 	 * @see IColumn#newCell(MarkupContainer, String, TreeNode, int)
 	 */
-	@Override
-	public Component newCell(MarkupContainer parent, String id, TreeNode node, int level)
+	public Component newCell(final MarkupContainer parent, final String id, final TreeNode node,
+		final int level)
 	{
-		return new EditablePanel(id, new PropertyModel<T>(node, getPropertyExpression()));
+		return TreeTable.newTreeCell(parent, id, node, level, new TreeTable.IRenderNodeCallback()
+		{
+			private static final long serialVersionUID = 1L;
+
+			public String renderNode(final TreeNode node)
+			{
+				return PropertyTreeColumn.this.getNodeValue(node);
+			}
+		}, getTreeTable());
 	}
 
 	/**
 	 * @see IColumn#newCell(TreeNode, int)
 	 */
-	@Override
-	public IRenderable newCell(TreeNode node, int level)
+	public IRenderable newCell(final TreeNode node, final int level)
 	{
-		if (getTreeTable().getTreeState().isNodeSelected(node))
-			return null;
-		else
-			return super.newCell(node, level);
+		return null;
 	}
 }
