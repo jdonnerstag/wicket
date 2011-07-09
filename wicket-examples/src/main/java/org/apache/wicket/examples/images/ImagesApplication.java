@@ -17,8 +17,8 @@
 package org.apache.wicket.examples.images;
 
 import org.apache.wicket.Page;
+import org.apache.wicket.awt.markup.html.image.resource.DefaultButtonImageResource;
 import org.apache.wicket.examples.WicketExampleApplication;
-import org.apache.wicket.markup.html.image.resource.DefaultButtonImageResource;
 
 
 /**

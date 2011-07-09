@@ -65,6 +65,7 @@
 				<module>wicket-objectssizeof-agent</module>
 				<module>wicket-examples</module>
 				<module>archetypes/quickstart</module>
+                <module>wicket-awt</module>
 			</modules>
 			<build>
 				<plugins>
@@ -137,6 +138,7 @@
 				<module>wicket-objectssizeof-agent</module>
 				<module>wicket-examples</module>
 				<module>archetypes/quickstart</module>
+                <module>wicket-awt</module>
 			</modules>
 			<build>
 				<plugins>
@@ -197,8 +199,8 @@
 				<module>wicket-examples</module>
 				<module>archetypes/quickstart</module>
 				<module>testing/wicket-threadtest</module>
+                <module>wicket-awt</module>
 			</modules>
-
 
 			<!-- distribution management is inherited from the parent pom -->
 		</profile>
@@ -296,6 +298,12 @@
             <dependency>
                 <groupId>org.apache.wicket</groupId>
                 <artifactId>wicket-util</artifactId>
+                <version>${project.version}</version>
+                <type>jar</type>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.wicket</groupId>
+                <artifactId>wicket-awt</artifactId>
                 <version>${project.version}</version>
                 <type>jar</type>
             </dependency>

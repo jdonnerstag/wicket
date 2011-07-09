@@ -16,8 +16,8 @@
  */
 package org.apache.wicket.examples.captcha;
 
+import org.apache.wicket.awt.markup.html.captcha.CaptchaImageResource;
 import org.apache.wicket.examples.WicketExamplePage;
-import org.apache.wicket.extensions.markup.html.captcha.CaptchaImageResource;
 import org.apache.wicket.markup.ComponentTag;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.RequiredTextField;

@@ -62,7 +62,7 @@ import org.apache.wicket.util.string.Strings;
  * share images. The [specification] string which follows the second colon is passed directly to the
  * image factory and its format is dependent on the specific image factory. For details on the
  * default buttonFactory, see
- * {@link org.apache.wicket.markup.html.image.resource.DefaultButtonImageResourceFactory}.
+ * {@link org.apache.wicket.awt.markup.html.image.resource.DefaultButtonImageResourceFactory}.
  * <p>
  * Finally, if there is no SRC attribute and no VALUE attribute, the Image component's model is
  * inspected. If the model contains a resource or resource reference, this image is used, otherwise

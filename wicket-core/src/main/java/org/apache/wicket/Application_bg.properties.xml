@@ -19,39 +19,39 @@
 <properties>
 	<entry key="Required">Полето '${label}' е задължително.</entry>
 	<entry key="IConverter">'${input}' не е валиден ${type}.</entry>
-	<entry key="RangeValidator">${input} тр�?бва да бъде между ${minimum} и ${maximum}.</entry>
-	<entry key="MinimumValidator">'${input}' тр�?бва да бъде най-малко ${minimum}.</entry>
-	<entry key="MaximumValidator">'${input}' тр�?бва да бъде най-много ${maximum}.</entry>
+	<entry key="RangeValidator">${input} тр�?бва да бъде между ${minimum} и ${maximum}.</entry>
+	<entry key="MinimumValidator">'${input}' тр�?бва да бъде най-малко ${minimum}.</entry>
+	<entry key="MaximumValidator">'${input}' тр�?бва да бъде най-много ${maximum}.</entry>
 
-	<entry key="StringValidator.range">'${input}' тр�?бва да бъде между ${minimum} и ${maximum} �?имвола.</entry>
-	<entry key="StringValidator.minimum">'${input}' тр�?бва да бъде поне ${minimum} �?имвола.</entry>
-	<entry key="StringValidator.maximum">'${input}' тр�?бва да бъде най-много ${maximum} �?имвола.</entry>
-	<entry key="StringValidator.exact">'${input}' тр�?бва да бъде точно ${exact} �?имвола.</entry>
+	<entry key="StringValidator.range">'${input}' тр�?бва да бъде между ${minimum} и ${maximum} �?имвола.</entry>
+	<entry key="StringValidator.minimum">'${input}' тр�?бва да бъде поне ${minimum} �?имвола.</entry>
+	<entry key="StringValidator.maximum">'${input}' тр�?бва да бъде най-много ${maximum} �?имвола.</entry>
+	<entry key="StringValidator.exact">'${input}' тр�?бва да бъде точно ${exact} �?имвола.</entry>
 
-	<entry key="DateValidator.range">'${input}' тр�?бва да бъде между ${minimum} и ${maximum}.</entry>
-	<entry key="DateValidator.minimum">'${input}' не тр�?бва да бъде преди ${minimum}.</entry>
-	<entry key="DateValidator.maximum">'${input}' не тр�?бва да бъде �?лед ${maximum}.</entry>
+	<entry key="DateValidator.range">'${input}' тр�?бва да бъде между ${minimum} и ${maximum}.</entry>
+	<entry key="DateValidator.minimum">'${input}' не тр�?бва да бъде преди ${minimum}.</entry>
+	<entry key="DateValidator.maximum">'${input}' не тр�?бва да бъде �?лед ${maximum}.</entry>
 
-	<entry key="NumberValidator.positive">'${input}' тр�?бва да е положително чи�?ло.</entry>
-	<entry key="NumberValidator.negative">'${input}' тр�?бва да е отрицателно чи�?ло.</entry>
-	<entry key="NumberValidator.range">'${input}' тр�?бва да бъде между ${minimum} и ${maximum}.</entry>
-	<entry key="NumberValidator.minimum">'${input}' тр�?бва да бъде най-малко ${minimum}.</entry>
-	<entry key="NumberValidator.maximum">'${input}' тр�?бва да бъде най-много ${maximum}.</entry>
+	<entry key="NumberValidator.positive">'${input}' тр�?бва да е положително чи�?ло.</entry>
+	<entry key="NumberValidator.negative">'${input}' тр�?бва да е отрицателно чи�?ло.</entry>
+	<entry key="NumberValidator.range">'${input}' тр�?бва да бъде между ${minimum} и ${maximum}.</entry>
+	<entry key="NumberValidator.minimum">'${input}' тр�?бва да бъде най-малко ${minimum}.</entry>
+	<entry key="NumberValidator.maximum">'${input}' тр�?бва да бъде най-много ${maximum}.</entry>
 
-	<entry key="PatternValidator">'${input}' не отговар�? на шаблона '${pattern}'.</entry>
-	<entry key="EmailAddressValidator">'${input}' не е валиден адре�? на електронна поща.</entry>
-	<entry key="CreditCardValidator">�?омерът на кредитната карта не е валиден.</entry>
-	<entry key="UrlValidator">'${input}' не е валиден уеб адре�?.</entry>
+	<entry key="PatternValidator">'${input}' не отговар�? на шаблона '${pattern}'.</entry>
+	<entry key="EmailAddressValidator">'${input}' не е валиден адре�? на електронна поща.</entry>
+	<entry key="CreditCardValidator">�?омерът на кредитната карта не е валиден.</entry>
+	<entry key="UrlValidator">'${input}' не е валиден уеб адре�?.</entry>
 
-	<entry key="EqualInputValidator">'${input0}' от ${label0} и '${input1}' от ${label1} тр�?бва да бъдат еднакви.</entry>
-	<entry key="EqualPasswordInputValidator">${label0} и ${label1} тр�?бва да �?ъвпадат.</entry>
+	<entry key="EqualInputValidator">'${input0}' от ${label0} и '${input1}' от ${label1} тр�?бва да бъдат еднакви.</entry>
+	<entry key="EqualPasswordInputValidator">${label0} и ${label1} тр�?бва да �?ъвпадат.</entry>
 
 	<entry key="null">Изберете едно</entry>
 	<entry key="nullValid"></entry>
 
-	<entry key="PagingNavigator.first">Към първата �?траница</entry>
-	<entry key="PagingNavigator.previous">Към предишната �?траница</entry>
-	<entry key="PagingNavigator.next">Към �?ледващата �?траница</entry>
-	<entry key="PagingNavigator.last">Към по�?ледната �?траница</entry>
-	<entry key="PagingNavigation.page">Към �?траница ${page}</entry>
+	<entry key="PagingNavigator.first">Към първата �?траница</entry>
+	<entry key="PagingNavigator.previous">Към предишната �?траница</entry>
+	<entry key="PagingNavigator.next">Към �?ледващата �?траница</entry>
+	<entry key="PagingNavigator.last">Към по�?ледната �?траница</entry>
+	<entry key="PagingNavigation.page">Към �?траница ${page}</entry>
 </properties>

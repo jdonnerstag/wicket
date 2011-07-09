@@ -42,6 +42,10 @@
 			<groupId>org.apache.wicket</groupId>
 			<artifactId>wicket-extensions</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>org.apache.wicket</groupId>
+			<artifactId>wicket-awt</artifactId>
+		</dependency>
 
 		<dependency>
 			<groupId>org.eclipse.jetty.aggregate</groupId>

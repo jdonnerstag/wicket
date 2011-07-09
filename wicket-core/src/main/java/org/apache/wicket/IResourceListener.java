@@ -28,7 +28,7 @@ package org.apache.wicket;
  * self-contained JAR file.
  * 
  * @see org.apache.wicket.markup.html.image.Image
- * @see org.apache.wicket.markup.html.image.resource.RenderedDynamicImageResource
+ * @see org.apache.wicket.awt.markup.html.image.resource.RenderedDynamicImageResource
  * @author Jonathan Locke
  */
 public interface IResourceListener extends IRequestListener

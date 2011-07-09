@@ -1,3 +1,6 @@
+This a AWT and Swing free version of Wicket suitable for GAE.
+See https://issues.apache.org/jira/browse/WICKET-3036
+
 Apache Wicket 1.5
 =================
 

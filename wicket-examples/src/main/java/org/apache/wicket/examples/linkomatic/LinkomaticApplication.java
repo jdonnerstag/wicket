@@ -17,9 +17,9 @@
 package org.apache.wicket.examples.linkomatic;
 
 import org.apache.wicket.Page;
+import org.apache.wicket.awt.markup.html.image.resource.DefaultButtonImageResource;
 import org.apache.wicket.examples.ServerHostNameAndTimeFilter;
 import org.apache.wicket.examples.WicketExampleApplication;
-import org.apache.wicket.markup.html.image.resource.DefaultButtonImageResource;
 
 /**
  * Application class for the linkomatic example.

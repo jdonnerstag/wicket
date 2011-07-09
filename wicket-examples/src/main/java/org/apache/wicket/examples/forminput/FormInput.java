@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
+import org.apache.wicket.awt.convert.MaskConverter;
 import org.apache.wicket.examples.WicketExamplePage;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.Button;
@@ -47,7 +48,6 @@ import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.request.http.WebRequest;
 import org.apache.wicket.util.convert.ConversionException;
 import org.apache.wicket.util.convert.IConverter;
-import org.apache.wicket.util.convert.MaskConverter;
 import org.apache.wicket.validation.validator.RangeValidator;
 
 
@@ -306,7 +306,8 @@ public class FormInput extends WicketExamplePage
 	}
 
 	/** available sites for the multiple select. */
-	private static final List<String> SITES = Arrays.asList("The Server Side", "Java Lobby", "Java.Net");
+	private static final List<String> SITES = Arrays.asList("The Server Side", "Java Lobby",
+		"Java.Net");
 
 	/** available numbers for the radio selection. */
 	static final List<String> NUMBERS = Arrays.asList("1", "2", "3");

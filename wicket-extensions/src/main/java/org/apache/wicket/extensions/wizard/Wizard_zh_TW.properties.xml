@@ -20,8 +20,8 @@
 	<entry key="org.apache.wicket.extensions.wizard.next">下一步</entry>
 	<entry key="org.apache.wicket.extensions.wizard.previous">上一步</entry>
 	<entry key="org.apache.wicket.extensions.wizard.last">最後</entry>
-	<entry key="org.apache.wicket.extensions.wizard.cancel">�?�消</entry>
-	<entry key="org.apache.wicket.extensions.wizard.finish">�?�?�</entry>
+	<entry key="org.apache.wicket.extensions.wizard.cancel">�?�消</entry>
+	<entry key="org.apache.wicket.extensions.wizard.finish">�?�?�</entry>
 
 	<entry key="org.apache.wicket.extensions.wizard.NextButton.step.did.not.complete">無法執行下一步</entry>
 	<entry key="org.apache.wicket.extensions.wizard.FinishButton.step.did.not.complete">無法執行最後一步</entry>

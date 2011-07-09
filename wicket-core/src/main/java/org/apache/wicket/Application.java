@@ -41,7 +41,6 @@ import org.apache.wicket.markup.MarkupFactory;
 import org.apache.wicket.markup.html.IHeaderContributor;
 import org.apache.wicket.markup.html.IHeaderResponse;
 import org.apache.wicket.markup.html.IHeaderResponseDecorator;
-import org.apache.wicket.markup.html.image.resource.DefaultButtonImageResourceFactory;
 import org.apache.wicket.markup.parser.filter.EnclosureHandler;
 import org.apache.wicket.markup.parser.filter.InlineEnclosureHandler;
 import org.apache.wicket.markup.parser.filter.RelativePathPrefixHandler;
@@ -684,10 +683,6 @@ public abstract class Application implements UnboundListener, IEventSink
 		pageSettings.addComponentResolver(new EnclosureHandler());
 		pageSettings.addComponentResolver(new InlineEnclosureHandler());
 		pageSettings.addComponentResolver(new WicketContainerResolver());
-
-		// Install button image resource factory
-		getResourceSettings().addResourceFactory("buttonFactory",
-			new DefaultButtonImageResourceFactory());
 
 		String applicationKey = getApplicationKey();
 		applicationKeyToApplication.put(applicationKey, this);

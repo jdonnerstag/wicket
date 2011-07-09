@@ -57,7 +57,7 @@ import org.apache.wicket.util.watch.IModificationWatcher;
  * <p>
  * <i>Resource Factories </i>- Resource factories can be used to create resources dynamically from
  * specially formatted HTML tag attribute values. For more details, see {@link IResourceFactory},
- * {@link org.apache.wicket.markup.html.image.resource.DefaultButtonImageResourceFactory} and
+ * {@link org.apache.wicket.awt.markup.html.image.resource.DefaultButtonImageResourceFactory} and
  * especially {@link org.apache.wicket.markup.html.image.resource.LocalizedImageResource}.
  * <p>
  * <i>A Localizer </i> The getLocalizer() method returns an object encapsulating all of the

@@ -25,11 +25,11 @@ import java.util.List;
 import java.util.Random;
 
 import org.apache.wicket.WicketRuntimeException;
+import org.apache.wicket.awt.request.resource.DynamicImageResource;
 import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.markup.html.image.Image;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
-import org.apache.wicket.request.resource.DynamicImageResource;
 
 import com.sun.image.codec.jpeg.JPEGCodec;
 import com.sun.image.codec.jpeg.JPEGImageEncoder;

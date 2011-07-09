@@ -19,10 +19,10 @@
 <properties>
 	<entry key="org.apache.wicket.extensions.wizard.next">下一步</entry>
 	<entry key="org.apache.wicket.extensions.wizard.previous">上一步</entry>
-	<entry key="org.apache.wicket.extensions.wizard.last">最�?�</entry>
-	<entry key="org.apache.wicket.extensions.wizard.cancel">�?�消</entry>
-	<entry key="org.apache.wicket.extensions.wizard.finish">结�?�</entry>
+	<entry key="org.apache.wicket.extensions.wizard.last">最�?�</entry>
+	<entry key="org.apache.wicket.extensions.wizard.cancel">�?�消</entry>
+	<entry key="org.apache.wicket.extensions.wizard.finish">结�?�</entry>
 
 	<entry key="org.apache.wicket.extensions.wizard.NextButton.step.did.not.complete">无法执行下一步</entry>
-	<entry key="org.apache.wicket.extensions.wizard.FinishButton.step.did.not.complete">无法执行最�?�一步</entry>
+	<entry key="org.apache.wicket.extensions.wizard.FinishButton.step.did.not.complete">无法执行最�?�一步</entry>
 </properties>

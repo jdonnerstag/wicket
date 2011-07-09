@@ -20,8 +20,8 @@ import java.awt.Dimension;
 
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.markup.html.AjaxLink;
+import org.apache.wicket.awt.captcha.kittens.KittenCaptchaPanel;
 import org.apache.wicket.examples.WicketExamplePage;
-import org.apache.wicket.extensions.captcha.kittens.KittenCaptchaPanel;
 import org.apache.wicket.request.mapper.parameter.PageParameters;
 
 /**

@@ -21,11 +21,11 @@ import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.util.Random;
 
+import org.apache.wicket.awt.markup.html.image.resource.BufferedDynamicImageResource;
+import org.apache.wicket.awt.markup.html.image.resource.DefaultButtonImageResource;
+import org.apache.wicket.awt.markup.html.image.resource.RenderedDynamicImageResource;
 import org.apache.wicket.examples.WicketExamplePage;
 import org.apache.wicket.markup.html.image.Image;
-import org.apache.wicket.markup.html.image.resource.BufferedDynamicImageResource;
-import org.apache.wicket.markup.html.image.resource.DefaultButtonImageResource;
-import org.apache.wicket.markup.html.image.resource.RenderedDynamicImageResource;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.request.resource.IResource;
 import org.apache.wicket.request.resource.PackageResourceReference;

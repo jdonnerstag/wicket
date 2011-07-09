@@ -19,7 +19,7 @@ package org.apache.wicket.threadtest.apps.app1;
 import org.apache.wicket.Application;
 import org.apache.wicket.DefaultPageManagerProvider;
 import org.apache.wicket.Page;
-import org.apache.wicket.markup.html.image.resource.DefaultButtonImageResource;
+import org.apache.wicket.awt.markup.html.image.resource.DefaultButtonImageResource;
 import org.apache.wicket.page.IPageManager;
 import org.apache.wicket.page.IPageManagerContext;
 import org.apache.wicket.page.PageStoreManager;
@@ -87,5 +87,4 @@ public class TestApp1 extends WebApplication
 			}
 		});
 	}
-
 }
