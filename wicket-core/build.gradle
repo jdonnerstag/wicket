@@ -20,4 +20,5 @@ description = 'Wicket Core'
 dependencies {
   	compile project(':wicket-util')
   	compile project(':wicket-request')
+  	compile project(':wicket-awt')
 }
