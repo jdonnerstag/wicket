@@ -91,7 +91,6 @@ import org.slf4j.LoggerFactory;
  * 
  * @see MarkupStream
  * @author Jonathan Locke
- * 
  */
 public abstract class MarkupContainer extends Component implements Iterable<Component>
 {
@@ -153,6 +152,12 @@ public abstract class MarkupContainer extends Component implements Iterable<Comp
 				}
 
 				parent = parent.getParent();
+			}
+
+			if ((queuedComponents != null) && queuedComponents.contains(child))
+			{
+				throw new IllegalStateException(
+					"You can not add components which are already queued: " + child.toString());
 			}
 
 			checkHierarchyChange(child);
@@ -2111,6 +2116,13 @@ public abstract class MarkupContainer extends Component implements Iterable<Comp
 		// Add all components provided
 		for (Component comp : components)
 		{
+			if (comp.getParent() != null)
+			{
+				throw new IllegalStateException(
+					"You can not queue components which are already added to a parent: " +
+						comp.toString());
+			}
+
 			// Make sure the component are unambigious (do not have the same IDs)
 			for (Component queued : queuedComponents)
 			{
@@ -2157,6 +2169,7 @@ public abstract class MarkupContainer extends Component implements Iterable<Comp
 			if (dequeue(this, child))
 			{
 				iter.remove();
+				add(child);
 			}
 			else
 			{
@@ -2168,6 +2181,7 @@ public abstract class MarkupContainer extends Component implements Iterable<Comp
 					if (dequeue(cont, child))
 					{
 						iter.remove();
+						cont.add(child);
 						break;
 					}
 				}
@@ -2196,10 +2210,14 @@ public abstract class MarkupContainer extends Component implements Iterable<Comp
 	{
 		// Can child be added to parent?
 		// No child with same ID already added and markup for child successfully found.
-		if ((parent.get(child.getId()) == null) && (parent.getMarkup(child) != null))
+		if (parent.get(child.getId()) == null)
 		{
-			parent.add(child);
-			return true;
+			IMarkupFragment markup = parent.getMarkup(child);
+			if (markup != null)
+			{
+				child.setMarkup(markup);
+				return true;
+			}
 		}
 		return false;
 	}
