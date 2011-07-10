@@ -41,6 +41,7 @@ import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.IWrapModel;
 import org.apache.wicket.settings.IDebugSettings;
 import org.apache.wicket.util.iterator.ComponentHierarchyIterator;
+import org.apache.wicket.util.iterator.GenericComponentHierarchyIterator;
 import org.apache.wicket.util.lang.Args;
 import org.apache.wicket.util.lang.Generics;
 import org.apache.wicket.util.string.ComponentStrings;
@@ -2087,4 +2088,127 @@ public abstract class MarkupContainer extends Component implements Iterable<Comp
 		}
 	}
 
+	// Transient => no need to persist in session store
+	private transient List<Component> queuedComponents;
+
+	/**
+	 * Enqueue components. They'll be dequeued and added after this container was initialized (
+	 * {@link MarkupContainer#onInitialize()}).
+	 * <p>
+	 * Dequeuing is a hierarchical process. It tries to find the proper container (this or any of
+	 * its children and grand-children) to add the queued component to.
+	 * 
+	 * @param components
+	 * @return this
+	 */
+	public final MarkupContainer queue(final Component... components)
+	{
+		if (queuedComponents == null)
+		{
+			queuedComponents = Generics.newArrayList();
+		}
+
+		// Add all components provided
+		for (Component comp : components)
+		{
+			// Make sure the component are unambigious (do not have the same IDs)
+			for (Component queued : queuedComponents)
+			{
+				if (queued.getId().equals(comp.getId()))
+				{
+					throw new IllegalStateException(
+						"You can not add multiple components with the same ID for queueing: " +
+							comp.getId());
+				}
+			}
+
+			queuedComponents.add(comp);
+		}
+
+		return this;
+	}
+
+	/**
+	 * @return Gets the list components in the queue. Null, if no components queued.
+	 */
+	public final List<Component> getQueuedComponents()
+	{
+		return queuedComponents;
+	}
+
+	/**
+	 * Implements the process to dequeue all components registered
+	 */
+	private final void dequeue()
+	{
+		if (queuedComponents == null)
+		{
+			return;
+		}
+
+		// For each component queued
+		Iterator<Component> iter = queuedComponents.iterator();
+		while (iter.hasNext())
+		{
+			Component child = iter.next();
+
+			// Can it be added to "this"?
+			// No child with same ID already added and markup for child successfully found.
+			if (dequeue(this, child))
+			{
+				iter.remove();
+			}
+			else
+			{
+				// Check all children and grand children if the queued component fit with any of
+				// them
+				for (MarkupContainer cont : new GenericComponentHierarchyIterator<MarkupContainer>(
+					this, MarkupContainer.class))
+				{
+					if (dequeue(cont, child))
+					{
+						iter.remove();
+						break;
+					}
+				}
+			}
+		}
+
+		if (queuedComponents.isEmpty())
+		{
+			queuedComponents = null;
+		}
+		else
+		{
+			throw new IllegalStateException("Unable to dequeue all components registered: " +
+				queuedComponents);
+		}
+	}
+
+	/**
+	 * Check if child can be added to the parent. If yes, than add it.
+	 * 
+	 * @param parent
+	 * @param child
+	 * @return true, if child was added to parent
+	 */
+	private boolean dequeue(final MarkupContainer parent, final Component child)
+	{
+		// Can child be added to parent?
+		// No child with same ID already added and markup for child successfully found.
+		if ((parent.get(child.getId()) == null) && (parent.getMarkup(child) != null))
+		{
+			parent.add(child);
+			return true;
+		}
+		return false;
+	}
+
+	@Override
+	protected void onInitialize()
+	{
+		super.onInitialize();
+
+		dequeue();
+	}
 }

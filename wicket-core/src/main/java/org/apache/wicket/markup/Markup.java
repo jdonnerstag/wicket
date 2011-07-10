@@ -24,7 +24,6 @@ import java.util.List;
 
 import org.apache.wicket.util.lang.Args;
 import org.apache.wicket.util.resource.ResourceStreamNotFoundException;
-import org.apache.wicket.util.string.AppendingStringBuffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -229,7 +228,7 @@ public class Markup implements IMarkupFragment
 	 */
 	public final String toString(final boolean markupOnly)
 	{
-		final AppendingStringBuffer buf = new AppendingStringBuffer(400);
+		final StringBuilder buf = new StringBuilder(400);
 
 		if (markupOnly == false)
 		{
