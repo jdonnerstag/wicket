@@ -2165,7 +2165,6 @@ public abstract class MarkupContainer extends Component implements Iterable<Comp
 			Component child = iter.next();
 
 			// Can it be added to "this"?
-			// No child with same ID already added and markup for child successfully found.
 			if (dequeue(this, child))
 			{
 				iter.remove();
@@ -2173,7 +2172,7 @@ public abstract class MarkupContainer extends Component implements Iterable<Comp
 			}
 			else
 			{
-				// Check all children and grand children if the queued component fit with any of
+				// Check all children and grand children if the queued component fits with any of
 				// them
 				for (MarkupContainer cont : new GenericComponentHierarchyIterator<MarkupContainer>(
 					this, MarkupContainer.class))
@@ -2200,7 +2199,7 @@ public abstract class MarkupContainer extends Component implements Iterable<Comp
 	}
 
 	/**
-	 * Check if child can be added to the parent. If yes, than add it.
+	 * Check if child can be added to the parent.
 	 * 
 	 * @param parent
 	 * @param child
@@ -2208,10 +2207,10 @@ public abstract class MarkupContainer extends Component implements Iterable<Comp
 	 */
 	private boolean dequeue(final MarkupContainer parent, final Component child)
 	{
-		// Can child be added to parent?
-		// No child with same ID already added and markup for child successfully found.
+		// No child with same ID already added
 		if (parent.get(child.getId()) == null)
 		{
+			// Markup for child successfully found with parent
 			IMarkupFragment markup = parent.getMarkup(child);
 			if (markup != null)
 			{
