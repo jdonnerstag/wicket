@@ -24,7 +24,6 @@ import org.apache.wicket.IClusterable;
 import org.apache.wicket.IResourceFactory;
 import org.apache.wicket.IResourceListener;
 import org.apache.wicket.MarkupContainer;
-import org.apache.wicket.ThreadContext;
 import org.apache.wicket.WicketRuntimeException;
 import org.apache.wicket.markup.ComponentTag;
 import org.apache.wicket.markup.html.border.Border;
@@ -174,27 +173,11 @@ public final class LocalizedImageResource implements IClusterable
 	}
 
 	/**
-	 * Binds this resource if it is shared
-	 */
-	public final void bind()
-	{
-		// If we have a resource reference
-		if (resourceReference != null)
-		{
-			// Bind the reference to the application
-			ThreadContext.getApplication()
-				.getResourceReferenceRegistry()
-				.registerResourceReference(resourceReference);
-		}
-	}
-
-	/**
 	 * @param parameters
 	 *            page parameters
 	 */
 	public final void onResourceRequested(PageParameters parameters)
 	{
-		bind();
 		RequestCycle requestCycle = RequestCycle.get();
 		Attributes attributes = new Attributes(requestCycle.getRequest(),
 			requestCycle.getResponse(), parameters);
@@ -246,7 +229,6 @@ public final class LocalizedImageResource implements IClusterable
 			this.resourceReference = resourceReference;
 		}
 		this.resourceParameters = resourceParameters;
-		bind();
 	}
 
 	/**
@@ -327,7 +309,7 @@ public final class LocalizedImageResource implements IClusterable
 		final CharSequence url;
 		if (resourceReference != null)
 		{
-//			// Create URL to resource
+			// Create URL to resource
 			url = RequestCycle.get().urlFor(resourceReference, resourceParameters);
 		}
 		else
@@ -337,7 +319,7 @@ public final class LocalizedImageResource implements IClusterable
 		}
 
 		// Set the SRC attribute to point to the component or shared resource
-		tag.put("src", RequestCycle.get().getOriginalResponse().encodeURL(url));
+		tag.put("src", url);
 	}
 
 	/**
@@ -404,7 +386,6 @@ public final class LocalizedImageResource implements IClusterable
 		}
 		final Class<?> scope = parent.getClass();
 		resourceReference = new PackageResourceReference(scope, path, locale, style, variation);
-		bind();
 	}
 
 	/**

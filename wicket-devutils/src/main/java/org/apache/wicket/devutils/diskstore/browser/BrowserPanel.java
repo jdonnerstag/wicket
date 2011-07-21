@@ -19,9 +19,16 @@ package org.apache.wicket.devutils.diskstore.browser;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.wicket.ajax.AjaxRequestTarget;
+import org.apache.wicket.ajax.AjaxSelfUpdatingTimerBehavior;
+import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
+import org.apache.wicket.ajax.markup.html.AjaxFallbackLink;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
+import org.apache.wicket.markup.html.form.DropDownChoice;
 import org.apache.wicket.markup.html.panel.Panel;
+import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
+import org.apache.wicket.util.time.Duration;
 
 /**
  * A panel that shows the data about pages in the data store
@@ -39,13 +46,75 @@ public class BrowserPanel extends Panel
 	{
 		super(id);
 
-		BrowserTable table = createTable("table");
+		final DropDownChoice<String> sessionsSelector = createSessionsSelector("sessions");
+		add(sessionsSelector);
+
+		final BrowserTable table = createTable("table", sessionsSelector.getModel());
 		add(table);
+
+		AjaxFallbackLink<Void> refreshLink = new AjaxFallbackLink<Void>("refresh")
+		{
+			@Override
+			public void onClick(AjaxRequestTarget target)
+			{
+				if (target != null)
+				{
+					target.add(table);
+				}
+			}
+		};
+		add(refreshLink);
+
+		AjaxFallbackLink<Void> currentSessionLink = new AjaxFallbackLink<Void>("currentSessionLink")
+		{
+			@Override
+			public void onClick(AjaxRequestTarget target)
+			{
+				sessionsSelector.setModelObject(getCurrentSession().getObject());
+				if (target != null)
+				{
+					target.add(sessionsSelector, table);
+				}
+			}
+
+			@Override
+			public boolean isVisible()
+			{
+				return BrowserPanel.this.getSession().isTemporary() == false;
+			}
+		};
+		currentSessionLink.setOutputMarkupPlaceholderTag(true);
+		add(currentSessionLink);
+
+		sessionsSelector.add(new AjaxFormComponentUpdatingBehavior("onchange")
+		{
+			@Override
+			protected void onUpdate(AjaxRequestTarget target)
+			{
+				target.add(table);
+			}
+		});
 	}
 
-	private BrowserTable createTable(String id)
+	private DropDownChoice<String> createSessionsSelector(String id)
 	{
-		PageWindowProvider provider = new PageWindowProvider();
+		IModel<String> defaultSession = getCurrentSession();
+
+		DropDownChoice<String> sessionsSelector = new DropDownChoice<String>("sessions",
+			defaultSession, new SessionsProviderModel());
+
+
+		return sessionsSelector;
+	}
+
+	private IModel<String> getCurrentSession()
+	{
+		return Model.of(getSession().getId());
+	}
+
+	private BrowserTable createTable(String id, IModel<String> sessionId)
+	{
+		PageWindowProvider provider = new PageWindowProvider(sessionId);
 
 		List<IColumn<PageWindowDescription>> columns = new ArrayList<IColumn<PageWindowDescription>>();
 
@@ -58,7 +127,12 @@ public class BrowserPanel extends Panel
 		PageWindowColumn pageSizeColumn = new PageWindowColumn(Model.of("Size"), "size");
 		columns.add(pageSizeColumn);
 
-		return new BrowserTable(id, columns, provider);
+		BrowserTable browserTable = new BrowserTable(id, columns, provider);
+		browserTable.setOutputMarkupId(true);
+
+		browserTable.add(new AjaxSelfUpdatingTimerBehavior(Duration.seconds(5)));
+
+		return browserTable;
 	}
 
 }

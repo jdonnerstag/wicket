@@ -16,22 +16,23 @@
  */
 package org.apache.wicket.extensions.ajax.markup.html.form.upload;
 
-import java.text.MessageFormat;
-import java.util.Locale;
-import java.util.ResourceBundle;
-
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.wicket.Application;
-import org.apache.wicket.Session;
+import org.apache.wicket.Component;
+import org.apache.wicket.model.Model;
+import org.apache.wicket.model.StringResourceModel;
 import org.apache.wicket.protocol.http.servlet.MultipartServletWebRequestImpl;
 import org.apache.wicket.protocol.http.servlet.UploadInfo;
+import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.apache.wicket.request.resource.AbstractResource;
 
 /**
  * A resource that prints out basic statistics about the current upload. This resource is used to
  * feed the progress bar information by the progress bar javascript which requests this resource
  * through ajax.
+ * 
+ * For customizing status text see {@link #RESOURCE_STATUS}.
  * 
  * @author Andrew Lombardi
  * @author Igor Vaynberg (ivaynberg)
@@ -40,6 +41,16 @@ class UploadStatusResource extends AbstractResource
 {
 
 	private static final long serialVersionUID = 1L;
+
+	private static final String UPLOAD_PARAMETER = "upload";
+
+	/**
+	 * Resource key used to retrieve status message for.
+	 * 
+	 * Example: UploadStatusResource.status=${percentageComplete}% finished, ${bytesUploadedString}
+	 * of ${totalBytesString} at ${transferRateString}; ${remainingTimeString}
+	 */
+	public static final String RESOURCE_STATUS = "UploadStatusResource.status";
 
 	@Override
 	protected ResourceResponse newResourceResponse(final Attributes attributes)
@@ -69,13 +80,17 @@ class UploadStatusResource extends AbstractResource
 
 	/**
 	 * @param attributes
-	 * @return Status string with progress data that will feed the progressbar.js variables on
+	 * @return status string with progress data that will feed the progressbar.js variables on
 	 *         browser to update the progress bar
 	 */
 	private String getStatus(final Attributes attributes)
 	{
-		HttpServletRequest req = (HttpServletRequest)attributes.getRequest().getContainerRequest();
-		UploadInfo info = MultipartServletWebRequestImpl.getUploadInfo(req);
+		final HttpServletRequest req = (HttpServletRequest)attributes.getRequest()
+			.getContainerRequest();
+
+		final String upload = req.getParameter(UPLOAD_PARAMETER);
+
+		UploadInfo info = MultipartServletWebRequestImpl.getUploadInfo(req, upload);
 
 		String status = null;
 		if ((info == null) || (info.getTotalBytes() < 1))
@@ -84,31 +99,26 @@ class UploadStatusResource extends AbstractResource
 		}
 		else
 		{
-			Locale locale = Session.get().getLocale();
-
-			String pattern = getStatus("statusUpdate", locale);
-
 			status = info.getPercentageComplete() +
 				"|" +
-				MessageFormat.format(pattern, info.getPercentageComplete(),
-					info.getBytesUploadedString(locale), info.getTotalBytesString(locale),
-					info.getTransferRateString(locale), info.getRemainingTimeString(locale));
+				new StringResourceModel(
+					RESOURCE_STATUS,
+					(Component)null,
+					Model.of(info),
+					"${percentageComplete}% finished, ${bytesUploadedString} of ${totalBytesString} at ${transferRateString}; ${remainingTimeString}").getString();
 		}
 		return status;
 	}
 
 	/**
-	 * Get a status message for the given key.
+	 * Create a new parameter for the given identifier of a {@link UploadInfo}.
 	 * 
-	 * @param key
-	 *            message key
-	 * @param locale
-	 *            locale for message
-	 * @return status message
+	 * @param upload
+	 *            identifier
+	 * @return page parameter suitable for URLs to this resource
 	 */
-	static String getStatus(String key, Locale locale)
+	public static PageParameters newParameter(String upload)
 	{
-		return ResourceBundle.getBundle(UploadStatusResource.class.getName(), locale)
-			.getString(key);
+		return new PageParameters().add(UPLOAD_PARAMETER, upload);
 	}
 }

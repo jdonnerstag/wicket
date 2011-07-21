@@ -30,23 +30,26 @@ class PageWindowDescription implements IClusterable
 	/** the page size */
 	private final int size;
 
-	PageWindowDescription(PageWindow pageWindow)
+	/** the id of the session for which this page has been used */
+	private final String sessionId;
+
+	PageWindowDescription(PageWindow pageWindow, String sessionId)
 	{
 		id = pageWindow.getPageId();
 		size = pageWindow.getFilePartSize();
+		this.sessionId = sessionId;
 	}
 
-	/**
-	 * @return the page id
-	 */
+	public String getSessionId()
+	{
+		return sessionId;
+	}
+
 	public int getId()
 	{
 		return id;
 	}
 
-	/**
-	 * @return the page size
-	 */
 	public int getSize()
 	{
 		return size;

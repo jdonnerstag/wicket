@@ -19,12 +19,13 @@ package org.apache.wicket.request.mapper.parameter;
 import java.util.List;
 
 import org.apache.wicket.util.string.StringValue;
+import org.junit.Assert;
 import org.junit.Test;
 
 /**
  * Tests for {@link PageParameters}
  */
-public class PageParametersTest
+public class PageParametersTest extends Assert
 {
 
 	/**
@@ -59,5 +60,50 @@ public class PageParametersTest
 				throw new IllegalStateException("Expected to find a StringValue with value: " + in);
 			}
 		}
+	}
+
+	/**
+	 * https://issues.apache.org/jira/browse/WICKET-3906
+	 */
+	@Test
+	public void getPosition()
+	{
+		PageParameters parameters = new PageParameters();
+		parameters.set("named1", "value1", 3);
+		assertEquals(
+			"Adding a parameter at position out of the size of the list will just append it", 0,
+			parameters.getPosition("named1"));
+
+		parameters.set("named2", "value2", 0);
+		assertEquals(0, parameters.getPosition("named2"));
+		assertEquals("'named1' should be moved back", 1, parameters.getPosition("named1"));
+
+
+		parameters.set("named3", "value3", -100);
+		assertEquals(0, parameters.getPosition("named2"));
+		assertEquals(1, parameters.getPosition("named1"));
+		assertEquals("Adding a parameter with negative position will just append it.", 2,
+			parameters.getPosition("named3"));
+	}
+
+	/**
+	 * Tests that overwriting (via #set()) a named parameter will preserve its position
+	 */
+	@Test
+	public void set()
+	{
+		PageParameters parameters = new PageParameters();
+		parameters.add("named1", "value1").add("named2", "value2");
+
+		assertEquals(0, parameters.getPosition("named1"));
+		assertEquals(1, parameters.getPosition("named2"));
+
+		// overwrite it
+		parameters.set("named1", "newValue");
+		parameters.set("named3", "value3");
+		assertEquals(0, parameters.getPosition("named1"));
+		assertEquals("newValue", parameters.get("named1").toString());
+		assertEquals(1, parameters.getPosition("named2"));
+		assertEquals(2, parameters.getPosition("named3"));
 	}
 }

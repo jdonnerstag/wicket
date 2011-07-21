@@ -34,6 +34,7 @@ import org.apache.wicket.ajax.AjaxRequestTargetListenerCollection;
 import org.apache.wicket.markup.MarkupType;
 import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.markup.html.form.AutoLabelResolver;
+import org.apache.wicket.markup.html.form.AutoLabelTextResolver;
 import org.apache.wicket.markup.html.pages.AccessDeniedPage;
 import org.apache.wicket.markup.html.pages.InternalErrorPage;
 import org.apache.wicket.markup.html.pages.PageExpiredErrorPage;
@@ -62,8 +63,9 @@ import org.apache.wicket.session.HttpSessionStore;
 import org.apache.wicket.session.ISessionStore;
 import org.apache.wicket.util.IContextProvider;
 import org.apache.wicket.util.IProvider;
-import org.apache.wicket.util.file.FileUploadCleaner;
-import org.apache.wicket.util.file.IFileUploadCleaner;
+import org.apache.wicket.util.crypt.CharEncoding;
+import org.apache.wicket.util.file.FileCleaner;
+import org.apache.wicket.util.file.IFileCleaner;
 import org.apache.wicket.util.file.IResourceFinder;
 import org.apache.wicket.util.file.WebApplicationPath;
 import org.apache.wicket.util.lang.Args;
@@ -388,24 +390,52 @@ public abstract class WebApplication extends Application
 	}
 
 	/**
-	 * Create a new WebRequest. Subclasses of WebRequest could e.g. decode and obfuscated URL which
+	 * Create a new WebRequest. Subclasses of WebRequest could e.g. decode and obfuscate URL which
 	 * has been encoded by an appropriate WebResponse.
 	 * 
 	 * @param servletRequest
+	 *            the current HTTP Servlet request
 	 * @param filterPath
 	 *            the filter mapping read from web.xml
 	 * @return a WebRequest object
 	 */
 	protected WebRequest newWebRequest(HttpServletRequest servletRequest, final String filterPath)
 	{
-		String requestEncoding = getRequestCycleSettings().getResponseRequestEncoding();
-		try
+		return new ServletWebRequest(servletRequest, filterPath);
+	}
+
+	/**
+	 * Pre- and post- configures the {@link WebRequest} created by user override-able
+	 * {@link #newWebRequest(HttpServletRequest, String)}
+	 * 
+	 * @param servletRequest
+	 *            the current HTTP Sservlet request
+	 * @param filterPath
+	 *            the filter mapping read from web.xml
+	 * @return a WebRequest object
+	 */
+	WebRequest createWebRequest(HttpServletRequest servletRequest, final String filterPath)
+	{
+		if (servletRequest.getCharacterEncoding() == null)
 		{
-			servletRequest.setCharacterEncoding(requestEncoding);
-		}
-		catch (UnsupportedEncodingException e)
-		{
-			throw new RuntimeException(e);
+			try
+			{
+				String wicketAjaxHeader = servletRequest.getHeader(WebRequest.HEADER_AJAX);
+				if (Strings.isTrue(wicketAjaxHeader))
+				{
+					// WICKET-3908, WICKET-1816: Forms submitted with Ajax are always UTF-8 encoded
+					servletRequest.setCharacterEncoding(CharEncoding.UTF_8);
+				}
+				else
+				{
+					String requestEncoding = getRequestCycleSettings().getResponseRequestEncoding();
+					servletRequest.setCharacterEncoding(requestEncoding);
+				}
+			}
+			catch (UnsupportedEncodingException e)
+			{
+				throw new WicketRuntimeException(e);
+			}
 		}
 
 		if (hasFilterFactoryManager())
@@ -416,7 +446,9 @@ public abstract class WebApplication extends Application
 			}
 		}
 
-		return new ServletWebRequest(servletRequest, filterPath);
+		WebRequest webRequest = newWebRequest(servletRequest, filterPath);
+
+		return webRequest;
 	}
 
 	/**
@@ -425,14 +457,31 @@ public abstract class WebApplication extends Application
 	 * to decode the encoded URL.
 	 * 
 	 * @param webRequest
+	 *            the {@link WebRequest} that will handle the current HTTP Servlet request
 	 * @param httpServletResponse
+	 *            the current HTTP Servlet response
 	 * @return a WebResponse object
 	 */
 	protected WebResponse newWebResponse(final WebRequest webRequest,
 		final HttpServletResponse httpServletResponse)
 	{
-		ServletWebResponse webResponse = new ServletWebResponse((ServletWebRequest)webRequest,
-			httpServletResponse);
+		return new ServletWebResponse((ServletWebRequest)webRequest, httpServletResponse);
+	}
+
+	/**
+	 * Pre- and post- configures the {@link WebResponse} returned from
+	 * {@link #newWebResponse(WebRequest, HttpServletResponse)}
+	 * 
+	 * @param webRequest
+	 *            the {@link WebRequest} that will handle the current HTTP Servlet request
+	 * @param httpServletResponse
+	 *            the current HTTP Servlet response
+	 * @return the configured WebResponse object
+	 */
+	WebResponse createWebResponse(final WebRequest webRequest,
+		final HttpServletResponse httpServletResponse)
+	{
+		WebResponse webResponse = newWebResponse(webRequest, httpServletResponse);
 
 		boolean shouldBufferResponse = getRequestCycleSettings().getBufferResponse();
 		return shouldBufferResponse ? new HeaderBufferingWebResponse(webResponse) : webResponse;
@@ -502,10 +551,10 @@ public abstract class WebApplication extends Application
 			resourceWatcher.destroy();
 		}
 
-		IFileUploadCleaner fileUploadCleaner = getResourceSettings().getFileUploadCleaner();
-		if (fileUploadCleaner != null)
+		IFileCleaner fileCleaner = getResourceSettings().getFileCleaner();
+		if (fileCleaner != null)
 		{
-			fileUploadCleaner.destroy();
+			fileCleaner.destroy();
 		}
 
 		super.internalDestroy();
@@ -537,11 +586,12 @@ public abstract class WebApplication extends Application
 		// Add resolver for automatically resolving HTML links
 		getPageSettings().addComponentResolver(new AutoLinkResolver());
 		getPageSettings().addComponentResolver(new AutoLabelResolver());
+		getPageSettings().addComponentResolver(new AutoLabelTextResolver());
 
 		// Set resource finder to web app path
 		getResourceSettings().setResourceFinder(getResourceFinder());
 
-		getResourceSettings().setFileUploadCleaner(new FileUploadCleaner());
+		getResourceSettings().setFileCleaner(new FileCleaner());
 
 		// Add optional sourceFolder for resources.
 		String resourceFolder = getInitParameter("sourceFolder");

@@ -55,7 +55,7 @@ public class CompoundPropertyModel<T> implements IComponentInheritedModel<T>, IC
 
 	/**
 	 * Constructor
-	 *
+	 * 
 	 * @param object
 	 *            The model object
 	 */
@@ -224,5 +224,18 @@ public class CompoundPropertyModel<T> implements IComponentInheritedModel<T>, IC
 			getClass().getName() + "]");
 		sb.append(":nestedModel=[").append(target).append("]");
 		return sb.toString();
+	}
+
+	/**
+	 * Type-infering factory method
+	 * 
+	 * @param <Z>
+	 * @param model
+	 *            model
+	 * @return {@link CompoundPropertyModel} instance
+	 */
+	public static <Z> CompoundPropertyModel<Z> of(IModel<Z> model)
+	{
+		return new CompoundPropertyModel<Z>(model);
 	}
 }

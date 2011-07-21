@@ -33,6 +33,8 @@ import org.apache.wicket.request.resource.caching.ResourceUrl;
 import org.apache.wicket.util.IProvider;
 import org.apache.wicket.util.lang.WicketObjects;
 import org.apache.wicket.util.string.Strings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Generic {@link ResourceReference} encoder that encodes and decodes non-mounted
@@ -53,6 +55,8 @@ import org.apache.wicket.util.string.Strings;
  */
 class BasicResourceReferenceMapper extends AbstractResourceReferenceMapper
 {
+	private static final Logger log = LoggerFactory.getLogger(BasicResourceReferenceMapper.class);
+
 	private final IPageParametersEncoder pageParametersEncoder;
 
 	/** resource caching strategy */
@@ -100,8 +104,11 @@ class BasicResourceReferenceMapper extends AbstractResourceReferenceMapper
 					segment = resourceUrl.getFileName();
 
 					if (Strings.isEmpty(segment))
-						throw new NullPointerException(
-							"caching strategy must not return an empty filename");
+					{
+						log.debug("Caching strategy {} returned an empty name, not mapping {}",
+							getCachingStrategy().getClass().getName(), url);
+						return null;
+					}
 				}
 				if (name.length() > 0)
 				{
@@ -196,7 +203,7 @@ class BasicResourceReferenceMapper extends AbstractResourceReferenceMapper
 				if (tokens.hasMoreTokens() == false)
 				{
 					// ... but only for package resources
-					if(reference instanceof PackageResourceReference)
+					if (reference instanceof PackageResourceReference)
 					{
 						final PackageResourceReference pkgref = (PackageResourceReference)reference;
 						final ResourceUrl resourceUrl = new ResourceUrl(token, parameters);
@@ -204,8 +211,11 @@ class BasicResourceReferenceMapper extends AbstractResourceReferenceMapper
 						token = resourceUrl.getFileName();
 
 						if (Strings.isEmpty(token))
-							throw new NullPointerException(
-								"caching strategy must not return an empty filename");
+						{
+							log.debug("Caching strategy {} returned an empty name, not mapping {}",
+								getCachingStrategy().getClass().getName(), url);
+							return null;
+						}
 
 						if (parameters.getIndexedCount() > 0)
 							throw new IllegalStateException(
@@ -227,7 +237,15 @@ class BasicResourceReferenceMapper extends AbstractResourceReferenceMapper
 
 	public int getCompatibilityScore(Request request)
 	{
-		// always return 0 here so that the mounts have higher priority
-		return 0;
+		Url url = request.getUrl();
+
+		int score = -1;
+		if (url.getSegments().size() >= 4 &&
+			urlStartsWith(url, getContext().getNamespace(), getContext().getResourceIdentifier()))
+		{
+			score = 1;
+		}
+
+		return score;
 	}
 }

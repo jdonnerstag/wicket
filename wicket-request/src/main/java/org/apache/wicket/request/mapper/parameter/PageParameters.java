@@ -16,7 +16,6 @@
  */
 package org.apache.wicket.request.mapper.parameter;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -25,6 +24,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.apache.wicket.IClusterable;
 import org.apache.wicket.request.IRequestMapper;
 import org.apache.wicket.util.lang.Args;
 import org.apache.wicket.util.lang.Objects;
@@ -48,9 +48,9 @@ import org.apache.wicket.util.value.ValueMap;
  * 
  * @author Matej Knopp
  */
-public class PageParameters implements Serializable, IIndexedParameters, INamedParameters
+public class PageParameters implements IClusterable, IIndexedParameters, INamedParameters
 {
-	private static class Entry implements Serializable
+	private static class Entry implements IClusterable
 	{
 		private static final long serialVersionUID = 1L;
 
@@ -369,6 +369,27 @@ public class PageParameters implements Serializable, IIndexedParameters, INamedP
 	}
 
 	/**
+	 * @see org.apache.wicket.request.mapper.parameter.INamedParameters#getPosition(String)
+	 */
+	public int getPosition(final String name)
+	{
+		int index = -1;
+		if (namedParameters != null)
+		{
+			for (int i = 0; i < namedParameters.size(); i++)
+			{
+				Entry entry = namedParameters.get(i);
+				if (entry.key.equals(name))
+				{
+					index = i;
+					break;
+				}
+			}
+		}
+		return index;
+	}
+
+	/**
 	 * @see org.apache.wicket.request.mapper.parameter.INamedParameters#remove(java.lang.String)
 	 */
 	public PageParameters remove(final String name)
@@ -429,7 +450,7 @@ public class PageParameters implements Serializable, IIndexedParameters, INamedP
 			entry.key = name;
 			entry.value = val;
 
-			if (index == -1)
+			if (index < 0 || index > namedParameters.size())
 			{
 				namedParameters.add(entry);
 			}
@@ -451,7 +472,7 @@ public class PageParameters implements Serializable, IIndexedParameters, INamedP
 
 		if (value != null)
 		{
-			add(name, value);
+			add(name, value, index);
 		}
 		return this;
 	}
@@ -462,7 +483,8 @@ public class PageParameters implements Serializable, IIndexedParameters, INamedP
 	 */
 	public PageParameters set(final String name, final Object value)
 	{
-		set(name, value, -1);
+		int position = getPosition(name);
+		set(name, value, position);
 		return this;
 	}
 

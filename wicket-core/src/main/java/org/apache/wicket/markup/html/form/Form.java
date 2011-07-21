@@ -54,8 +54,8 @@ import org.apache.wicket.util.string.AppendingStringBuffer;
 import org.apache.wicket.util.string.PrependingStringBuffer;
 import org.apache.wicket.util.string.Strings;
 import org.apache.wicket.util.string.interpolator.MapVariableInterpolator;
-import org.apache.wicket.util.upload.FileUploadBase.SizeLimitExceededException;
 import org.apache.wicket.util.upload.FileUploadException;
+import org.apache.wicket.util.upload.FileUploadBase.SizeLimitExceededException;
 import org.apache.wicket.util.value.LongValue;
 import org.apache.wicket.util.visit.ClassVisitFilter;
 import org.apache.wicket.util.visit.IVisit;
@@ -536,12 +536,8 @@ public class Form<T> extends WebMarkupContainer implements IFormSubmitListener
 
 		Form<?> root = getRootForm();
 		return new AppendingStringBuffer("document.getElementById('").append(
-			root.getHiddenFieldId())
-			.append("').value='")
-			.append(url)
-			.append("';document.getElementById('")
-			.append(root.getMarkupId())
-			.append("').submit();");
+			root.getHiddenFieldId()).append("').value='").append(url).append(
+			"';document.getElementById('").append(root.getMarkupId()).append("').submit();");
 	}
 
 	/**
@@ -806,6 +802,13 @@ public class Form<T> extends WebMarkupContainer implements IFormSubmitListener
 			// Update model using form data
 			updateFormComponentModels();
 
+			// validate model objects after input values have been bound
+			onValidateModelObjects();
+			if (hasError())
+			{
+				callOnError(submittingComponent);
+			}
+
 			// Form has no error
 			delegateSubmit(submittingComponent);
 		}
@@ -837,7 +840,7 @@ public class Form<T> extends WebMarkupContainer implements IFormSubmitListener
 	 * 
 	 * @param submitter
 	 */
-	private void callOnError(IFormSubmitter submitter)
+	protected void callOnError(IFormSubmitter submitter)
 	{
 		if (submitter != null)
 		{
@@ -1272,7 +1275,8 @@ public class Form<T> extends WebMarkupContainer implements IFormSubmitListener
 			try
 			{
 				ServletWebRequest request = (ServletWebRequest)getRequest();
-				final WebRequest multipartWebRequest = request.newMultipartWebRequest(getMaxSize());
+				final WebRequest multipartWebRequest = request.newMultipartWebRequest(getMaxSize(),
+					getPage().getId());
 				// TODO: Can't this be detected from header?
 				getRequestCycle().setRequest(multipartWebRequest);
 			}
@@ -1547,11 +1551,8 @@ public class Form<T> extends WebMarkupContainer implements IFormSubmitListener
 
 			// render the hidden field
 			AppendingStringBuffer buffer = new AppendingStringBuffer(HIDDEN_DIV_START).append(
-				"<input type=\"hidden\" name=\"")
-				.append(nameAndId)
-				.append("\" id=\"")
-				.append(nameAndId)
-				.append("\" />");
+				"<input type=\"hidden\" name=\"").append(nameAndId).append("\" id=\"").append(
+				nameAndId).append("\" />");
 
 			// if it's a get, did put the parameters in the action attribute,
 			// and have to write the url parameters as hidden fields
@@ -1593,11 +1594,8 @@ public class Form<T> extends WebMarkupContainer implements IFormSubmitListener
 		{
 			String[] pair = Strings.split(param, '=');
 
-			buffer.append("<input type=\"hidden\" name=\"")
-				.append(recode(pair[0]))
-				.append("\" value=\"")
-				.append(pair.length > 1 ? recode(pair[1]) : "")
-				.append("\" />");
+			buffer.append("<input type=\"hidden\" name=\"").append(recode(pair[0])).append(
+				"\" value=\"").append(pair.length > 1 ? recode(pair[1]) : "").append("\" />");
 		}
 	}
 
@@ -1724,6 +1722,22 @@ public class Form<T> extends WebMarkupContainer implements IFormSubmitListener
 	 * Callback during the validation stage of the form
 	 */
 	protected void onValidate()
+	{
+
+	}
+
+	/**
+	 * Called after form components have updated their models. This is a late-stage validation that
+	 * allows outside frameworks to validate any beans that the form is updating.
+	 * 
+	 * This validation method is not preferred because at this point any errors will not unroll any
+	 * changes to the model object, so the model object is in a modified state potentially
+	 * containing illegal values. However, with external frameworks there may not be an alternate
+	 * way to validate the model object. A good example of this is a JSR303 Bean Validator
+	 * validating the model object to check any class-level constraints, in order to check such
+	 * constaints the model object must contain the values set by the user.
+	 */
+	protected void onValidateModelObjects()
 	{
 
 	}
