@@ -35,7 +35,7 @@ import org.apache.wicket.event.Broadcast;
 import org.apache.wicket.markup.html.IHeaderResponse;
 import org.apache.wicket.markup.html.internal.HeaderResponse;
 import org.apache.wicket.markup.html.internal.HtmlHeaderContainer;
-import org.apache.wicket.markup.parser.filter.HtmlHeaderSectionHandler;
+import org.apache.wicket.markup.renderStrategy.AbstractHeaderRenderStrategy;
 import org.apache.wicket.markup.repeater.AbstractRepeater;
 import org.apache.wicket.request.IRequestCycle;
 import org.apache.wicket.request.IRequestHandler;
@@ -391,12 +391,7 @@ public class AjaxRequestTarget implements IPageRequestHandler
 		{
 			Args.notNull(component, "component");
 
-			if (component.getOutputMarkupId() == false)
-			{
-				throw new IllegalArgumentException(
-					"cannot update component that does not have setOutputMarkupId property set to true. Component: " +
-						component.toString());
-			}
+			component.setOutputMarkupId(true);
 			add(component, component.getMarkupId());
 		}
 	}
@@ -477,13 +472,11 @@ public class AjaxRequestTarget implements IPageRequestHandler
 	 */
 	public final void focusComponent(Component component)
 	{
-		if (component != null && component.getOutputMarkupId() == false)
-		{
-			throw new IllegalArgumentException(
-				"cannot update component that does not have setOutputMarkupId property set to true. Component: " +
-					component.toString());
-		}
-		final String id = component != null ? ("'" + component.getMarkupId() + "'") : "null";
+		Args.notNull(component, "component");
+
+		component.setOutputMarkupId(true);
+
+		String id = component != null ? ("'" + component.getMarkupId() + "'") : "null";
 		appendJavaScript("Wicket.Focus.setFocusOnId(" + id + ");");
 	}
 
@@ -799,6 +792,7 @@ public class AjaxRequestTarget implements IPageRequestHandler
 			// to support this, we need to allow header contributions to be written in the close
 			// tag, which we do here:
 			headerRendering = true;
+
 			// save old response, set new
 			Response oldResponse = RequestCycle.get().setResponse(encodingHeaderResponse);
 			encodingHeaderResponse.reset();
@@ -1161,62 +1155,33 @@ public class AjaxRequestTarget implements IPageRequestHandler
 
 	// whether a header contribution is being rendered
 	private boolean headerRendering = false;
-	private HtmlHeaderContainer header = null;
-
+	private HtmlHeaderContainer header;
 	private IHeaderResponse headerResponse;
 
 	/**
-	 * Returns the header response associated with current AjaxRequestTarget.
 	 * 
-	 * Beware that only renderOnDomReadyJavaScript and renderOnLoadJavaScript can be called outside
-	 * the renderHeader(IHeaderResponse response) method. Calls to other render** methods will
-	 * result in the call failing with a debug-level log statement to help you see why it failed.
-	 * 
-	 * @return header response
+	 * @param component
+	 * @return html header container
 	 */
-	public IHeaderResponse getHeaderResponse()
+	public final HtmlHeaderContainer getHeaderContainer(final Component component)
 	{
-		if (headerResponse == null)
+		if (header == null)
 		{
-			// we don't need to decorate the header response here because this is called from
-			// within AjaxHtmlHeaderContainer, which decorates the response
-			headerResponse = new AjaxHeaderResponse();
+			header = HtmlHeaderContainer.get(component, false);
+			header.setHeaderResponse(new AjaxHeaderResponse());
 		}
-		return headerResponse;
+
+		return header;
 	}
 
 	/**
-	 * Header container component for ajax header contributions
 	 * 
-	 * @author Matej Knopp
+	 * @param component
+	 * @return header response
 	 */
-	private static class AjaxHtmlHeaderContainer extends HtmlHeaderContainer
+	public final IHeaderResponse getHeaderResponse(final Component component)
 	{
-		private static final long serialVersionUID = 1L;
-
-		/**
-		 * Construct.
-		 * 
-		 * @param id
-		 * @param target
-		 */
-		public AjaxHtmlHeaderContainer(String id, AjaxRequestTarget target)
-		{
-			super(id);
-			this.target = target;
-		}
-
-		/**
-		 * 
-		 * @see org.apache.wicket.markup.html.internal.HtmlHeaderContainer#newHeaderResponse()
-		 */
-		@Override
-		protected IHeaderResponse newHeaderResponse()
-		{
-			return target.getHeaderResponse();
-		}
-
-		private final transient AjaxRequestTarget target;
+		return getHeaderContainer(component).getHeaderResponse();
 	}
 
 	/**
@@ -1228,40 +1193,13 @@ public class AjaxRequestTarget implements IPageRequestHandler
 	{
 		headerRendering = true;
 
-		// create the htmlheadercontainer if needed
-		if (header == null)
-		{
-			header = new AjaxHtmlHeaderContainer(HtmlHeaderSectionHandler.HEADER_ID, this);
-			final Page page = component.getPage();
-			page.addOrReplace(header);
-		}
-
 		// save old response, set new
 		Response oldResponse = RequestCycle.get().setResponse(encodingHeaderResponse);
 
 		encodingHeaderResponse.reset();
 
 		// render the head of component and all it's children
-
-		component.renderHead(header);
-
-		if (component instanceof MarkupContainer)
-		{
-			((MarkupContainer)component).visitChildren(new IVisitor<Component, Void>()
-			{
-				public void component(final Component component, final IVisit<Void> visit)
-				{
-					if (component.isVisibleInHierarchy())
-					{
-						component.renderHead(header);
-					}
-					else
-					{
-						visit.dontGoDeeper();
-					}
-				}
-			});
-		}
+		AbstractHeaderRenderStrategy.get().renderHeader(getHeaderContainer(component), component);
 
 		// revert to old response
 		RequestCycle.get().setResponse(oldResponse);

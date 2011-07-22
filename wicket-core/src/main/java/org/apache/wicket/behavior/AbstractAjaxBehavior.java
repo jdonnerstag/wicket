@@ -19,6 +19,7 @@ package org.apache.wicket.behavior;
 import org.apache.wicket.Component;
 import org.apache.wicket.RequestListenerInterface;
 import org.apache.wicket.markup.ComponentTag;
+import org.apache.wicket.util.lang.Args;
 
 /**
  * Abstract class for handling Ajax roundtrips. This class serves as a base for javascript specific
@@ -51,10 +52,7 @@ public abstract class AbstractAjaxBehavior extends Behavior implements IBehavior
 	@Override
 	public final void bind(final Component hostComponent)
 	{
-		if (hostComponent == null)
-		{
-			throw new IllegalArgumentException("Argument hostComponent must be not null");
-		}
+		Args.notNull(hostComponent, "hostComponent");
 
 		if (component != null)
 		{
@@ -82,26 +80,16 @@ public abstract class AbstractAjaxBehavior extends Behavior implements IBehavior
 				"Behavior must be bound to a component to create the URL");
 		}
 
-		final RequestListenerInterface rli;
-
-		rli = IBehaviorListener.INTERFACE;
-
+		RequestListenerInterface rli = IBehaviorListener.INTERFACE;
 		return getComponent().urlFor(this, rli);
 	}
 
-	/**
-	 * @see org.apache.wicket.behavior.Behavior#onComponentTag(org.apache.wicket.Component,
-	 *      org.apache.wicket.markup.ComponentTag)
-	 */
 	@Override
 	public final void onComponentTag(final Component component, final ComponentTag tag)
 	{
 		onComponentTag(tag);
 	}
 
-	/**
-	 * @see org.apache.wicket.behavior.Behavior#afterRender(org.apache.wicket.Component)
-	 */
 	@Override
 	public final void afterRender(final Component hostComponent)
 	{
@@ -145,9 +133,6 @@ public abstract class AbstractAjaxBehavior extends Behavior implements IBehavior
 	{
 	}
 
-	/**
-	 * @see org.apache.wicket.behavior.Behavior#getStatelessHint(Component)
-	 */
 	@Override
 	public boolean getStatelessHint(Component component)
 	{

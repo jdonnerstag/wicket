@@ -65,8 +65,7 @@ public class HtmlHeaderResolver implements IComponentResolver
 		{
 			// Create a special header component which will gather additional
 			// input the <head> from 'contributors'.
-			return newHtmlHeaderContainer(HtmlHeaderSectionHandler.HEADER_ID +
-				container.getPage().getAutoIndex());
+			return newHtmlHeaderContainer(HtmlHeaderSectionHandler.HEADER_ID);
 		}
 		else if ((tag instanceof WicketTag) && ((WicketTag)tag).isHeadTag())
 		{
@@ -77,15 +76,14 @@ public class HtmlHeaderResolver implements IComponentResolver
 			{
 				// Create a special header component which will gather
 				// additional input the <head> from 'contributors'.
-				MarkupContainer header = newHtmlHeaderContainer(HtmlHeaderSectionHandler.HEADER_ID +
-					container.getPage().getAutoIndex());
+				MarkupContainer header = newHtmlHeaderContainer(HtmlHeaderSectionHandler.HEADER_ID);
 
 				// It is <wicket:head>. Because they do not provide any
 				// additional functionality they are merely a means of surrounding relevant
 				// markup. Thus we simply create a WebMarkupContainer to handle
 				// the tag.
 				WebMarkupContainer header2 = new TransparentWebMarkupContainer(
-					HtmlHeaderSectionHandler.HEADER_ID);
+					HtmlHeaderSectionHandler.HEADER_ID + container.getPage().getAutoIndex());
 
 				header2.setRenderBodyOnly(true);
 				header.add(header2);
@@ -99,11 +97,12 @@ public class HtmlHeaderResolver implements IComponentResolver
 				// relevant markup. Thus we simply create a WebMarkupContainer to handle
 				// the tag.
 				WebMarkupContainer header = new TransparentWebMarkupContainer(
-					HtmlHeaderSectionHandler.HEADER_ID);
+					HtmlHeaderSectionHandler.HEADER_ID + container.getPage().getAutoIndex());
 				header.setRenderBodyOnly(true);
 
 				return header;
 			}
+
 			final Page page = container.getPage();
 			final String pageClassName = (page != null) ? page.getClass().getName() : "unknown";
 			final IResourceStream stream = markupStream.getResource();

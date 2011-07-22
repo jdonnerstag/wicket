@@ -100,8 +100,7 @@ public class TogglePageTests extends WicketTestCase
 	{
 		{
 			// On
-			InlineEnclosureWithAdditionalAjaxTargetPage ajaxPage =
-				tester.startPage(InlineEnclosureWithAdditionalAjaxTargetPage.class);
+			InlineEnclosureWithAdditionalAjaxTargetPage ajaxPage = tester.startPage(InlineEnclosureWithAdditionalAjaxTargetPage.class);
 			assertVisible(ajaxPage.getLabel1());
 			assertVisible(ajaxPage.getLabel2());
 			tester.clickLink(ajaxPage.getLink().getPageRelativePath(), true);
@@ -140,10 +139,10 @@ public class TogglePageTests extends WicketTestCase
 		String inlineEnclosureIdPrefix = "InlineEnclosure-";
 
 		String inlineEnclosureHiddenPattern = "<tr id=\"" + inlineEnclosureIdPrefix +
-			"1\" style=\"display:none\"></tr>";
+			"0\" style=\"display:none\"></tr>";
 
 		String inlineEnclosureVisiblePattern = "<tr bgcolor=\"red\" id=\"" +
-			inlineEnclosureIdPrefix + "1\">";
+			inlineEnclosureIdPrefix + "0\">";
 
 		{
 			// On

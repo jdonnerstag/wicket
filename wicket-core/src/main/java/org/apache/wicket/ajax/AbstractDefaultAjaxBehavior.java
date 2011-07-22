@@ -31,7 +31,6 @@ import org.apache.wicket.request.resource.PackageResourceReference;
 import org.apache.wicket.request.resource.ResourceReference;
 import org.apache.wicket.settings.IDebugSettings;
 import org.apache.wicket.util.lang.Args;
-import org.apache.wicket.util.string.AppendingStringBuffer;
 import org.apache.wicket.util.string.Strings;
 import org.apache.wicket.util.time.Duration;
 
@@ -41,7 +40,6 @@ import org.apache.wicket.util.time.Duration;
  * @since 1.2
  * 
  * @author Igor Vaynberg (ivaynberg)
- * 
  */
 public abstract class AbstractDefaultAjaxBehavior extends AbstractAjaxBehavior
 {
@@ -57,8 +55,6 @@ public abstract class AbstractDefaultAjaxBehavior extends AbstractAjaxBehavior
 
 	/**
 	 * Subclasses should call super.onBind()
-	 * 
-	 * @see org.apache.wicket.behavior.AbstractAjaxBehavior#onBind()
 	 */
 	@Override
 	protected void onBind()
@@ -66,9 +62,6 @@ public abstract class AbstractDefaultAjaxBehavior extends AbstractAjaxBehavior
 		getComponent().setOutputMarkupId(true);
 	}
 
-	/**
-	 * @see org.apache.wicket.behavior.AbstractAjaxBehavior#renderHead(Component,org.apache.wicket.markup.html.IHeaderResponse)
-	 */
 	@Override
 	public void renderHead(Component component, IHeaderResponse response)
 	{
@@ -189,7 +182,7 @@ public abstract class AbstractDefaultAjaxBehavior extends AbstractAjaxBehavior
 			failure = decorator.decorateOnFailureScript(getComponent(), failure);
 		}
 
-		AppendingStringBuffer buff = new AppendingStringBuffer(256);
+		StringBuilder buff = new StringBuilder(256);
 		buff.append("var ").append(IAjaxCallDecorator.WICKET_CALL_RESULT_VAR).append("=");
 		buff.append(partialCall);
 
@@ -221,8 +214,7 @@ public abstract class AbstractDefaultAjaxBehavior extends AbstractAjaxBehavior
 
 		if (!Strings.isEmpty(indicatorId))
 		{
-			final AppendingStringBuffer indicatorWithPrecondition = new AppendingStringBuffer(
-				"if (");
+			final StringBuilder indicatorWithPrecondition = new StringBuilder("if (");
 			if (precondition != null)
 			{
 				indicatorWithPrecondition.append("function(){")
@@ -284,9 +276,6 @@ public abstract class AbstractDefaultAjaxBehavior extends AbstractAjaxBehavior
 		return null;
 	}
 
-	/**
-	 * @see org.apache.wicket.behavior.IBehaviorListener#onRequest()
-	 */
 	public final void onRequest()
 	{
 		WebApplication app = (WebApplication)getComponent().getApplication();
@@ -302,10 +291,8 @@ public abstract class AbstractDefaultAjaxBehavior extends AbstractAjaxBehavior
 	 * @param target
 	 *            The AJAX target
 	 */
-	// TODO rename this to onEvent or something? respond is mostly the same as
-	// onRender
-	// this is not the case this is still the event handling period. respond is
-	// called
+	// TODO rename this to onEvent or something? respond is mostly the same as onRender
+	// this is not the case this is still the event handling period. respond is called
 	// in the RequestCycle on the AjaxRequestTarget..
 	protected abstract void respond(AjaxRequestTarget target);
 
@@ -334,7 +321,7 @@ public abstract class AbstractDefaultAjaxBehavior extends AbstractAjaxBehavior
 		Args.notEmpty(throttleId, "throttleId");
 		Args.notNull(throttleDelay, "throttleDelay");
 
-		return new AppendingStringBuffer("wicketThrottler.throttle( '").append(throttleId)
+		return new StringBuilder("wicketThrottler.throttle( '").append(throttleId)
 			.append("', ")
 			.append(throttleDelay.getMilliseconds())
 			.append(", function() { ")

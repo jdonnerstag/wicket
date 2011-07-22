@@ -33,9 +33,9 @@ public class AjaxEnclosureTest extends WicketTestCase
 {
 	private final String inlineEnclosureIdPrefix = "InlineEnclosure-";
 	private final String inlineEnclosureHiddenPattern = "<div id=\"" + inlineEnclosureIdPrefix +
-		"1\" style=\"display:none\"></div>";
+		"0\" style=\"display:none\"></div>";
 	private final String inlineEnclosureVisiblePattern = "<div id=\"" + inlineEnclosureIdPrefix +
-		"1\">";
+		"0\">";
 
 
 	/**
@@ -85,7 +85,7 @@ public class AjaxEnclosureTest extends WicketTestCase
 	 */
 	public void testAjaxTogglingNonControllingChildShouldNotToggleEnclosure()
 	{
-		final String enclosurePath = "InlineEnclosure-1";
+		final String enclosurePath = "InlineEnclosure-0";
 		{
 			// label 2 On
 			AjaxEnclosurePage_1 ajaxPage = tester.startPage(AjaxEnclosurePage_1.class);
@@ -125,7 +125,7 @@ public class AjaxEnclosureTest extends WicketTestCase
 	 */
 	public void testNestedInlineEnclosuresShouldToggleNormally()
 	{
-		final String enclosure1Path = "InlineEnclosure-1";
+		final String enclosure1Path = "InlineEnclosure-0";
 
 		{
 			// 1. test that enclosure1, enclosure2, label1, label2 are visible, click link1,
@@ -214,11 +214,11 @@ public class AjaxEnclosureTest extends WicketTestCase
 	 */
 	public void testControllingChildShouldDefaultToTheSingleComponentInsideEnclosure()
 	{
-		final String enclosurePath = "InlineEnclosure-1";
+		final String enclosurePath = "InlineEnclosure-0";
 
 		{
 			// enclosure On
-			AjaxEnclosurePage_3 ajaxPage = (AjaxEnclosurePage_3)tester.startPage(AjaxEnclosurePage_3.class);
+			AjaxEnclosurePage_3 ajaxPage = tester.startPage(AjaxEnclosurePage_3.class);
 			assertVisible(ajaxPage.getLabel1(), true);
 			ensureEnclosureIsVisible(enclosurePath, ajaxPage);
 			tester.clickLink(ajaxPage.getToggleLabel1Link().getPageRelativePath());
@@ -252,6 +252,7 @@ public class AjaxEnclosureTest extends WicketTestCase
 	private void ensureEnclosureIsVisible(final String enclosurePath, Page ajaxPage)
 	{
 		Component enclosure = ajaxPage.get(enclosurePath);
+		assertNotNull(enclosure);
 		assertTrue("Is not visible", enclosure.determineVisibility());
 	}
 

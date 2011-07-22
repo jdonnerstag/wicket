@@ -118,15 +118,6 @@ public class Enclosure extends WebMarkupContainer implements IComponentResolver
 		return childId.toString();
 	}
 
-	@Override
-	protected void onInitialize()
-	{
-		super.onInitialize();
-
-		// get Child Component. If not "added", ask a resolver to find it.
-		childComponent = getChildComponent(new MarkupStream(getMarkup()), getEnclosureParent());
-	}
-
 	protected final Component getChild()
 	{
 		return childComponent;
@@ -135,6 +126,11 @@ public class Enclosure extends WebMarkupContainer implements IComponentResolver
 	@Override
 	public boolean isVisible()
 	{
+		if (childComponent == null)
+		{
+			throw new WicketRuntimeException("childId=" + childId);
+		}
+
 		return childComponent.determineVisibility() && super.isVisible();
 	}
 
@@ -159,16 +155,27 @@ public class Enclosure extends WebMarkupContainer implements IComponentResolver
 		return parent;
 	}
 
+	@Override
+	protected void enqueueAutoComponents()
+	{
+		super.enqueueAutoComponents();
+
+		// get Child Component. If not "added", ask a resolver to find it.
+		childComponent = getChildComponent(new MarkupStream(getMarkup()), getEnclosureParent());
+	}
+
 	/**
 	 * @param markupStream
 	 * @param container
 	 * @return The component associated with the
 	 */
-	private Component getChildComponent(final MarkupStream markupStream, MarkupContainer container)
+	private Component getChildComponent(final MarkupStream markupStream,
+		final MarkupContainer container)
 	{
-		Component controller = getEnclosureParent().get(getChildId());
+		Component controller = container.get(getChildId());
 		if (controller == null)
 		{
+			// TODO this code is very similar to Markup.enqueueXXX()
 			int orgIndex = markupStream.getCurrentIndex();
 			try
 			{
@@ -191,6 +198,16 @@ public class Enclosure extends WebMarkupContainer implements IComponentResolver
 											return resolver instanceof EnclosureHandler;
 										}
 									});
+
+								if (controller != null)
+								{
+									if (contains(controller, false) == false)
+									{
+										controller.setAuto(true);
+										add(controller);
+									}
+								}
+
 								break;
 							}
 						}

@@ -17,9 +17,9 @@
 package org.apache.wicket.markup.html;
 
 import org.apache.wicket.IPageManagerProvider;
-import org.apache.wicket.MarkupContainer;
 import org.apache.wicket.WicketTestCase;
-import org.apache.wicket.markup.IMarkupResourceStreamProvider;
+import org.apache.wicket.markup.IMarkupFragment;
+import org.apache.wicket.markup.Markup;
 import org.apache.wicket.markup.MarkupException;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.border.Border;
@@ -28,8 +28,6 @@ import org.apache.wicket.page.IManageablePage;
 import org.apache.wicket.page.IPageManager;
 import org.apache.wicket.page.IPageManagerContext;
 import org.apache.wicket.util.lang.WicketObjects;
-import org.apache.wicket.util.resource.IResourceStream;
-import org.apache.wicket.util.resource.StringResourceStream;
 import org.apache.wicket.util.tester.WicketTester;
 
 /**
@@ -73,7 +71,6 @@ public class TransparentWebMarkupContainerTest extends WicketTestCase
 	{
 		tester.startPage(TestPage2.class);
 		assertTrue(tester.getLastResponseAsString().contains("test_message"));
-
 	}
 
 	/**
@@ -124,7 +121,7 @@ public class TransparentWebMarkupContainerTest extends WicketTestCase
 	}
 
 	/** */
-	public static class TestPage extends WebPage implements IMarkupResourceStreamProvider
+	public static class TestPage extends WebPage
 	{
 		private static final long serialVersionUID = 1L;
 
@@ -134,10 +131,10 @@ public class TransparentWebMarkupContainerTest extends WicketTestCase
 			add(new TestBorder("border"));
 		}
 
-		public IResourceStream getMarkupResourceStream(MarkupContainer container,
-			Class<?> containerClass)
+		@Override
+		public IMarkupFragment getMarkup()
 		{
-			return new StringResourceStream("" + //
+			return Markup.of("" + //
 				"<html><body>" + //
 				"	<div wicket:id=\"border\">" + //
 				"		<div wicket:id=\"c1\"></div>" + // component is only at the markup
@@ -146,7 +143,7 @@ public class TransparentWebMarkupContainerTest extends WicketTestCase
 		}
 	}
 
-	private static class TestBorder extends Border implements IMarkupResourceStreamProvider
+	private static class TestBorder extends Border
 	{
 		private static final long serialVersionUID = 1L;
 
@@ -156,16 +153,15 @@ public class TransparentWebMarkupContainerTest extends WicketTestCase
 			addToBorder(new Label("c1", "some border title"));
 		}
 
-		public IResourceStream getMarkupResourceStream(MarkupContainer container,
-			Class<?> containerClass)
+		@Override
+		public Markup getAssociatedMarkup()
 		{
-			return new StringResourceStream(
-				"<wicket:border><div wicket:id=\"c1\"></div><wicket:body /></wicket:border>");
+			return Markup.of("<wicket:border><div wicket:id=\"c1\"></div><wicket:body /></wicket:border>");
 		}
 	}
 
 	/** */
-	public static class TestPage2 extends WebPage implements IMarkupResourceStreamProvider
+	public static class TestPage2 extends WebPage
 	{
 		private static final long serialVersionUID = 1L;
 
@@ -176,10 +172,10 @@ public class TransparentWebMarkupContainerTest extends WicketTestCase
 			add(new TransparentWebMarkupContainer("container").add(new Label("msg", "test_message")));
 		}
 
-		public IResourceStream getMarkupResourceStream(MarkupContainer container,
-			Class<?> containerClass)
+		@Override
+		public IMarkupFragment getMarkup()
 		{
-			return new StringResourceStream("" + //
+			return Markup.of("" + //
 				"<html><body>" + //
 				"	<div wicket:id=\"_wicket_enclosure\"></div>" + //
 				"	<div wicket:id=\"container\">" + //
@@ -192,7 +188,7 @@ public class TransparentWebMarkupContainerTest extends WicketTestCase
 	}
 
 	/** */
-	public static class TestPage3 extends WebPage implements IMarkupResourceStreamProvider
+	public static class TestPage3 extends WebPage
 	{
 		private static final long serialVersionUID = 1L;
 
@@ -203,10 +199,10 @@ public class TransparentWebMarkupContainerTest extends WicketTestCase
 			add(new TransparentWebMarkupContainer("container"));
 		}
 
-		public IResourceStream getMarkupResourceStream(MarkupContainer container,
-			Class<?> containerClass)
+		@Override
+		public IMarkupFragment getMarkup()
 		{
-			return new StringResourceStream("" + //
+			return Markup.of("" + //
 				"<html><body>" + //
 				"	<div wicket:id=\"_wicket_message\"></div>" + //
 				"	<div wicket:id=\"container\">" + //

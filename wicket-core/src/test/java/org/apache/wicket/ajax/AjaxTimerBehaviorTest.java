@@ -73,9 +73,7 @@ public class AjaxTimerBehaviorTest extends WicketTestCase
 		tester.clickLink(MockPageWithLinkAndComponent.LINK_ID);
 
 		validate(timer, false);
-
 	}
-
 
 	/**
 	 * tests timer behavior in a WebPage.
@@ -97,17 +95,15 @@ public class AjaxTimerBehaviorTest extends WicketTestCase
 				// do nothing, link is just used to simulate a roundtrip
 			}
 		});
+
 		label.setOutputMarkupId(true);
 		label.add(timer);
 
 		tester.startPage(page);
-
 		validate(timer, true);
 
 		tester.clickLink(MockPageWithLinkAndComponent.LINK_ID);
-
 		validate(timer, true);
-
 	}
 
 	/**
@@ -119,7 +115,6 @@ public class AjaxTimerBehaviorTest extends WicketTestCase
 	private void validate(MyAjaxSelfUpdatingTimerBehavior timer, boolean inBodyOnLoad)
 	{
 		String document = tester.getLastResponseAsString();
-
 		String updateScript = timer.getUpdateScript();
 
 		if (inBodyOnLoad)
@@ -133,14 +128,7 @@ public class AjaxTimerBehaviorTest extends WicketTestCase
 			validateTimerScript(document, updateScript);
 		}
 
-
 		tester.executeBehavior(timer);
-
-
-		if (inBodyOnLoad)
-		{
-			updateScript = timer.getUpdateScript();
-		}
 
 		// Validate the document
 		document = tester.getLastResponseAsString();
@@ -199,10 +187,6 @@ public class AjaxTimerBehaviorTest extends WicketTestCase
 
 	static class MyAjaxSelfUpdatingTimerBehavior extends AjaxSelfUpdatingTimerBehavior
 	{
-
-		/**
-		 * 
-		 */
 		private static final long serialVersionUID = 1L;
 		private final Duration duration;
 		String updateScript;
@@ -232,7 +216,5 @@ public class AjaxTimerBehaviorTest extends WicketTestCase
 		{
 			return updateScript;
 		}
-
-
 	}
 }

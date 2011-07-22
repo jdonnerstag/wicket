@@ -120,7 +120,7 @@ public class WicketMessageResolver implements IComponentResolver
 			if (wtag.isMessageTag())
 			{
 				String messageKey = wtag.getAttributes().getString("key");
-				if ((messageKey == null) || (messageKey.trim().length() == 0))
+				if (Strings.isEmpty(messageKey))
 				{
 					throw new MarkupException(
 						"Wrong format of <wicket:message key='xxx'>: attribute 'key' is missing");

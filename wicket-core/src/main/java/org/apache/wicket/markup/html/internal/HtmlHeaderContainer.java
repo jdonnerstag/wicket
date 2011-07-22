@@ -22,17 +22,16 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.wicket.Component;
-import org.apache.wicket.WicketRuntimeException;
+import org.apache.wicket.Page;
 import org.apache.wicket.markup.ComponentTag;
-import org.apache.wicket.markup.IMarkupFragment;
-import org.apache.wicket.markup.MarkupException;
 import org.apache.wicket.markup.MarkupStream;
-import org.apache.wicket.markup.WicketTag;
 import org.apache.wicket.markup.html.IHeaderResponse;
 import org.apache.wicket.markup.html.TransparentWebMarkupContainer;
+import org.apache.wicket.markup.parser.filter.HtmlHeaderSectionHandler;
 import org.apache.wicket.markup.renderStrategy.AbstractHeaderRenderStrategy;
 import org.apache.wicket.request.Response;
 import org.apache.wicket.response.StringResponse;
+import org.apache.wicket.util.lang.Args;
 
 
 /**
@@ -69,6 +68,37 @@ import org.apache.wicket.response.StringResponse;
 public class HtmlHeaderContainer extends TransparentWebMarkupContainer
 {
 	private static final long serialVersionUID = 1L;
+
+	/**
+	 * @param component
+	 *            Any component connected to a Page
+	 * @param throwException
+	 *            If true, throw an exception if no header container was found
+	 * @return The header container. Null, if throwException == false and nothing found.
+	 */
+	public final static HtmlHeaderContainer get(final Component component,
+		final boolean throwException)
+	{
+		Args.notNull(component, "component");
+
+		Page page = component.getPage();
+		for (Component child : page.visitChildren())
+		{
+			if ((child instanceof HtmlHeaderContainer) &&
+				HtmlHeaderSectionHandler.HEADER_ID.equals(child.getId()))
+			{
+				return (HtmlHeaderContainer)child;
+			}
+		}
+
+		if (throwException == true)
+		{
+			throw new IllegalStateException("Failed to find Header component with id == '" +
+				HtmlHeaderSectionHandler.HEADER_ID + "'");
+		}
+
+		return null;
+	}
 
 	/**
 	 * wicket:head tags (components) must only be added once. To allow for a little bit more
@@ -281,7 +311,7 @@ public class HtmlHeaderContainer extends TransparentWebMarkupContainer
 	 * 
 	 * @return header response
 	 */
-	public IHeaderResponse getHeaderResponse()
+	public final IHeaderResponse getHeaderResponse()
 	{
 		if (headerResponse == null)
 		{
@@ -290,51 +320,12 @@ public class HtmlHeaderContainer extends TransparentWebMarkupContainer
 		return headerResponse;
 	}
 
-	@Override
-	public IMarkupFragment getMarkup()
+	/**
+	 * 
+	 * @param headerResponse
+	 */
+	public final void setHeaderResponse(final IHeaderResponse headerResponse)
 	{
-		if (getParent() == null)
-		{
-			throw new WicketRuntimeException(
-				"Bug: The Wicket internal instance of HtmlHeaderContainer is not connected to a parent");
-		}
-
-		// Get the page markup
-		IMarkupFragment markup = getPage().getMarkup();
-		if (markup == null)
-		{
-			throw new MarkupException("Unable to get page markup: " + getPage().toString());
-		}
-
-		// Find the markup fragment
-		MarkupStream stream = new MarkupStream(markup);
-		IMarkupFragment headerMarkup = null;
-		while (stream.skipUntil(ComponentTag.class) && (headerMarkup == null))
-		{
-			ComponentTag tag = stream.getTag();
-			if (tag.isOpen() || tag.isOpenClose())
-			{
-				if (tag instanceof WicketTag)
-				{
-					WicketTag wtag = (WicketTag)tag;
-					if (wtag.isHeadTag())
-					{
-						if (tag.getMarkupClass() == null)
-						{
-							headerMarkup = stream.getMarkupFragment();
-						}
-					}
-				}
-				else if (tag.getName().equalsIgnoreCase("head"))
-				{
-					headerMarkup = stream.getMarkupFragment();
-				}
-			}
-
-			stream.next();
-		}
-
-		setMarkup(headerMarkup);
-		return headerMarkup;
+		this.headerResponse = headerResponse;
 	}
 }

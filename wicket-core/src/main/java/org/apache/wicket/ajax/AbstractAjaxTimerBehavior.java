@@ -21,6 +21,7 @@ import org.apache.wicket.Page;
 import org.apache.wicket.markup.html.IHeaderResponse;
 import org.apache.wicket.request.cycle.RequestCycle;
 import org.apache.wicket.request.http.WebRequest;
+import org.apache.wicket.util.lang.Args;
 import org.apache.wicket.util.time.Duration;
 
 /**
@@ -29,13 +30,9 @@ import org.apache.wicket.util.time.Duration;
  * @since 1.2
  * 
  * @author Igor Vaynberg (ivaynberg)
- * 
  */
 public abstract class AbstractAjaxTimerBehavior extends AbstractDefaultAjaxBehavior
 {
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L;
 
 	/** The update interval */
@@ -53,10 +50,13 @@ public abstract class AbstractAjaxTimerBehavior extends AbstractDefaultAjaxBehav
 	 */
 	public AbstractAjaxTimerBehavior(final Duration updateInterval)
 	{
-		if (updateInterval == null || updateInterval.getMilliseconds() <= 0)
+		Args.notNull(updateInterval, "updateInterval");
+
+		if (updateInterval.getMilliseconds() <= 0)
 		{
 			throw new IllegalArgumentException("Invalid update interval");
 		}
+
 		this.updateInterval = updateInterval;
 	}
 
@@ -115,8 +115,12 @@ public abstract class AbstractAjaxTimerBehavior extends AbstractDefaultAjaxBehav
 	protected final String getJsTimeoutCall(final Duration updateInterval)
 	{
 		// this might look strange, but it is necessary for IE not to leak :(
-		return "setTimeout(\"" + getCallbackScript() + "\", " + updateInterval.getMilliseconds() +
-			");";
+		return new StringBuilder().append("setTimeout(\"")
+			.append(getCallbackScript())
+			.append("\", ")
+			.append(updateInterval.getMilliseconds())
+			.append(");")
+			.toString();
 	}
 
 	@Override
@@ -125,9 +129,6 @@ public abstract class AbstractAjaxTimerBehavior extends AbstractDefaultAjaxBehav
 		return generateCallbackScript("wicketAjaxGet('" + getCallbackUrl() + "'");
 	}
 
-	/**
-	 * @see org.apache.wicket.ajax.AbstractDefaultAjaxBehavior#getPreconditionScript()
-	 */
 	@Override
 	protected CharSequence getPreconditionScript()
 	{
@@ -141,18 +142,16 @@ public abstract class AbstractAjaxTimerBehavior extends AbstractDefaultAjaxBehav
 		return precondition;
 	}
 
-	/**
-	 * 
-	 * @see org.apache.wicket.ajax.AbstractDefaultAjaxBehavior#respond(org.apache.wicket.ajax.AjaxRequestTarget)
-	 */
 	@Override
 	protected final void respond(final AjaxRequestTarget target)
 	{
 		onTimer(target);
 
-		if (!stopped && isEnabled(getComponent()))
+		Component component = getComponent();
+		if (!stopped && isEnabled(component))
 		{
-			target.getHeaderResponse().renderOnLoadJavaScript(getJsTimeoutCall(updateInterval));
+			target.getHeaderResponse(component).renderOnLoadJavaScript(
+				getJsTimeoutCall(updateInterval));
 		}
 	}
 
@@ -171,6 +170,4 @@ public abstract class AbstractAjaxTimerBehavior extends AbstractDefaultAjaxBehav
 	{
 		return stopped;
 	}
-
-
 }

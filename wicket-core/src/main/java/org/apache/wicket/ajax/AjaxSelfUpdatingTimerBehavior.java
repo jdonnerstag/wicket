@@ -24,7 +24,6 @@ import org.apache.wicket.util.time.Duration;
  * @since 1.2
  * 
  * @author Igor Vaynberg (ivaynberg)
- * 
  */
 public class AjaxSelfUpdatingTimerBehavior extends AbstractAjaxTimerBehavior
 {
@@ -41,9 +40,6 @@ public class AjaxSelfUpdatingTimerBehavior extends AbstractAjaxTimerBehavior
 		super(updateInterval);
 	}
 
-	/**
-	 * @see org.apache.wicket.ajax.AbstractAjaxTimerBehavior#onTimer(org.apache.wicket.ajax.AjaxRequestTarget)
-	 */
 	@Override
 	protected final void onTimer(final AjaxRequestTarget target)
 	{

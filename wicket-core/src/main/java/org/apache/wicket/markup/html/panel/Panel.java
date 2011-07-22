@@ -16,6 +16,11 @@
  */
 package org.apache.wicket.markup.html.panel;
 
+import org.apache.wicket.markup.ComponentTag;
+import org.apache.wicket.markup.IMarkupFragment;
+import org.apache.wicket.markup.MarkupElement;
+import org.apache.wicket.markup.MarkupStream;
+import org.apache.wicket.markup.WicketTag;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.parser.filter.WicketTagIdentifier;
 import org.apache.wicket.model.IModel;
@@ -79,12 +84,53 @@ public abstract class Panel extends WebMarkupContainer
 		super(id, model);
 	}
 
-	/**
-	 * {@inheritDoc}
-	 */
 	@Override
 	protected IMarkupSourcingStrategy newMarkupSourcingStrategy()
 	{
 		return new PanelMarkupSourcingStrategy(false);
+	}
+
+	// TODO This code should be moved into PanelMSS
+	// TODO Border require the same code => copy
+	// TODO Fragment requires the same code => copy
+	@Override
+	protected void enqueueAutoComponents()
+	{
+		super.enqueueAutoComponents();
+
+		// <wicket:panel> ..
+		IMarkupFragment markup = getMarkup(null);
+		MarkupStream stream = new MarkupStream(markup);
+		stream.next();
+		enqueueAutoComponents(stream);
+
+		// <wicket:head> ..
+		markup = getAssociatedMarkup();
+		stream = new MarkupStream(markup);
+		while (stream.hasMore())
+		{
+			MarkupElement elem = stream.get();
+			if (elem instanceof ComponentTag)
+			{
+				ComponentTag tag = (ComponentTag)elem;
+				if (elem instanceof WicketTag)
+				{
+					WicketTag wtag = (WicketTag)elem;
+					if (wtag.isOpen() && wtag.isHeadTag())
+					{
+						IMarkupFragment m = stream.getMarkupFragment();
+						MarkupStream s = new MarkupStream(m);
+						s.next();
+						enqueueAutoComponents(s);
+					}
+				}
+
+				if (tag.isOpen())
+				{
+					stream.skipToMatchingCloseTag(tag);
+				}
+			}
+			stream.next();
+		}
 	}
 }

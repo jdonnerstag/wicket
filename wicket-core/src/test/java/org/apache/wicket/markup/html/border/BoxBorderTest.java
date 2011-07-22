@@ -176,7 +176,7 @@ public class BoxBorderTest extends WicketTestCase
 	 * @throws Exception
 	 */
 	@Test(expected = WicketRuntimeException.class)
-	public void test10() throws Exception
+	public void page10() throws Exception
 	{
 		executeTest(BoxBorderTestPage_10.class, "BoxBorderTestPage_ExpectedResult_10.html");
 	}

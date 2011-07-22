@@ -3967,7 +3967,7 @@ public abstract class Component
 	 * @param auto
 	 *            True to put component into auto-add mode
 	 */
-	protected final void setAuto(final boolean auto)
+	public final void setAuto(final boolean auto)
 	{
 		setFlag(FLAG_AUTO, auto);
 	}

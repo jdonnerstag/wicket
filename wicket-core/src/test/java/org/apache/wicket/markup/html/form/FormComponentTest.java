@@ -18,12 +18,10 @@ package org.apache.wicket.markup.html.form;
 
 import junit.framework.Assert;
 
-import org.apache.wicket.MarkupContainer;
 import org.apache.wicket.WicketTestCase;
-import org.apache.wicket.markup.IMarkupResourceStreamProvider;
+import org.apache.wicket.markup.IMarkupFragment;
+import org.apache.wicket.markup.Markup;
 import org.apache.wicket.markup.html.WebPage;
-import org.apache.wicket.util.resource.IResourceStream;
-import org.apache.wicket.util.resource.StringResourceStream;
 import org.apache.wicket.validation.INullAcceptingValidator;
 import org.apache.wicket.validation.IValidatable;
 
@@ -82,7 +80,7 @@ public class FormComponentTest extends WicketTestCase
 		assertTrue(validator.called);
 	}
 
-	public static class TestPage1 extends WebPage implements IMarkupResourceStreamProvider
+	public static class TestPage1 extends WebPage
 	{
 		public final TextField field1, field2;
 
@@ -94,13 +92,10 @@ public class FormComponentTest extends WicketTestCase
 			form.add(field2 = new TextField("field2"));
 		}
 
-		public IResourceStream getMarkupResourceStream(MarkupContainer container,
-			Class<?> containerClass)
+		@Override
+		public IMarkupFragment getMarkup()
 		{
-			return new StringResourceStream(
-				"<html><body><form wicket:id='form'><input wicket:id='field1' type='text'/><input wicket:id='field2' type='text'/></form></body></html>");
+			return Markup.of("<html><body><form wicket:id='form'><input wicket:id='field1' type='text'/><input wicket:id='field2' type='text'/></form></body></html>");
 		}
-
-
 	}
 }

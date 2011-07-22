@@ -222,7 +222,6 @@ public class WebPageRenderer extends PageRenderer
 
 			// redirect to buffer
 			BufferedWebResponse response = renderPage(targetUrl, requestCycle);
-
 			if (response == null)
 			{
 				return;

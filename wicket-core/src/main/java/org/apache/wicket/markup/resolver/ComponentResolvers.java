@@ -29,6 +29,8 @@ import org.apache.wicket.markup.MarkupStream;
  */
 public class ComponentResolvers
 {
+	private final static HasEqualMarkupResolver equalMarkupResolver = new HasEqualMarkupResolver();
+
 	private ComponentResolvers()
 	{
 	}
@@ -54,13 +56,22 @@ public class ComponentResolvers
 	public static Component resolve(final MarkupContainer container,
 		final MarkupStream markupStream, final ComponentTag tag, final ResolverFilter filter)
 	{
-		// try to resolve using component hierarchy
-		Component component = resolveByComponentHierarchy(container, markupStream, tag);
-
+		Component component = equalMarkupResolver.resolve(container, markupStream, tag);
 		if (component == null)
 		{
-			// fallback to application-level resolvers
-			component = resolveByApplication(container, markupStream, tag, filter);
+			// try to resolve using component hierarchy
+			component = resolveByComponentHierarchy(container, markupStream, tag);
+
+			if (component == null)
+			{
+				// fallback to application-level resolvers
+				component = resolveByApplication(container, markupStream, tag, filter);
+			}
+		}
+
+		if (component != null)
+		{
+			component.setMarkup(markupStream.getMarkupFragment());
 		}
 
 		return component;

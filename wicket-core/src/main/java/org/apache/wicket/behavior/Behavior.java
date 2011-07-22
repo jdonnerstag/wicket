@@ -214,12 +214,8 @@ public abstract class Behavior
 
 	/**
 	 * Called to notify the behavior about any events sent to the component
-	 * 
-	 * @see org.apache.wicket.IComponentAwareEventSink#onEvent(org.apache.wicket.Component,
-	 *      org.apache.wicket.event.IEvent)
 	 */
 	public void onEvent(Component component, IEvent<?> event)
 	{
 	}
-
 }

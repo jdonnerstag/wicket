@@ -20,12 +20,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.wicket.application.IComponentInitializationListener;
-import org.apache.wicket.markup.IMarkupResourceStreamProvider;
+import org.apache.wicket.markup.IMarkupFragment;
+import org.apache.wicket.markup.Markup;
 import org.apache.wicket.markup.html.WebComponent;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.WebPage;
-import org.apache.wicket.util.resource.IResourceStream;
-import org.apache.wicket.util.resource.StringResourceStream;
 
 /**
  * Tests {@link Component#onInitialize()} contract
@@ -141,10 +140,7 @@ public class ComponentInitializationTest extends WicketTestCase
 		tester.getApplication().getComponentInitializationListeners().add(listener1);
 		tester.getApplication().getComponentInitializationListeners().add(listener2);
 
-		WebPage page = new WebPage()
-		{
-			private static final long serialVersionUID = 1L;
-		};
+		WebPage page = new TestPage();
 		page.internalInitialize();
 
 		TestComponent t1 = new TestComponent("t1");
@@ -169,11 +165,7 @@ public class ComponentInitializationTest extends WicketTestCase
 		TestInitListener listener1 = new TestInitListener();
 		tester.getApplication().getComponentInitializationListeners().add(listener1);
 
-		WebPage page = new WebPage()
-		{
-			private static final long serialVersionUID = 1L;
-		};
-
+		WebPage page = new TestPage();
 		page.internalInitialize();
 
 		TestComponent t1 = new TestComponent("t1");
@@ -194,16 +186,16 @@ public class ComponentInitializationTest extends WicketTestCase
 	}
 
 
-	static class TestPage extends WebPage implements IMarkupResourceStreamProvider
+	static class TestPage extends WebPage
 	{
 		private static final long serialVersionUID = 1L;
 
 		private int count;
 
-		public IResourceStream getMarkupResourceStream(MarkupContainer container,
-			Class<?> containerClass)
+		@Override
+		public IMarkupFragment getMarkup()
 		{
-			return new StringResourceStream("<html><body></body></html>");
+			return Markup.of("<html><body></body></html>");
 		}
 
 		@Override
@@ -241,8 +233,6 @@ public class ComponentInitializationTest extends WicketTestCase
 		{
 			return count;
 		}
-
-
 	}
 
 	private static class InvalidComponent extends WebComponent
@@ -276,7 +266,5 @@ public class ComponentInitializationTest extends WicketTestCase
 		{
 			return components;
 		}
-
-
 	}
 }

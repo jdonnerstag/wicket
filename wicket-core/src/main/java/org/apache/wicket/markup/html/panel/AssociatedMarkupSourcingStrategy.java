@@ -94,7 +94,14 @@ public abstract class AssociatedMarkupSourcingStrategy extends AbstractMarkupSou
 		IMarkupFragment associatedMarkup = parent.getAssociatedMarkup();
 		if (associatedMarkup == null)
 		{
-			throw new MarkupNotFoundException("Failed to find markup file associated. " +
+			if (parent.getParent() == null)
+			{
+				throw new MarkupNotFoundException(
+					"Component not attached to parent => Unknown file extension => Failed to find associated markup file. " +
+						parent.getClass().getSimpleName() + ": " + parent.toString());
+			}
+
+			throw new MarkupNotFoundException("Failed to find associated markup file. " +
 				parent.getClass().getSimpleName() + ": " + parent.toString());
 		}
 

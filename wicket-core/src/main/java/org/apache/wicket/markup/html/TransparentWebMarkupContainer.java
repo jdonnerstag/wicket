@@ -20,6 +20,7 @@ import org.apache.wicket.Component;
 import org.apache.wicket.MarkupContainer;
 import org.apache.wicket.markup.ComponentTag;
 import org.apache.wicket.markup.MarkupStream;
+import org.apache.wicket.markup.WicketTag;
 import org.apache.wicket.markup.resolver.IComponentResolver;
 
 /**
@@ -41,12 +42,13 @@ public class TransparentWebMarkupContainer extends WebMarkupContainer implements
 		super(id);
 	}
 
-	/**
-	 * @see org.apache.wicket.markup.resolver.IComponentResolver#resolve(org.apache.wicket.MarkupContainer,
-	 *      org.apache.wicket.markup.MarkupStream, org.apache.wicket.markup.ComponentTag)
-	 */
 	public Component resolve(MarkupContainer container, MarkupStream markupStream, ComponentTag tag)
 	{
+		if (tag instanceof WicketTag)
+		{
+			return null;
+		}
+
 		Component resolvedComponent = getParent().get(tag.getId());
 		if (resolvedComponent != null && getPage().wasRendered(resolvedComponent))
 		{

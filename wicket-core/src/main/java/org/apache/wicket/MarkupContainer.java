@@ -34,13 +34,15 @@ import org.apache.wicket.markup.MarkupStream;
 import org.apache.wicket.markup.MarkupType;
 import org.apache.wicket.markup.WicketTag;
 import org.apache.wicket.markup.html.border.Border;
-import org.apache.wicket.markup.html.internal.InlineEnclosure;
+import org.apache.wicket.markup.html.border.Border.BorderBodyContainer;
 import org.apache.wicket.markup.resolver.ComponentResolvers;
+import org.apache.wicket.markup.resolver.HasEqualMarkupResolver;
 import org.apache.wicket.model.IComponentInheritedModel;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.IWrapModel;
 import org.apache.wicket.settings.IDebugSettings;
 import org.apache.wicket.util.iterator.ComponentHierarchyIterator;
+import org.apache.wicket.util.iterator.GenericComponentHierarchyIterator;
 import org.apache.wicket.util.lang.Args;
 import org.apache.wicket.util.lang.Generics;
 import org.apache.wicket.util.string.ComponentStrings;
@@ -90,7 +92,6 @@ import org.slf4j.LoggerFactory;
  * 
  * @see MarkupStream
  * @author Jonathan Locke
- * 
  */
 public abstract class MarkupContainer extends Component implements Iterable<Component>
 {
@@ -152,6 +153,12 @@ public abstract class MarkupContainer extends Component implements Iterable<Comp
 				}
 
 				parent = parent.getParent();
+			}
+
+			if ((queuedComponents != null) && queuedComponents.contains(child))
+			{
+				throw new IllegalStateException(
+					"You can not add components which are already queued: " + child.toString());
 			}
 
 			checkHierarchyChange(child);
@@ -244,56 +251,6 @@ public abstract class MarkupContainer extends Component implements Iterable<Comp
 		}
 
 		return this;
-	}
-
-	/**
-	 * This method allows a component to be added by an auto-resolver such as AutoLinkResolver.
-	 * While the component is being added, the component's FLAG_AUTO boolean is set. The isAuto()
-	 * method of Component returns true if a component or any of its parents has this bit set. When
-	 * a component is added via autoAdd(), the logic in Page that normally (a) checks for
-	 * modifications during the rendering process, and (b) versions components, is bypassed if
-	 * Component.isAuto() returns true.
-	 * <p>
-	 * The result of all this is that components added with autoAdd() are free from versioning and
-	 * can add their own children without the usual exception that would normally be thrown when the
-	 * component hierarchy is modified during rendering.
-	 * 
-	 * @param component
-	 *            The component to add
-	 * @param markupStream
-	 *            Null, if the parent container is able to provide the markup. Else the markup
-	 *            stream to be used to render the component.
-	 * @return True, if component has been added
-	 */
-	public final boolean autoAdd(final Component component, MarkupStream markupStream)
-	{
-		if (component == null)
-		{
-			throw new IllegalArgumentException("argument component may not be null");
-		}
-
-		// Replace strategy
-		component.setAuto(true);
-
-		if (markupStream != null)
-		{
-			component.setMarkup(markupStream.getMarkupFragment());
-		}
-
-		// Add the child to the parent.
-
-		// Arguably child.setParent() can be used as well. It connects the child to the parent and
-		// that's all what most auto-components need. Unfortunately child.onDetach() will not / can
-		// not be invoked, since the parent doesn't known its one of his children. Hence we need to
-		// properly add it.
-		int index = children_indexOf(component);
-		if (index >= 0)
-		{
-			children_remove(index);
-		}
-		add(component);
-
-		return true;
 	}
 
 	/**
@@ -1000,13 +957,10 @@ public abstract class MarkupContainer extends Component implements Iterable<Comp
 	public final void internalInitialize()
 	{
 		super.fireInitialize();
-		visitChildren(new IVisitor<Component, Void>()
+		for (Component child : visitChildren())
 		{
-			public void component(final Component component, final IVisit<Void> visit)
-			{
-				component.fireInitialize();
-			}
-		});
+			child.fireInitialize();
+		}
 	}
 
 	/**
@@ -1458,14 +1412,6 @@ public abstract class MarkupContainer extends Component implements Iterable<Comp
 			if (component == null)
 			{
 				component = ComponentResolvers.resolve(this, markupStream, tag, null);
-				if ((component != null) && (component.getParent() == null))
-				{
-					autoAdd(component, markupStream);
-				}
-				else if (component != null)
-				{
-					component.setMarkup(markupStream.getMarkupFragment());
-				}
 			}
 
 			// Failed to find it?
@@ -1529,27 +1475,40 @@ public abstract class MarkupContainer extends Component implements Iterable<Comp
 		return false;
 	}
 
-	private List<String> findSimilarComponents(final String id)
+	private List<String> findSimilarComponents(String id)
 	{
 		final List<String> names = Generics.newArrayList();
 
 		Page page = findPage();
 		if (page != null)
 		{
-			page.visitChildren(new IVisitor<Component, Void>()
+			id = id.toLowerCase();
+
+			for (Component child : page.visitChildren())
 			{
-				public void component(Component component, IVisit<Void> visit)
+				String path = child.getPageRelativePath();
+				if (Strings.getLevenshteinDistance(id, child.getId().toLowerCase()) < 3)
 				{
-					if (Strings.getLevenshteinDistance(id.toLowerCase(), component.getId()
-						.toLowerCase()) < 3)
-					{
-						names.add(component.getPageRelativePath());
-					}
+					names.add(path);
 				}
-			});
+			}
 		}
 
 		return names;
+	}
+
+	/** */
+	public void printChildren()
+	{
+		log.error(">>>>>>>>>");
+		Page page = findPage();
+		if (page != null)
+		{
+			for (Component child : page.visitChildren())
+			{
+				log.error(child.getPageRelativePath());
+			}
+		}
 	}
 
 	/**
@@ -1712,10 +1671,10 @@ public abstract class MarkupContainer extends Component implements Iterable<Comp
 				// We need to keep InlineEnclosures for Ajax request handling.
 				// TODO this is really ugly. Feature request for 1.5: change auto-component that
 				// they don't need to be removed anymore.
-				if (component.isAuto() && !(component instanceof InlineEnclosure))
-				{
-					children_remove(i);
-				}
+// if (component.isAuto() && !(component instanceof InlineEnclosure))
+// {
+// children_remove(i);
+// }
 			}
 		}
 
@@ -2087,4 +2046,204 @@ public abstract class MarkupContainer extends Component implements Iterable<Comp
 		}
 	}
 
+	// Transient => no need to persist in session store
+	private transient List<Component> queuedComponents;
+
+	/**
+	 * Enqueue components. They'll be dequeued and added after this container was initialized (
+	 * {@link MarkupContainer#onInitialize()}).
+	 * <p>
+	 * Dequeuing is a hierarchical process. It tries to find the proper container (this or any of
+	 * its children and grand-children) to add the queued component to.
+	 * 
+	 * @param components
+	 * @return this
+	 */
+	public final MarkupContainer queue(final Component... components)
+	{
+		if (queuedComponents == null)
+		{
+			queuedComponents = Generics.newArrayList();
+		}
+
+		// Add all components provided
+		for (Component comp : components)
+		{
+			if (comp.getParent() != null)
+			{
+				throw new IllegalStateException(
+					"You can not queue components which are already added to a parent: " +
+						comp.toString());
+			}
+
+			// Make sure the component are unambigious (do not have the same IDs)
+			for (Component queued : queuedComponents)
+			{
+				if (queued.getId().equals(comp.getId()))
+				{
+					throw new IllegalStateException(
+						"You can not add multiple components with the same ID for queueing: " +
+							comp.getId());
+				}
+			}
+
+			queuedComponents.add(comp);
+		}
+
+		return this;
+	}
+
+	/**
+	 * @return Gets the list components in the queue. Null, if no components queued.
+	 */
+	public final List<Component> getQueuedComponents()
+	{
+		return queuedComponents;
+	}
+
+	/**
+	 * Implements the process to dequeue all components registered
+	 */
+	private final void dequeue()
+	{
+		if (queuedComponents == null)
+		{
+			return;
+		}
+
+		// For each component queued
+		Iterator<Component> iter = queuedComponents.iterator();
+		while (iter.hasNext())
+		{
+			Component child = iter.next();
+
+			// Can it be added to "this"?
+			if (dequeue(this, child))
+			{
+				iter.remove();
+				add(child);
+			}
+			else
+			{
+				// Check all children and grand children if the queued component fits with any of
+				// them
+				for (MarkupContainer cont : new GenericComponentHierarchyIterator<MarkupContainer>(
+					this, MarkupContainer.class))
+				{
+					if (dequeue(cont, child))
+					{
+						iter.remove();
+						cont.add(child);
+						break;
+					}
+				}
+			}
+		}
+
+		if (queuedComponents.isEmpty())
+		{
+			queuedComponents = null;
+		}
+		else
+		{
+			throw new IllegalStateException("Unable to dequeue all components registered: " +
+				queuedComponents);
+		}
+	}
+
+	/**
+	 * Check if child can be added to the parent.
+	 * 
+	 * @param parent
+	 * @param child
+	 * @return true, if child was added to parent
+	 */
+	private boolean dequeue(final MarkupContainer parent, final Component child)
+	{
+		// No child with same ID already added
+		if (parent.get(child.getId()) == null)
+		{
+			// Markup for child successfully found with parent??
+			IMarkupFragment markup = parent.getMarkup(child);
+			if (markup != null)
+			{
+				child.setMarkup(markup);
+				return true;
+			}
+		}
+		return false;
+	}
+
+	protected void enqueueAutoComponents()
+	{
+		IMarkupFragment markup = getMarkup();
+		if (markup == null)
+		{
+			// TODO How can this happen??
+			return;
+		}
+
+		MarkupStream stream = new MarkupStream(markup);
+		if (!(this instanceof Page))
+		{
+			stream.next();
+		}
+
+		enqueueAutoComponents(stream);
+	}
+
+	protected final void enqueueAutoComponents(final MarkupStream stream)
+	{
+		Args.notNull(stream, "stream");
+
+		while (stream.hasMore())
+		{
+			MarkupElement elem = stream.get();
+			if (elem instanceof ComponentTag)
+			{
+				ComponentTag tag = (ComponentTag)elem;
+				if (!tag.isClose())
+				{
+					if (tag.isAutoComponentTag() || (tag instanceof WicketTag))
+					{
+						Component child = new HasEqualMarkupResolver().resolve(this, stream, tag);
+						if (child == null)
+						{
+							child = ComponentResolvers.resolve(this, stream, tag, null);
+							if (child != null)
+							{
+								if (contains(child, false) == false)
+								{
+									child.setAuto(true);
+									if (!(child instanceof BorderBodyContainer))
+									{
+										add(child);
+									}
+								}
+							}
+						}
+					}
+
+					if ((tag.hasNoCloseTag() == false) && tag.isOpen())
+					{
+						stream.skipToMatchingCloseTag(tag);
+					}
+				}
+			}
+
+			stream.next();
+		}
+	}
+
+	@Override
+	protected void onInitialize()
+	{
+		super.onInitialize();
+
+		enqueueAutoComponents();
+
+		// printChildren();
+
+		dequeue();
+	}
 }

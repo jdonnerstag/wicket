@@ -107,10 +107,11 @@ public final class InlineEnclosureHandler extends AbstractMarkupFilter
 					{
 						tag.setId(htmlId);
 					}
-
-					tag.setAutoComponentTag(true);
-					tag.setModified(true);
 				}
+
+				// It must be an auto tag to be picked up by the resolver
+				tag.setAutoComponentTag(true);
+				tag.setModified(true);
 
 				// Put the enclosure on the stack. The most current one will be on top
 				if (enclosures == null)
