@@ -84,7 +84,7 @@ public class GenericComponentHierarchyIterator<I extends Component> extends
 		getFilters().add(new IteratorFilter<Component>()
 		{
 			@Override
-			boolean onFilter(final Component component)
+			public boolean onFilter(final Component component)
 			{
 				if (component instanceof MarkupContainer)
 				{
@@ -110,7 +110,7 @@ public class GenericComponentHierarchyIterator<I extends Component> extends
 			getFilters().add(new IteratorFilter<Component>()
 			{
 				@Override
-				boolean onFilter(Component component)
+				public boolean onFilter(Component component)
 				{
 					return clazz.isInstance(component);
 				}
@@ -130,7 +130,7 @@ public class GenericComponentHierarchyIterator<I extends Component> extends
 		IteratorFilter<Component> filter = new IteratorFilter<Component>()
 		{
 			@Override
-			protected boolean onFilter(Component comp)
+			public boolean onFilter(Component comp)
 			{
 				return comp.isVisibleInHierarchy();
 			}
@@ -152,7 +152,7 @@ public class GenericComponentHierarchyIterator<I extends Component> extends
 		IteratorFilter<Component> filter = new IteratorFilter<Component>()
 		{
 			@Override
-			protected boolean onFilter(Component comp)
+			public boolean onFilter(Component comp)
 			{
 				return comp.isEnabledInHierarchy();
 			}
@@ -178,7 +178,7 @@ public class GenericComponentHierarchyIterator<I extends Component> extends
 		getFilters().add(new IteratorFilter<Component>()
 		{
 			@Override
-			protected boolean onFilter(Component comp)
+			public boolean onFilter(Component comp)
 			{
 				return comp.getId().matches(match);
 			}

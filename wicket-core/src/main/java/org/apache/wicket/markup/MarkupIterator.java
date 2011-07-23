@@ -17,125 +17,183 @@
 package org.apache.wicket.markup;
 
 import java.util.Iterator;
+import java.util.List;
+
+import org.apache.wicket.util.iterator.IteratorFilter;
+import org.apache.wicket.util.lang.Args;
+import org.apache.wicket.util.lang.Generics;
 
 /**
  * 
  * @author Juergen Donnerstag
  */
-public class MarkupIterator implements Iterator<MarkupElement>
+public class MarkupIterator implements Iterator<ComponentTag>, Iterable<ComponentTag>
 {
-	private final IMarkupFragment markup;
+	private final MarkupStream stream;
 
-	private int index = -1;
+	private List<IteratorFilter<ComponentTag>> filters = Generics.newArrayList();
 
-	private boolean componentTagOnly;
-	private boolean wicketTagOnly;
-	private boolean openTagOnly;
+	private boolean dontGoDeeper;
+	private boolean found;
 
 	/**
 	 * Construct.
 	 * 
-	 * @param markup
+	 * @param stream
 	 */
-	public MarkupIterator(final IMarkupFragment markup)
+	public MarkupIterator(final MarkupStream stream)
 	{
-		if (markup == null)
-		{
-			throw new NullPointerException("Parameter 'markup' must not be null");
-		}
-		this.markup = markup;
+		this.stream = Args.notNull(stream, "stream");
 	}
 
-	/**
-	 * @see java.util.Iterator#hasNext()
-	 */
-	public boolean hasNext()
+	public final Iterator<ComponentTag> iterator()
 	{
-		for (index++; index < markup.size(); index++)
+		return this;
+	}
+
+	public final boolean hasNext()
+	{
+		if (found && dontGoDeeper)
 		{
-			MarkupElement elem = markup.get(index);
-			if ((componentTagOnly && (elem instanceof ComponentTag)) ||
-				(wicketTagOnly && (elem instanceof WicketTag)))
+			MarkupElement elem = stream.get();
+			if (elem instanceof ComponentTag)
 			{
-				if (openTagOnly)
+				ComponentTag tag = stream.getTag();
+				if ((tag.hasNoCloseTag() == false) && tag.isOpen())
 				{
-					ComponentTag tag = (ComponentTag)elem;
-					if (tag.isOpen())
+					stream.skipToMatchingCloseTag(tag);
+				}
+			}
+
+			stream.next();
+		}
+
+		found = false;
+		while (stream.hasMore())
+		{
+			MarkupElement elem = stream.get();
+			if (elem instanceof ComponentTag)
+			{
+				found = true;
+				ComponentTag tag = stream.getTag();
+				for (IteratorFilter<ComponentTag> filter : filters)
+				{
+					if (filter.onFilter(tag) == false)
 					{
-						return true;
-					}
-					else
-					{
-						continue;
+						found = false;
+						break;
 					}
 				}
-				return true;
+
+				if (found == true)
+				{
+					return true;
+				}
+
+				if (dontGoDeeper && (tag.hasNoCloseTag() == false) && tag.isOpen())
+				{
+					stream.skipToMatchingCloseTag(tag);
+				}
 			}
-			return true;
+
+			stream.next();
 		}
 
 		return false;
 	}
 
-	/**
-	 * @see java.util.Iterator#next()
-	 */
-	public MarkupElement next()
+	public final ComponentTag next()
 	{
-		return markup.get(index);
+		return stream.getTag();
 	}
 
 	/**
-	 * @return The next element assuming it is a ComponentTag or WicketTag
-	 */
-	public ComponentTag nextTag()
-	{
-		return (ComponentTag)next();
-	}
-
-	/**
-	 * @return The next element assuming it is a WicketTag
-	 */
-	public WicketTag nextWicketTag()
-	{
-		return (WicketTag)next();
-	}
-
-	/**
-	 * @see java.util.Iterator#remove()
-	 */
-	public void remove()
-	{
-		throw new UnsupportedOperationException("You can not remove markup elements");
-	}
-
-	/**
-	 * Ignore raw markup and iterate over component and wicket tags only.
 	 * 
-	 * @param componentTagOnly
+	 * @param dontGoDeeper
+	 * @return this
 	 */
-	public final void setComponentTagOnly(boolean componentTagOnly)
+	public MarkupIterator setDontGoDeeper(boolean dontGoDeeper)
 	{
-		this.componentTagOnly = componentTagOnly;
+		this.dontGoDeeper = dontGoDeeper;
+		return this;
 	}
 
 	/**
-	 * Ignore raw markup and component tags, and iterate over WicketTags only
-	 * 
-	 * @param wicketTagOnly
+	 * @param filter
+	 * @return this
 	 */
-	public final void setWicketTagOnly(boolean wicketTagOnly)
+	public MarkupIterator addFilter(final IteratorFilter<ComponentTag> filter)
 	{
-		this.wicketTagOnly = wicketTagOnly;
+		filters.add(filter);
+		return this;
 	}
 
 	/**
-	 * Ignore close tag. Iterate over open and open-close tags only
-	 * 
-	 * @param openTagOnly
+	 * @return this
 	 */
-	public final void setOpenTagOnly(boolean openTagOnly)
+	public MarkupIterator skipComponentTags()
 	{
-		this.openTagOnly = openTagOnly;
+		addFilter(new IteratorFilter<ComponentTag>()
+		{
+			@Override
+			public boolean onFilter(final ComponentTag tag)
+			{
+				return (tag instanceof WicketTag);
+			}
+		});
+
+		return this;
+	}
+
+	/**
+	 * @return this
+	 */
+	public MarkupIterator skipWicketTags()
+	{
+		addFilter(new IteratorFilter<ComponentTag>()
+		{
+			@Override
+			public boolean onFilter(final ComponentTag tag)
+			{
+				return !(tag instanceof WicketTag);
+			}
+		});
+
+		return this;
+	}
+
+	/**
+	 * @return this
+	 */
+	public MarkupIterator openTagsOnly()
+	{
+		addFilter(new IteratorFilter<ComponentTag>()
+		{
+			@Override
+			public boolean onFilter(final ComponentTag tag)
+			{
+				return !tag.isClose();
+			}
+		});
+
+		return this;
+	}
+
+	/**
+	 * 
+	 * @return MarkupStream
+	 */
+	public final MarkupStream getMarkupStream()
+	{
+		return stream;
+	}
+
+	/**
+	 * Not supported. Markup is immutable.
+	 */
+	public final void remove()
+	{
+		throw new UnsupportedOperationException(
+			"Markup is immutable. You can not remove tags or raw markup.");
 	}
 }

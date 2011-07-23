@@ -29,14 +29,13 @@ import org.apache.wicket.markup.Markup;
 import org.apache.wicket.markup.MarkupElement;
 import org.apache.wicket.markup.MarkupException;
 import org.apache.wicket.markup.MarkupFactory;
+import org.apache.wicket.markup.MarkupIteratorForAutoComponents;
 import org.apache.wicket.markup.MarkupNotFoundException;
 import org.apache.wicket.markup.MarkupStream;
 import org.apache.wicket.markup.MarkupType;
 import org.apache.wicket.markup.WicketTag;
 import org.apache.wicket.markup.html.border.Border;
-import org.apache.wicket.markup.html.border.Border.BorderBodyContainer;
 import org.apache.wicket.markup.resolver.ComponentResolvers;
-import org.apache.wicket.markup.resolver.HasEqualMarkupResolver;
 import org.apache.wicket.model.IComponentInheritedModel;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.IWrapModel;
@@ -2179,15 +2178,13 @@ public abstract class MarkupContainer extends Component implements Iterable<Comp
 		IMarkupFragment markup = getMarkup();
 		if (markup == null)
 		{
-			// TODO How can this happen??
+			// TODO How can this be??
 			return;
+			// throw new MarkupNotFoundException("Unable to find markup for Component: " + this);
 		}
 
 		MarkupStream stream = new MarkupStream(markup);
-		if (!(this instanceof Page))
-		{
-			stream.next();
-		}
+		stream.next();
 
 		enqueueAutoComponents(stream);
 	}
@@ -2196,42 +2193,13 @@ public abstract class MarkupContainer extends Component implements Iterable<Comp
 	{
 		Args.notNull(stream, "stream");
 
-		while (stream.hasMore())
+		MarkupIteratorForAutoComponents iter = new MarkupIteratorForAutoComponents(stream);
+		for (ComponentTag tag : iter)
 		{
-			MarkupElement elem = stream.get();
-			if (elem instanceof ComponentTag)
+			if (tag.isAutoComponentTag() || (tag instanceof WicketTag))
 			{
-				ComponentTag tag = (ComponentTag)elem;
-				if (!tag.isClose())
-				{
-					if (tag.isAutoComponentTag() || (tag instanceof WicketTag))
-					{
-						Component child = new HasEqualMarkupResolver().resolve(this, stream, tag);
-						if (child == null)
-						{
-							child = ComponentResolvers.resolve(this, stream, tag, null);
-							if (child != null)
-							{
-								if (contains(child, false) == false)
-								{
-									child.setAuto(true);
-									if (!(child instanceof BorderBodyContainer))
-									{
-										add(child);
-									}
-								}
-							}
-						}
-					}
-
-					if ((tag.hasNoCloseTag() == false) && tag.isOpen())
-					{
-						stream.skipToMatchingCloseTag(tag);
-					}
-				}
+				iter.onTagFound(this);
 			}
-
-			stream.next();
 		}
 	}
 

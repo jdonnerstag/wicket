@@ -26,7 +26,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.wicket.authorization.IAuthorizationStrategy;
 import org.apache.wicket.authorization.UnauthorizedActionException;
 import org.apache.wicket.authorization.strategies.page.SimplePageAuthorizationStrategy;
+import org.apache.wicket.markup.IMarkupFragment;
 import org.apache.wicket.markup.MarkupException;
+import org.apache.wicket.markup.MarkupNotFoundException;
 import org.apache.wicket.markup.MarkupStream;
 import org.apache.wicket.markup.MarkupType;
 import org.apache.wicket.markup.resolver.IComponentResolver;
@@ -1093,5 +1095,18 @@ public abstract class Page extends MarkupContainer implements IRedirectListener,
 	public final boolean wasRendered(Component component)
 	{
 		return renderedComponents != null && renderedComponents.contains(component);
+	}
+
+	@Override
+	protected void enqueueAutoComponents()
+	{
+		IMarkupFragment markup = getMarkup();
+		if (markup == null)
+		{
+			throw new MarkupNotFoundException("Unable to find markup for Page: " + this);
+		}
+
+		MarkupStream stream = new MarkupStream(markup);
+		enqueueAutoComponents(stream);
 	}
 }

@@ -18,7 +18,7 @@ package org.apache.wicket.markup.html.panel;
 
 import org.apache.wicket.markup.ComponentTag;
 import org.apache.wicket.markup.IMarkupFragment;
-import org.apache.wicket.markup.MarkupElement;
+import org.apache.wicket.markup.MarkupIteratorForAutoComponents;
 import org.apache.wicket.markup.MarkupStream;
 import org.apache.wicket.markup.WicketTag;
 import org.apache.wicket.markup.html.WebMarkupContainer;
@@ -98,39 +98,28 @@ public abstract class Panel extends WebMarkupContainer
 	{
 		super.enqueueAutoComponents();
 
-		// <wicket:panel> ..
-		IMarkupFragment markup = getMarkup(null);
-		MarkupStream stream = new MarkupStream(markup);
-		stream.next();
-		enqueueAutoComponents(stream);
-
-		// <wicket:head> ..
-		markup = getAssociatedMarkup();
-		stream = new MarkupStream(markup);
-		while (stream.hasMore())
 		{
-			MarkupElement elem = stream.get();
-			if (elem instanceof ComponentTag)
-			{
-				ComponentTag tag = (ComponentTag)elem;
-				if (elem instanceof WicketTag)
-				{
-					WicketTag wtag = (WicketTag)elem;
-					if (wtag.isOpen() && wtag.isHeadTag())
-					{
-						IMarkupFragment m = stream.getMarkupFragment();
-						MarkupStream s = new MarkupStream(m);
-						s.next();
-						enqueueAutoComponents(s);
-					}
-				}
+			// <wicket:panel> ..
+			IMarkupFragment markup = getMarkup(null);
+			MarkupStream stream = new MarkupStream(markup);
+			stream.next();
+			enqueueAutoComponents(stream);
+		}
 
-				if (tag.isOpen())
+		{
+			// <wicket:head> ..
+			IMarkupFragment markup = getAssociatedMarkup();
+			MarkupIteratorForAutoComponents iter = new MarkupIteratorForAutoComponents(markup).skipComponentTags();
+			for (ComponentTag tag : iter)
+			{
+				WicketTag wtag = (WicketTag)tag;
+				if (wtag.isHeadTag())
 				{
-					stream.skipToMatchingCloseTag(tag);
+					MarkupStream s = iter.getMarkupStream().clone();
+					s.next();
+					enqueueAutoComponents(s);
 				}
 			}
-			stream.next();
 		}
 	}
 }

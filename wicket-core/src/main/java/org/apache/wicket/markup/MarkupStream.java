@@ -515,6 +515,16 @@ public class MarkupStream
 	}
 
 	/**
+	 * Create a copy of the markup stream with the markup for the current open-body-close tag only.
+	 */
+	@Override
+	public MarkupStream clone()
+	{
+		IMarkupFragment markup = getMarkupFragment();
+		return new MarkupStream(markup);
+	}
+
+	/**
 	 * Throws a new markup exception
 	 * 
 	 * @param message
