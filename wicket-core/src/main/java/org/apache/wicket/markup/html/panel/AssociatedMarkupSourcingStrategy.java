@@ -23,6 +23,7 @@ import org.apache.wicket.markup.ComponentTag;
 import org.apache.wicket.markup.IMarkupFragment;
 import org.apache.wicket.markup.MarkupElement;
 import org.apache.wicket.markup.MarkupException;
+import org.apache.wicket.markup.MarkupIteratorForAutoComponents;
 import org.apache.wicket.markup.MarkupNotFoundException;
 import org.apache.wicket.markup.MarkupStream;
 import org.apache.wicket.markup.TagUtils;
@@ -389,5 +390,35 @@ public abstract class AssociatedMarkupSourcingStrategy extends AbstractMarkupSou
 
 		// No (more) wicket:head found
 		return -1;
+	}
+
+	@Override
+	public void enqueueAutoComponents(final MarkupContainer container)
+	{
+		super.enqueueAutoComponents(container);
+
+		{
+			// <wicket:panel> ..
+			IMarkupFragment markup = container.getMarkup(null);
+			MarkupStream stream = new MarkupStream(markup);
+			stream.next();
+			container.enqueueAutoComponents(stream);
+		}
+
+		{
+			// <wicket:head> ..
+			IMarkupFragment markup = container.getAssociatedMarkup();
+			MarkupIteratorForAutoComponents iter = new MarkupIteratorForAutoComponents(markup).skipComponentTags();
+			for (ComponentTag tag : iter)
+			{
+				WicketTag wtag = (WicketTag)tag;
+				if (wtag.isHeadTag())
+				{
+					MarkupStream s = iter.getMarkupStream().clone();
+					s.next();
+					container.enqueueAutoComponents(s);
+				}
+			}
+		}
 	}
 }

@@ -16,11 +16,6 @@
  */
 package org.apache.wicket.markup.html.panel;
 
-import org.apache.wicket.markup.ComponentTag;
-import org.apache.wicket.markup.IMarkupFragment;
-import org.apache.wicket.markup.MarkupIteratorForAutoComponents;
-import org.apache.wicket.markup.MarkupStream;
-import org.apache.wicket.markup.WicketTag;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.parser.filter.WicketTagIdentifier;
 import org.apache.wicket.model.IModel;
@@ -88,38 +83,5 @@ public abstract class Panel extends WebMarkupContainer
 	protected IMarkupSourcingStrategy newMarkupSourcingStrategy()
 	{
 		return new PanelMarkupSourcingStrategy(false);
-	}
-
-	// TODO This code should be moved into PanelMSS
-	// TODO Border require the same code => copy
-	// TODO Fragment requires the same code => copy
-	@Override
-	protected void enqueueAutoComponents()
-	{
-		super.enqueueAutoComponents();
-
-		{
-			// <wicket:panel> ..
-			IMarkupFragment markup = getMarkup(null);
-			MarkupStream stream = new MarkupStream(markup);
-			stream.next();
-			enqueueAutoComponents(stream);
-		}
-
-		{
-			// <wicket:head> ..
-			IMarkupFragment markup = getAssociatedMarkup();
-			MarkupIteratorForAutoComponents iter = new MarkupIteratorForAutoComponents(markup).skipComponentTags();
-			for (ComponentTag tag : iter)
-			{
-				WicketTag wtag = (WicketTag)tag;
-				if (wtag.isHeadTag())
-				{
-					MarkupStream s = iter.getMarkupStream().clone();
-					s.next();
-					enqueueAutoComponents(s);
-				}
-			}
-		}
 	}
 }

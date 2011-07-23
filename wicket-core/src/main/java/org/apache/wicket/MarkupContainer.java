@@ -2175,21 +2175,14 @@ public abstract class MarkupContainer extends Component implements Iterable<Comp
 
 	protected void enqueueAutoComponents()
 	{
-		IMarkupFragment markup = getMarkup();
-		if (markup == null)
-		{
-			// TODO How can this be??
-			return;
-			// throw new MarkupNotFoundException("Unable to find markup for Component: " + this);
-		}
-
-		MarkupStream stream = new MarkupStream(markup);
-		stream.next();
-
-		enqueueAutoComponents(stream);
+		getMarkupSourcingStrategy().enqueueAutoComponents(this);
 	}
 
-	protected final void enqueueAutoComponents(final MarkupStream stream)
+	/**
+	 * 
+	 * @param stream
+	 */
+	public final void enqueueAutoComponents(final MarkupStream stream)
 	{
 		Args.notNull(stream, "stream");
 

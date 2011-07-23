@@ -42,7 +42,7 @@ public interface IMarkupSourcingStrategy
 	 *            The component calling the strategy
 	 * @param container
 	 */
-	void renderHead(final Component component, HtmlHeaderContainer container);
+	void renderHead(Component component, HtmlHeaderContainer container);
 
 	/**
 	 * Will be called in addition to {@link Component#onComponentTag(ComponentTag)} and allows the
@@ -69,8 +69,7 @@ public interface IMarkupSourcingStrategy
 	 * @param markupStream
 	 * @param openTag
 	 */
-	void onComponentTagBody(final Component component, final MarkupStream markupStream,
-		final ComponentTag openTag);
+	void onComponentTagBody(Component component, MarkupStream markupStream, ComponentTag openTag);
 
 	/**
 	 * Will <b>replace</b> the respective component's method. However by returning null, the
@@ -84,5 +83,10 @@ public interface IMarkupSourcingStrategy
 	 *            The component to find the markup for.
 	 * @return markup fragment
 	 */
-	IMarkupFragment getMarkup(final MarkupContainer container, final Component child);
+	IMarkupFragment getMarkup(MarkupContainer container, Component child);
+
+	/**
+	 * @param container
+	 */
+	void enqueueAutoComponents(MarkupContainer container);
 }

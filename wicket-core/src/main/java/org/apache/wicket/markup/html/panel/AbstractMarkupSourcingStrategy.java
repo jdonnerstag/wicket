@@ -24,6 +24,7 @@ import org.apache.wicket.markup.MarkupException;
 import org.apache.wicket.markup.MarkupStream;
 import org.apache.wicket.markup.html.internal.HtmlHeaderContainer;
 import org.apache.wicket.markup.parser.XmlTag.TagType;
+import org.apache.wicket.util.lang.Args;
 
 /**
  * Implements boilerplate as needed by many markup sourcing strategies.
@@ -82,5 +83,23 @@ public abstract class AbstractMarkupSourcingStrategy implements IMarkupSourcingS
 	 */
 	public void renderHead(final Component component, HtmlHeaderContainer container)
 	{
+	}
+
+	public void enqueueAutoComponents(final MarkupContainer container)
+	{
+		Args.notNull(container, "container");
+
+		IMarkupFragment markup = container.getMarkup();
+		if (markup == null)
+		{
+			// TODO How can this be??
+			return;
+			// throw new MarkupNotFoundException("Unable to find markup for Component: " + this);
+		}
+
+		MarkupStream stream = new MarkupStream(markup);
+		stream.next();
+
+		container.enqueueAutoComponents(stream);
 	}
 }
