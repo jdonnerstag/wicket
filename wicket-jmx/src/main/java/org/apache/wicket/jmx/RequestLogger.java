@@ -38,18 +38,18 @@ public class RequestLogger implements RequestLoggerMBean
 	 * @param application
 	 *            The application
 	 */
-	public RequestLogger(org.apache.wicket.Application application)
+	public RequestLogger(final org.apache.wicket.Application application)
 	{
 		this.application = application;
 
 		// do this so that we don't have to cast all the time
 		if (application instanceof WebApplication)
 		{
-			this.webApplication = (WebApplication)application;
+			webApplication = (WebApplication)application;
 		}
 		else
 		{
-			this.webApplication = null;
+			webApplication = null;
 		}
 	}
 
@@ -61,7 +61,7 @@ public class RequestLogger implements RequestLoggerMBean
 		org.apache.wicket.protocol.http.IRequestLogger logger = getRequestLogger();
 		if (logger != null)
 		{
-			return Integer.valueOf(logger.getTotalCreatedSessions());
+			return logger.getTotalCreatedSessions();
 		}
 		return null;
 	}
@@ -74,7 +74,7 @@ public class RequestLogger implements RequestLoggerMBean
 		org.apache.wicket.protocol.http.IRequestLogger logger = getRequestLogger();
 		if (logger != null)
 		{
-			return Integer.valueOf(logger.getLiveSessions().length);
+			return logger.getLiveSessions().length;
 		}
 		return null;
 	}
@@ -87,7 +87,33 @@ public class RequestLogger implements RequestLoggerMBean
 		org.apache.wicket.protocol.http.IRequestLogger logger = getRequestLogger();
 		if (logger != null)
 		{
-			return Integer.valueOf(logger.getPeakSessions());
+			return logger.getPeakSessions();
+		}
+		return null;
+	}
+
+	/**
+	 * @see org.apache.wicket.jmx.RequestLoggerMBean#getNumberOfCurrentActiveRequests()
+	 */
+	public Integer getNumberOfCurrentActiveRequests() throws IOException
+	{
+		org.apache.wicket.protocol.http.IRequestLogger logger = getRequestLogger();
+		if (logger != null)
+		{
+			return Integer.valueOf(logger.getCurrentActiveRequestCount());
+		}
+		return null;
+	}
+
+	/**
+	 * @see org.apache.wicket.jmx.RequestLoggerMBean#getPeakNumberOfActiveRequests()
+	 */
+	public Integer getPeakNumberOfActiveRequests() throws IOException
+	{
+		org.apache.wicket.protocol.http.IRequestLogger logger = getRequestLogger();
+		if (logger != null)
+		{
+			return Integer.valueOf(logger.getPeakActiveRequestCount());
 		}
 		return null;
 	}
@@ -126,7 +152,7 @@ public class RequestLogger implements RequestLoggerMBean
 	{
 		if (application instanceof WebApplication)
 		{
-			return ((WebApplication)application).getRequestLogger();
+			return application.getRequestLogger();
 		}
 		return null;
 	}

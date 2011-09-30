@@ -16,13 +16,14 @@
  */
 package org.apache.wicket.extensions.markup.html.repeater.data.grid;
 
+import java.util.List;
+
 import org.apache.wicket.WicketRuntimeException;
 import org.apache.wicket.markup.repeater.Item;
 import org.apache.wicket.markup.repeater.RefreshingView;
 import org.apache.wicket.markup.repeater.RepeatingView;
 import org.apache.wicket.markup.repeater.data.DataViewBase;
 import org.apache.wicket.markup.repeater.data.IDataProvider;
-import org.apache.wicket.markup.repeater.util.ArrayIteratorAdapter;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 
@@ -45,9 +46,7 @@ public abstract class AbstractDataGridView<T> extends DataViewBase<T>
 	private static final String CELL_REPEATER_ID = "cells";
 	private static final String CELL_ITEM_ID = "cell";
 
-	private final ICellPopulator<T>[] populators;
-
-	private transient ArrayIteratorAdapter<ICellPopulator<T>> populatorsIteratorCache;
+	private final List<? extends ICellPopulator<T>> populators;
 
 	/**
 	 * Constructor
@@ -59,44 +58,15 @@ public abstract class AbstractDataGridView<T> extends DataViewBase<T>
 	 * @param dataProvider
 	 *            data provider
 	 */
-	public AbstractDataGridView(String id, ICellPopulator<T>[] populators,
-		IDataProvider<T> dataProvider)
+	public AbstractDataGridView(final String id,
+		final List<? extends ICellPopulator<T>> populators, final IDataProvider<T> dataProvider)
 	{
 		super(id, dataProvider);
 
 		this.populators = populators;
 	}
 
-	/**
-	 * Returns iterator over ICellPopulator elements in the populators array. This method caches the
-	 * iterator implementation in a transient member instance.
-	 * 
-	 * @return iterator over ICellPopulator elements in the populators array
-	 */
-	private ArrayIteratorAdapter<ICellPopulator<T>> getPopulatorsIterator()
-	{
-		if (populatorsIteratorCache == null)
-		{
-			populatorsIteratorCache = new ArrayIteratorAdapter<ICellPopulator<T>>(
-				internalGetPopulators())
-			{
-
-				@Override
-				protected IModel<ICellPopulator<T>> model(ICellPopulator<T> object)
-				{
-					return new Model<ICellPopulator<T>>(object);
-				}
-
-			};
-		}
-		else
-		{
-			populatorsIteratorCache.reset();
-		}
-		return populatorsIteratorCache;
-	}
-
-	protected final ICellPopulator<T>[] internalGetPopulators()
+	protected final List<? extends ICellPopulator<T>> internalGetPopulators()
 	{
 		return populators;
 	}
@@ -117,14 +87,14 @@ public abstract class AbstractDataGridView<T> extends DataViewBase<T>
 	 * 
 	 * @return DataItem created DataItem
 	 */
-	protected Item<ICellPopulator<T>> newCellItem(final String id, int index,
+	protected Item<ICellPopulator<T>> newCellItem(final String id, final int index,
 		final IModel<ICellPopulator<T>> model)
 	{
 		return new Item<ICellPopulator<T>>(id, index, model);
 	}
 
 	@Override
-	protected final Item<T> newItem(String id, int index, IModel<T> model)
+	protected final Item<T> newItem(final String id, final int index, final IModel<T> model)
 	{
 		return newRowItem(id, index, model);
 	}
@@ -144,7 +114,7 @@ public abstract class AbstractDataGridView<T> extends DataViewBase<T>
 	 * 
 	 * @return DataItem created DataItem
 	 */
-	protected Item<T> newRowItem(final String id, int index, final IModel<T> model)
+	protected Item<T> newRowItem(final String id, final int index, final IModel<T> model)
 	{
 		return new Item<T>(id, index, model);
 	}
@@ -159,9 +129,9 @@ public abstract class AbstractDataGridView<T> extends DataViewBase<T>
 		super.onDetach();
 		if (populators != null)
 		{
-			for (int i = 0; i < populators.length; i++)
+			for (ICellPopulator<T> populator : populators)
 			{
-				populators[i].detach();
+				populator.detach();
 			}
 		}
 	}
@@ -170,20 +140,19 @@ public abstract class AbstractDataGridView<T> extends DataViewBase<T>
 	 * @see org.apache.wicket.markup.repeater.RefreshingView#populateItem(org.apache.wicket.markup.repeater.Item)
 	 */
 	@Override
-	protected final void populateItem(Item<T> item)
+	protected final void populateItem(final Item<T> item)
 	{
 		RepeatingView cells = new RepeatingView(CELL_REPEATER_ID);
 		item.add(cells);
 
-		ArrayIteratorAdapter<ICellPopulator<T>> populators = getPopulatorsIterator();
-
-		for (int i = 0; populators.hasNext(); i++)
+		int populatorsNumber = populators.size();
+		for (int i = 0; i < populatorsNumber; i++)
 		{
-			IModel<ICellPopulator<T>> populatorModel = populators.next();
+			ICellPopulator<T> populator = populators.get(i);
+			IModel<ICellPopulator<T>> populatorModel = new Model<ICellPopulator<T>>(populator);
 			Item<ICellPopulator<T>> cellItem = newCellItem(cells.newChildId(), i, populatorModel);
 			cells.add(cellItem);
 
-			ICellPopulator<T> populator = cellItem.getModelObject();
 			populator.populateItem(cellItem, CELL_ITEM_ID, item.getModel());
 
 			if (cellItem.get("cell") == null)

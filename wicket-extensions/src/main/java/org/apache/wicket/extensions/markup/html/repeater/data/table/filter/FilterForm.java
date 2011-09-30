@@ -17,29 +17,26 @@
 package org.apache.wicket.extensions.markup.html.repeater.data.table.filter;
 
 import org.apache.wicket.Component;
-import org.apache.wicket.behavior.AbstractBehavior;
+import org.apache.wicket.behavior.Behavior;
 import org.apache.wicket.markup.ComponentTag;
 import org.apache.wicket.markup.MarkupStream;
-import org.apache.wicket.markup.html.WebMarkupContainer;
+import org.apache.wicket.markup.html.IHeaderResponse;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.FormComponent;
-import org.apache.wicket.markup.html.form.HiddenField;
 import org.apache.wicket.model.IModel;
-import org.apache.wicket.model.Model;
-import org.apache.wicket.util.string.AppendingStringBuffer;
+import org.apache.wicket.util.string.Strings;
 
 /**
  * A form with filter-related special functionality for its form components.
  * 
+ * @param <T>
+ *            type of filter state object
  * @author igor
- * 
  */
-public class FilterForm extends Form<Object>
+public class FilterForm<T> extends Form<T>
 {
 	private static final long serialVersionUID = 1L;
-
-	private final HiddenField<?> hidden;
-	private final IFilterStateLocator locator;
+	private final IFilterStateLocator<T> locator;
 
 	/**
 	 * @param id
@@ -47,42 +44,33 @@ public class FilterForm extends Form<Object>
 	 * @param locator
 	 *            filter state locator
 	 */
-	public FilterForm(String id, IFilterStateLocator locator)
+	public FilterForm(final String id, final IFilterStateLocator<T> locator)
 	{
-		super(id, new FilterStateModel(locator));
+		super(id, new FilterStateModel<T>(locator));
 
 		this.locator = locator;
+	}
 
-		// add hidden field used for managing current focus
-		hidden = new HiddenField<String>("focus-tracker", new Model<String>());
+	@Override
+	public void renderHead(final IHeaderResponse response)
+	{
+		super.renderHead(response);
+		response.renderOnLoadJavaScript("_filter_focus_restore('" + getFocusTrackerFieldCssId() +
+			"');");
+	}
 
-		hidden.add(new AbstractBehavior()
-		{
-			private static final long serialVersionUID = 1L;
-
-			@Override
-			public void onComponentTag(Component component, ComponentTag tag)
-			{
-				tag.put("id", getFocusTrackerFieldCssId());
-				super.onComponentTag(component, tag);
-			}
-		});
-		add(hidden);
-
-		// add javascript to restore focus to a filter component
-		add(new WebMarkupContainer("focus-restore")
-		{
-			private static final long serialVersionUID = 1L;
-
-			@Override
-			protected void onComponentTagBody(MarkupStream markupStream, ComponentTag openTag)
-			{
-				AppendingStringBuffer script = new AppendingStringBuffer(
-					"<script type=\"text/javascript\">_filter_focus_restore('").append(
-					getFocusTrackerFieldCssId()).append("');</script>");
-				replaceComponentTagBody(markupStream, openTag, script);
-			}
-		});
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public void onComponentTagBody(final MarkupStream markupStream, final ComponentTag openTag)
+	{
+		super.onComponentTagBody(markupStream, openTag);
+		String id = Strings.escapeMarkup(getFocusTrackerFieldCssId()).toString();
+		String value = getRequest().getPostParameters().getParameterValue(id).toString("");
+		getResponse().write(
+			String.format("<input type=\"hidden\" name=\"%s\" id=\"%s\" value=\"%s\"/>", id, id,
+				value));
 	}
 
 	/**
@@ -90,13 +78,13 @@ public class FilterForm extends Form<Object>
 	 */
 	public final String getFocusTrackerFieldCssId()
 	{
-		return hidden.getPageRelativePath();
+		return getMarkupId() + "focus";
 	}
 
 	/**
 	 * @return IFilterStateLocator passed to this form
 	 */
-	public final IFilterStateLocator getStateLocator()
+	public final IFilterStateLocator<T> getStateLocator()
 	{
 		return locator;
 	}
@@ -108,16 +96,16 @@ public class FilterForm extends Form<Object>
 	 * @param fc
 	 *            form component
 	 */
-	public final void enableFocusTracking(FormComponent<?> fc)
+	public final void enableFocusTracking(final FormComponent<?> fc)
 	{
-		fc.add(new AbstractBehavior()
+		fc.add(new Behavior()
 		{
 			private static final long serialVersionUID = 1L;
 
 			@Override
-			public void onComponentTag(Component component, ComponentTag tag)
+			public void onComponentTag(final Component component, final ComponentTag tag)
 			{
-				tag.put("id", component.getMarkupId());
+				component.setOutputMarkupId(true);
 				tag.put("onfocus", getFocusTrackingHandler(component));
 				super.onComponentTag(component, tag);
 			}
@@ -138,7 +126,7 @@ public class FilterForm extends Form<Object>
 	 * @return the javascript focus handler necessary to notify the form of focus tracking changes
 	 *         on the component
 	 */
-	public final String getFocusTrackingHandler(Component component)
+	public final String getFocusTrackingHandler(final Component component)
 	{
 		return ("_filter_focus(this, '" + getFocusTrackerFieldCssId() + "');");
 	}
@@ -146,14 +134,15 @@ public class FilterForm extends Form<Object>
 	/**
 	 * Model that uses filter state locator as a passthrough for model objects
 	 * 
+	 * @param <T>
+	 *            type of filter state object
 	 * @author Igor Vaynberg (ivaynberg)
-	 * 
 	 */
-	private static class FilterStateModel implements IModel<Object>
+	private static class FilterStateModel<T> implements IModel<T>
 	{
 		private static final long serialVersionUID = 1L;
 
-		private final IFilterStateLocator locator;
+		private final IFilterStateLocator<T> locator;
 
 		/**
 		 * Constructor
@@ -161,7 +150,7 @@ public class FilterForm extends Form<Object>
 		 * @param locator
 		 *            IFilterStateLocator implementation used to provide model object for this model
 		 */
-		public FilterStateModel(IFilterStateLocator locator)
+		public FilterStateModel(final IFilterStateLocator<T> locator)
 		{
 			if (locator == null)
 			{
@@ -173,7 +162,7 @@ public class FilterForm extends Form<Object>
 		/**
 		 * @see org.apache.wicket.model.IModel#getObject()
 		 */
-		public Object getObject()
+		public T getObject()
 		{
 			return locator.getFilterState();
 		}
@@ -181,7 +170,7 @@ public class FilterForm extends Form<Object>
 		/**
 		 * @see org.apache.wicket.model.IModel#setObject(java.lang.Object)
 		 */
-		public void setObject(Object object)
+		public void setObject(final T object)
 		{
 			locator.setFilterState(object);
 		}

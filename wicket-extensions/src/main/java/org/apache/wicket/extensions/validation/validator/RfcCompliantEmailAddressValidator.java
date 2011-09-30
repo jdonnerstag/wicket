@@ -16,32 +16,31 @@
  */
 package org.apache.wicket.extensions.validation.validator;
 
+import java.util.Map;
+import java.util.regex.Pattern;
+
 import org.apache.wicket.validation.IValidatable;
 import org.apache.wicket.validation.validator.EmailAddressValidator;
-import org.apache.wicket.validation.validator.PatternValidator;
+import org.apache.wicket.validation.validator.StringValidator;
 
 
 /**
  * Validator for validating email addresses according to the RFC 822. This validator uses the
  * regular expression taken from the Perl implementation of RFC 822.
- * 
- * <p>
- * <b>PLEATE NOTE!</b> Only use this validator if you really need it. The regex used is very big and
- * generates a allocates 1-2Kb of memory per session.
- * 
  * <p>
  * Most users will be satisfied with the {@link EmailAddressValidator}
+ * </p>
  * 
  * @see <a href="http://www.ex-parrot.com/~pdw/Mail-RFC822-Address.html">Perl Regex implementation
  *      of RFC 822</a>
  * @see <a href="http://www.ietf.org/rfc/rfc0822.txt?number=822">RFC 822</a>
  * @author Frank Bille
  */
-public class RfcCompliantEmailAddressValidator extends PatternValidator
+public class RfcCompliantEmailAddressValidator extends StringValidator
 {
 	private static final long serialVersionUID = 1L;
 
-	private static final String emailPattern = "(?:(?:\\r\\n)?[ \\t])*(?:(?:(?:[^()<>@,;:\\\".\\[\\] \\000-\\031]+(?:(?:(?:\\r\\n)?[ \\t]"
+	private static final String EMAIL_PATTERN = "(?:(?:\\r\\n)?[ \\t])*(?:(?:(?:[^()<>@,;:\\\".\\[\\] \\000-\\031]+(?:(?:(?:\\r\\n)?[ \\t]"
 		+ ")+|\\Z|(?=[\\[\"()<>@,;:\\\".\\[\\]]))|\"(?:[^\\\"\\r\\\\]|\\\\.|(?:(?:\\r\\n)?[ \\t]))*\"(?:(?:"
 		+ "\\r\\n)?[ \\t])*)(?:\\.(?:(?:\\r\\n)?[ \\t])*(?:[^()<>@,;:\\\".\\[\\] \\000-\\031]+(?:(?:("
 		+ "?:\\r\\n)?[ \\t])+|\\Z|(?=[\\[\"()<>@,;:\\\".\\[\\]]))|\"(?:[^\\\"\\r\\\\]|\\\\.|(?:(?:\\r\\n)?[ "
@@ -124,6 +123,8 @@ public class RfcCompliantEmailAddressValidator extends PatternValidator
 		+ "|(?=[\\[\"()<>@,;:\\\".\\[\\]]))|\\[([^\\[\\]\\r\\\\]|\\\\.)*\\](?:(?:\\r\\n)?[ \\t])*))*\\>(?:("
 		+ "?:\\r\\n)?[ \\t])*))*)?;\\s*)";
 
+	private static final Pattern PATTERN = Pattern.compile(EMAIL_PATTERN);
+
 	/** Singleton instance */
 	private static final RfcCompliantEmailAddressValidator INSTANCE = new RfcCompliantEmailAddressValidator();
 
@@ -137,20 +138,33 @@ public class RfcCompliantEmailAddressValidator extends PatternValidator
 
 	protected RfcCompliantEmailAddressValidator()
 	{
-		super(emailPattern);
+	}
+
+	/**
+	 * Checks a value against this <code>PatternValidator</code>'s {@link Pattern}.
+	 * 
+	 * @param validatable
+	 *            the <code>IValidatable</code> to check
+	 */
+	@Override
+	protected Map<String, Object> variablesMap(final IValidatable<String> validatable)
+	{
+		final Map<String, Object> map = super.variablesMap(validatable);
+		map.put("pattern", EMAIL_PATTERN);
+		return map;
 	}
 
 	@Override
-	protected void onValidate(IValidatable validatable)
+	protected void onValidate(final IValidatable<String> validatable)
 	{
 		String email = validatable.getValue().toString();
 		if (email.length() != email.trim().length())
 		{
 			error(validatable);
 		}
-		else
+		else if (!PATTERN.matcher(validatable.getValue()).matches())
 		{
-			super.onValidate(validatable);
+			error(validatable);
 		}
 	}
 }

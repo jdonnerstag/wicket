@@ -45,7 +45,7 @@ public class RedirectRequestHandler implements IRequestHandler
 	 * @param redirectUrl
 	 *            URL to redirect to.
 	 */
-	public RedirectRequestHandler(String redirectUrl)
+	public RedirectRequestHandler(final String redirectUrl)
 	{
 		this(redirectUrl, HttpServletResponse.SC_MOVED_TEMPORARILY);
 	}
@@ -56,10 +56,10 @@ public class RedirectRequestHandler implements IRequestHandler
 	 * @param status
 	 *            301 (Moved permanently) or 302 (Moved temporarily)
 	 */
-	public RedirectRequestHandler(String redirectUrl, int status)
+	public RedirectRequestHandler(final String redirectUrl, final int status)
 	{
-		if (status != HttpServletResponse.SC_MOVED_PERMANENTLY &&
-			status != HttpServletResponse.SC_MOVED_TEMPORARILY)
+		if ((status != HttpServletResponse.SC_MOVED_PERMANENTLY) &&
+			(status != HttpServletResponse.SC_MOVED_TEMPORARILY))
 		{
 			throw new IllegalStateException("Status must be either 301 or 302, but was: " + status);
 		}
@@ -67,37 +67,26 @@ public class RedirectRequestHandler implements IRequestHandler
 		this.status = status;
 	}
 
-	/**
-	 * @see org.apache.wicket.request.IRequestHandler#detach(org.apache.wicket.request.cycle.RequestCycle)
-	 */
-	public void detach(IRequestCycle requestCycle)
+	/** {@inheritDoc} */
+	public void detach(final IRequestCycle requestCycle)
 	{
 	}
 
-	/**
-	 * FIXME javadoc - what's special about this implementation?
-	 * 
-	 * @see org.apache.wicket.request.IRequestHandler#respond(org.apache.wicket.request.cycle.RequestCycle)
-	 */
-	public void respond(IRequestCycle requestCycle)
+	/** {@inheritDoc} */
+	public void respond(final IRequestCycle requestCycle)
 	{
 		final String location;
 
 		if (redirectUrl.startsWith("/"))
 		{
 			// context-absolute url
-			location = requestCycle.getUrlRenderer().renderContextPathRelativeUrl(redirectUrl,
-				requestCycle.getRequest());
-		}
-		else if (redirectUrl.contains("://"))
-		{
-			// absolute url
-			location = redirectUrl;
+			location = requestCycle.getUrlRenderer().renderContextRelativeUrl(redirectUrl);
 		}
 		else
 		{
-			// relative url, servlet container will translate to absolute as
+			// if relative url, servlet container will translate to absolute as
 			// per the servlet spec
+			// if absolute url still do the same
 			location = redirectUrl;
 		}
 

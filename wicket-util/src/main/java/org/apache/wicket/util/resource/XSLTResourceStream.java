@@ -20,10 +20,11 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.wicket.util.io.IOUtils;
+import org.apache.wicket.util.lang.Bytes;
 import org.apache.wicket.util.time.Time;
 
 /**
@@ -32,8 +33,8 @@ import org.apache.wicket.util.time.Time;
  * to the XSL stylesheet.
  * 
  * <p>
- * FIXME experimental feature, does not implement any kind of caching, use with care, running an XSL
- * transformation for every request is very expensive! Please have a look at
+ * NOTE: this is an experimental feature which does not implement any kind of caching, use with
+ * care, running an XSL transformation for every request is very expensive! Please have a look at
  * {@link ZipResourceStream} for an in-depth explanation of what needs to be done with respect to
  * caching.
  * </p>
@@ -46,7 +47,7 @@ public class XSLTResourceStream extends AbstractResourceStream
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	ByteArrayOutputStream out;
+	private final transient ByteArrayOutputStream out;
 
 	/**
 	 * @return a {@link Map} of XSLT parameters, appropriate for passing information to the XSL
@@ -65,7 +66,7 @@ public class XSLTResourceStream extends AbstractResourceStream
 	 * @param xmlResource
 	 *            the input XML document as an {@link IResourceStream}
 	 */
-	public XSLTResourceStream(IResourceStream xsltResource, IResourceStream xmlResource)
+	public XSLTResourceStream(final IResourceStream xsltResource, final IResourceStream xmlResource)
 	{
 		try
 		{
@@ -83,10 +84,8 @@ public class XSLTResourceStream extends AbstractResourceStream
 			Map<Object, Object> parameters = getParameters();
 			if (parameters != null)
 			{
-				Iterator<Entry<Object, Object>> it = parameters.entrySet().iterator();
-				while (it.hasNext())
+				for (Entry<Object, Object> e : parameters.entrySet())
 				{
-					Entry<Object, Object> e = it.next();
 					trans.setParameter(e.getKey().toString(), e.getValue().toString());
 				}
 			}
@@ -99,15 +98,8 @@ public class XSLTResourceStream extends AbstractResourceStream
 		}
 		finally
 		{
-			try
-			{
-				xmlResource.close();
-				xsltResource.close();
-			}
-			catch (IOException e)
-			{
-				// ignore
-			}
+			IOUtils.closeQuietly(xmlResource);
+			IOUtils.closeQuietly(xsltResource);
 		}
 	}
 
@@ -141,9 +133,9 @@ public class XSLTResourceStream extends AbstractResourceStream
 	 * @see org.apache.wicket.util.resource.IResourceStream#length()
 	 */
 	@Override
-	public long length()
+	public Bytes length()
 	{
-		return out.size();
+		return Bytes.bytes(out.size());
 	}
 
 	/**

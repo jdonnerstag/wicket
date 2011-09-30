@@ -189,6 +189,12 @@ public abstract class Request
 			{
 				return getUrl();
 			}
+
+			@Override
+			public Object getContainerRequest()
+			{
+				return Request.this.getContainerRequest();
+			}
 		};
 	}
 
@@ -207,5 +213,43 @@ public abstract class Request
 		return "";
 	}
 
+	/**
+	 * Returns the context path or an empty string if the application is running under root context.
+	 * Returned path, unless an empty string, will always start with a slash and will never end with
+	 * a slash.
+	 * 
+	 * @return context path
+	 */
+	public String getContextPath()
+	{
+		return "";
+	}
+
+	/**
+	 * Returns the path to which wicket Filter is mapped or an empty string if the filter is mapped
+	 * to {@code /*}. Returned path, unless an empty string, will always start with a slash and will
+	 * never end with a slash.
+	 * 
+	 * @return filter path
+	 */
+	public String getFilterPath()
+	{
+		return "";
+	}
+
+	/**
+	 * Gets charset of the request
+	 * 
+	 * @return request charset
+	 */
 	public abstract Charset getCharset();
+
+	/**
+	 * Provides access to the low-level container request object that implementaion of this
+	 * {@link Request} delegate to. This allows users to access features provided by the container
+	 * requests but not by generalized Wicket {@link Request} objects.
+	 * 
+	 * @return low-level container request object, or {@code null} if none
+	 */
+	public abstract Object getContainerRequest();
 }

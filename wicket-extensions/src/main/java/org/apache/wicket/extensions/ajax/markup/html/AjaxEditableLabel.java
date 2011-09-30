@@ -32,7 +32,7 @@ import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.request.cycle.RequestCycle;
 import org.apache.wicket.util.convert.IConverter;
-import org.apache.wicket.util.string.JavascriptUtils;
+import org.apache.wicket.util.string.JavaScriptUtils;
 import org.apache.wicket.validation.IValidator;
 
 
@@ -81,7 +81,6 @@ public class AjaxEditableLabel<T> extends Panel
 
 	protected class EditorAjaxBehavior extends AbstractDefaultAjaxBehavior
 	{
-
 		private static final long serialVersionUID = 1L;
 
 		/**
@@ -91,14 +90,16 @@ public class AjaxEditableLabel<T> extends Panel
 		{
 		}
 
+		/**
+		 * {@inheritDoc}
+		 */
 		@Override
-		protected void onComponentTag(ComponentTag tag)
+		protected void onComponentTag(final ComponentTag tag)
 		{
 			super.onComponentTag(tag);
 			final String saveCall = "{" +
 				generateCallbackScript("wicketAjaxGet('" + getCallbackUrl() +
 					"&save=true&'+this.name+'='+wicketEncode(this.value)") + "; return false;}";
-
 
 			final String cancelCall = "{" +
 				generateCallbackScript("wicketAjaxGet('" + getCallbackUrl() + "&save=false'") +
@@ -111,17 +112,19 @@ public class AjaxEditableLabel<T> extends Panel
 			tag.put("onblur", saveCall);
 			tag.put("onkeypress", "if (Wicket.Browser.isSafari()) { return; }; " + keypress);
 			tag.put("onkeydown", "if (!Wicket.Browser.isSafari()) { return; }; " + keypress);
-
 		}
 
+		/**
+		 * {@inheritDoc}
+		 */
 		@Override
-		protected void respond(AjaxRequestTarget target)
+		protected void respond(final AjaxRequestTarget target)
 		{
 			RequestCycle requestCycle = RequestCycle.get();
-			boolean save = Boolean.valueOf(requestCycle.getRequest()
+			boolean save = requestCycle.getRequest()
 				.getRequestParameters()
 				.getParameterValue("save")
-				.toBoolean(false));
+				.toBoolean(false);
 
 			if (save)
 			{
@@ -152,13 +155,16 @@ public class AjaxEditableLabel<T> extends Panel
 		 * 
 		 * @param event
 		 */
-		public LabelAjaxBehavior(String event)
+		public LabelAjaxBehavior(final String event)
 		{
 			super(event);
 		}
 
+		/**
+		 * {@inheritDoc}
+		 */
 		@Override
-		protected void onEvent(AjaxRequestTarget target)
+		protected void onEvent(final AjaxRequestTarget target)
 		{
 			onEdit(target);
 		}
@@ -169,7 +175,7 @@ public class AjaxEditableLabel<T> extends Panel
 	 * 
 	 * @param id
 	 */
-	public AjaxEditableLabel(String id)
+	public AjaxEditableLabel(final String id)
 	{
 		super(id);
 		setOutputMarkupId(true);
@@ -181,7 +187,7 @@ public class AjaxEditableLabel<T> extends Panel
 	 * @param id
 	 * @param model
 	 */
-	public AjaxEditableLabel(String id, IModel<T> model)
+	public AjaxEditableLabel(final String id, final IModel<T> model)
 	{
 		super(id, model);
 		setOutputMarkupId(true);
@@ -197,7 +203,7 @@ public class AjaxEditableLabel<T> extends Panel
 	 *            The validator
 	 * @return This
 	 */
-	public final AjaxEditableLabel<T> add(IValidator<T> validator)
+	public final AjaxEditableLabel<T> add(final IValidator<T> validator)
 	{
 		getEditor().add(validator);
 		return this;
@@ -209,11 +215,9 @@ public class AjaxEditableLabel<T> extends Panel
 	 * they should use a converter like they normally would (when this method returns null), or
 	 * whether they should use a custom converter (when this method is overridden and returns not
 	 * null).
-	 * 
-	 * @see org.apache.wicket.Component#getConverter(java.lang.Class)
 	 */
 	@Override
-	public IConverter getConverter(Class<?> type)
+	public <C> IConverter<C> getConverter(final Class<C> type)
 	{
 		return null;
 	}
@@ -232,10 +236,10 @@ public class AjaxEditableLabel<T> extends Panel
 	}
 
 	/**
-	 * @see org.apache.wicket.MarkupContainer#setDefaultModel(org.apache.wicket.model.IModel)
+	 * {@inheritDoc}
 	 */
 	@Override
-	public final AjaxEditableLabel<T> setDefaultModel(IModel<?> model)
+	public final AjaxEditableLabel<T> setDefaultModel(final IModel<?> model)
 	{
 		super.setDefaultModel(model);
 		getLabel().setDefaultModel(model);
@@ -262,7 +266,7 @@ public class AjaxEditableLabel<T> extends Panel
 	 * @param type
 	 * @return this for chaining
 	 */
-	public final AjaxEditableLabel<T> setType(Class<?> type)
+	public final AjaxEditableLabel<T> setType(final Class<?> type)
 	{
 		getEditor().setType(type);
 		return this;
@@ -279,16 +283,17 @@ public class AjaxEditableLabel<T> extends Panel
 	 *            The model
 	 * @return The editor
 	 */
-	protected FormComponent<T> newEditor(MarkupContainer parent, String componentId, IModel<T> model)
+	protected FormComponent<T> newEditor(final MarkupContainer parent, final String componentId,
+		final IModel<T> model)
 	{
 		TextField<T> editor = new TextField<T>(componentId, model)
 		{
 			private static final long serialVersionUID = 1L;
 
 			@Override
-			public IConverter getConverter(Class<?> type)
+			public <C> IConverter<C> getConverter(final Class<C> type)
 			{
-				IConverter c = AjaxEditableLabel.this.getConverter(type);
+				IConverter<C> c = AjaxEditableLabel.this.getConverter(type);
 				return c != null ? c : super.getConverter(type);
 			}
 
@@ -323,24 +328,29 @@ public class AjaxEditableLabel<T> extends Panel
 	 *            The model
 	 * @return The editor
 	 */
-	protected Component newLabel(MarkupContainer parent, String componentId, IModel<T> model)
+	protected Component newLabel(final MarkupContainer parent, final String componentId,
+		final IModel<T> model)
 	{
 		Label label = new Label(componentId, model)
 		{
 			private static final long serialVersionUID = 1L;
 
 			@Override
-			public IConverter getConverter(Class<?> type)
+			public <C> IConverter<C> getConverter(final Class<C> type)
 			{
-				IConverter c = AjaxEditableLabel.this.getConverter(type);
+				IConverter<C> c = AjaxEditableLabel.this.getConverter(type);
 				return c != null ? c : super.getConverter(type);
 			}
 
+			/**
+			 * {@inheritDoc}
+			 */
 			@Override
-			protected void onComponentTagBody(MarkupStream markupStream, ComponentTag openTag)
+			public void onComponentTagBody(final MarkupStream markupStream,
+				final ComponentTag openTag)
 			{
 				Object modelObject = getDefaultModelObject();
-				if (modelObject == null || "".equals(modelObject))
+				if ((modelObject == null) || "".equals(modelObject))
 				{
 					replaceComponentTagBody(markupStream, openTag, defaultNullLabel());
 				}
@@ -376,7 +386,7 @@ public class AjaxEditableLabel<T> extends Panel
 	{
 		if (editor == null)
 		{
-			initLabelAndEditor(getParentModel());
+			initLabelAndEditor(getDelegatingParentModel());
 		}
 		return editor;
 	}
@@ -390,13 +400,13 @@ public class AjaxEditableLabel<T> extends Panel
 	{
 		if (label == null)
 		{
-			initLabelAndEditor(getParentModel());
+			initLabelAndEditor(getDelegatingParentModel());
 		}
 		return label;
 	}
 
 	/**
-	 * @see org.apache.wicket.Component#onBeforeRender()
+	 * {@inheritDoc}
 	 */
 	@Override
 	protected void onBeforeRender()
@@ -405,7 +415,7 @@ public class AjaxEditableLabel<T> extends Panel
 		// lazily add label and editor
 		if (editor == null)
 		{
-			initLabelAndEditor(getParentModel());
+			initLabelAndEditor(getDelegatingParentModel());
 		}
 		// obsolete with WICKET-1919
 		// label.setEnabled(isEnabledInHierarchy());
@@ -418,7 +428,7 @@ public class AjaxEditableLabel<T> extends Panel
 	 * @param target
 	 *            the ajax request target
 	 */
-	protected void onCancel(AjaxRequestTarget target)
+	protected void onCancel(final AjaxRequestTarget target)
 	{
 		label.setVisible(true);
 		editor.setVisible(false);
@@ -431,14 +441,14 @@ public class AjaxEditableLabel<T> extends Panel
 	 * @param target
 	 *            Ajax target
 	 */
-	public void onEdit(AjaxRequestTarget target)
+	public void onEdit(final AjaxRequestTarget target)
 	{
 		label.setVisible(false);
 		editor.setVisible(true);
 		target.add(AjaxEditableLabel.this);
 		// put focus on the textfield and stupid explorer hack to move the
 		// caret to the end
-		target.appendJavascript("{ var el=wicketGet('" + editor.getMarkupId() + "');" +
+		target.appendJavaScript("{ var el=wicketGet('" + editor.getMarkupId() + "');" +
 			"   if (el.createTextRange) { " +
 			"     var v = el.value; var r = el.createTextRange(); " +
 			"     r.moveStart('character', v.length); r.select(); } }");
@@ -451,17 +461,16 @@ public class AjaxEditableLabel<T> extends Panel
 	 * @param target
 	 *            the ajax request target
 	 */
-	protected void onError(AjaxRequestTarget target)
+	protected void onError(final AjaxRequestTarget target)
 	{
 		Serializable errorMessage = editor.getFeedbackMessage().getMessage();
-		if (errorMessage instanceof String)
+		if (errorMessage != null)
 		{
-			target.appendJavascript("window.status='" +
-				JavascriptUtils.escapeQuotes((String)errorMessage) + "';");
+			target.appendJavaScript("window.status='" +
+				JavaScriptUtils.escapeQuotes(errorMessage.toString()) + "';");
 		}
-		target.appendJavascript("{var el=wicketGet('" + editor.getMarkupId() +
+		target.appendJavaScript("{var el=wicketGet('" + editor.getMarkupId() +
 			"'); el.select(); el.focus();}");
-		target.add(editor);
 	}
 
 	/**
@@ -472,13 +481,13 @@ public class AjaxEditableLabel<T> extends Panel
 	 * @param target
 	 *            The ajax request target
 	 */
-	protected void onSubmit(AjaxRequestTarget target)
+	protected void onSubmit(final AjaxRequestTarget target)
 	{
 		label.setVisible(true);
 		editor.setVisible(false);
 		target.add(AjaxEditableLabel.this);
 
-		target.appendJavascript("window.status='';");
+		target.appendJavaScript("window.status='';");
 	}
 
 	/**
@@ -487,13 +496,43 @@ public class AjaxEditableLabel<T> extends Panel
 	 * @param model
 	 *            The model for the label and editor
 	 */
-	private void initLabelAndEditor(IModel<T> model)
+	private void initLabelAndEditor(final IModel<T> model)
 	{
 		editor = newEditor(this, "editor", model);
 		label = newLabel(this, "label", model);
 		add(label);
 		add(editor);
 	}
+
+	/**
+	 * get a model that accesses the parent model lazily. this is required since we eventually
+	 * request the parents model before the component is added to the parent.
+	 * 
+	 * @return model
+	 */
+	private IModel<T> getDelegatingParentModel()
+	{
+		return new IModel<T>()
+		{
+			private static final long serialVersionUID = 1L;
+
+			public T getObject()
+			{
+				return getParentModel().getObject();
+			}
+
+			public void setObject(final T object)
+			{
+				getParentModel().setObject(object);
+			}
+
+			public void detach()
+			{
+				getParentModel().detach();
+			}
+		};
+	}
+
 
 	/**
 	 * @return Gets the parent model in case no explicit model was specified.
@@ -538,8 +577,6 @@ public class AjaxEditableLabel<T> extends Panel
 
 	/**
 	 * Dummy override to fix WICKET-1239
-	 * 
-	 * @see org.apache.wicket.Component#onModelChanged()
 	 */
 	@Override
 	protected void onModelChanged()
@@ -549,8 +586,6 @@ public class AjaxEditableLabel<T> extends Panel
 
 	/**
 	 * Dummy override to fix WICKET-1239
-	 * 
-	 * @see org.apache.wicket.Component#onModelChanging()
 	 */
 	@Override
 	protected void onModelChanging()

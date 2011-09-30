@@ -21,7 +21,6 @@ import org.apache.wicket.Session;
 import org.apache.wicket.devutils.DevUtilsPanel;
 import org.apache.wicket.markup.html.basic.Label;
 
-
 /**
  * A Wicket panel that shows interesting information about a given Wicket session.
  * 
@@ -48,7 +47,6 @@ public final class SessionView extends DevUtilsPanel
 		add(new Label("locale", session.getLocale().toString()));
 		add(new Label("style", session.getStyle() == null ? "[None]" : session.getStyle()));
 		add(new Label("size", new SessionSizeModel(session)));
-		add(new Label("totalSize", new SessionTotalSizeModel(session)));
 	}
-	
+
 }

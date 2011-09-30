@@ -28,14 +28,15 @@ import org.apache.wicket.IInitializer;
 import org.apache.wicket.WicketRuntimeException;
 import org.apache.wicket.protocol.http.WebApplication;
 import org.apache.wicket.util.file.WebApplicationPath;
+import org.apache.wicket.util.io.IOUtils;
 import org.apache.wicket.util.resource.IResourceStream;
 import org.apache.wicket.util.resource.ResourceStreamNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * An implementation of {@link wicket.IInitializer} for the Velocity Runtime Singleton. If
- * Application is an instance of WebApplication, Initializer will retrieve
+ * An implementation of {@link org.apache.wicket.IInitializer} for the Velocity Runtime Singleton.
+ * If Application is an instance of WebApplication, Initializer will retrieve
  * "velocityPropertiesFolder" as an initparam to point to the directory the properties file lives
  * in, and "velocity.properties" for the name of the properties file. If the params don't exist,
  * then velocity.properties next to this class will be loaded.
@@ -45,14 +46,10 @@ public class Initializer implements IInitializer
 {
 	private static final Logger log = LoggerFactory.getLogger(Initializer.class);
 
-	private String velocityPropertiesFile = "velocity.properties";
-
-	private String velocityPropertiesFolder;
-
 	/**
-	 * @see org.apache.wicket.IInitializer#init(org.apache.wicket.Application)
+	 * {@inheritDoc}
 	 */
-	public void init(Application application)
+	public void init(final Application application)
 	{
 		Properties props = getVelocityProperties(application);
 
@@ -74,14 +71,15 @@ public class Initializer implements IInitializer
 		}
 	}
 
-	private Properties getVelocityProperties(Application application)
+	private Properties getVelocityProperties(final Application application)
 	{
+		String velocityPropertiesFile = "velocity.properties";
+
 		if (application instanceof WebApplication)
 		{
 			WebApplication webapp = (WebApplication)application;
 			ServletContext servletContext = webapp.getServletContext();
-			ServletContext sc = servletContext;
-			velocityPropertiesFolder = sc.getInitParameter("velocityPropertiesFolder");
+			String propertiesFolder = servletContext.getInitParameter("velocityPropertiesFolder");
 			String propsFile = servletContext.getInitParameter("velocity.properties");
 
 			if (null != propsFile)
@@ -89,10 +87,10 @@ public class Initializer implements IInitializer
 				velocityPropertiesFile = propsFile;
 			}
 
-			if (null != velocityPropertiesFolder)
+			if (null != propertiesFolder)
 			{
-				WebApplicationPath webPath = new WebApplicationPath(sc);
-				webPath.add(velocityPropertiesFolder);
+				WebApplicationPath webPath = new WebApplicationPath(servletContext);
+				webPath.add(propertiesFolder);
 				IResourceStream stream = webPath.find(Initializer.class, velocityPropertiesFile);
 				InputStream is = null;
 				try
@@ -112,16 +110,13 @@ public class Initializer implements IInitializer
 				}
 				finally
 				{
-					if (is != null)
+					try
 					{
-						try
-						{
-							is.close();
-						}
-						catch (IOException e)
-						{
-							log.error(e.getMessage(), e);
-						}
+						IOUtils.close(is);
+					}
+					catch (IOException e)
+					{
+						log.error(e.getMessage(), e);
 					}
 				}
 			}
@@ -141,18 +136,21 @@ public class Initializer implements IInitializer
 		}
 		finally
 		{
-			if (is != null)
+			try
 			{
-				try
-				{
-					is.close();
-				}
-				catch (IOException e)
-				{
-					log.error(e.getMessage(), e);
-				}
+				IOUtils.close(is);
+			}
+			catch (IOException e)
+			{
+				log.error(e.getMessage(), e);
 			}
 		}
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
+	public void destroy(final Application application)
+	{
+	}
 }

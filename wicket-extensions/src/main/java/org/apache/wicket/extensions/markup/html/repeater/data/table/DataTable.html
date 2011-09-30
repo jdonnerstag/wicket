@@ -15,13 +15,13 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 -->
-<wicket:panel>
-
-<thead>
-	<wicket:container wicket:id="topToolbars"></wicket:container>
+<wicket:panel xmlns:wicket="http://wicket.apache.org">
+<caption wicket:id="caption"></caption>
+<thead wicket:id="topToolbars">
+	<wicket:container wicket:id="toolbars"></wicket:container>
 </thead>
-<tfoot>
-	<wicket:container wicket:id="bottomToolbars"></wicket:container>
+<tfoot wicket:id="bottomToolbars">
+	<wicket:container wicket:id="toolbars"></wicket:container>
 </tfoot>
 <tbody wicket:id="body">
 	<tr wicket:id="rows">

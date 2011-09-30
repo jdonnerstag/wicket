@@ -16,9 +16,7 @@
  */
 package org.apache.wicket.extensions.markup.html.tree;
 
-import junit.framework.TestCase;
-
-import org.apache.wicket.util.tester.WicketTester;
+import org.apache.wicket.WicketTestCase;
 
 /**
  * Try to move the c3 node to the c2 at the described tree model:
@@ -31,14 +29,18 @@ import org.apache.wicket.util.tester.WicketTester;
  * 
  * - c3
  * 
- * @see http://issues.apache.org/jira/browse/WICKET-2888
+ * @see "http://issues.apache.org/jira/browse/WICKET-2888"
  */
-public class MoveChildToParentNodeMarkedForRecreationTest extends TestCase
+public class MoveChildToParentNodeMarkedForRecreationTest extends WicketTestCase
 {
+	/**
+	 * test()
+	 */
 	public void test()
 	{
-		WicketTester tester = new WicketTester();
-		tester.startPage(MoveChildToParentNodeMarkedForRecreationTestPage.class);
+		MoveChildToParentNodeMarkedForRecreationTestPage testPage = new MoveChildToParentNodeMarkedForRecreationTestPage();
+		tester.startPage(testPage);
 		tester.clickLink("moveC3ToC2");
+		assertTrue(testPage.c2.isNodeChild(testPage.c3));
 	}
 }

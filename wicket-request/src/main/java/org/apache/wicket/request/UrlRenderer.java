@@ -17,36 +17,46 @@
 package org.apache.wicket.request;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.wicket.util.lang.Args;
 import org.apache.wicket.util.string.PrependingStringBuffer;
+import org.apache.wicket.util.string.Strings;
 
 /**
- * Takes care of rendering relative (or in future possibly absolute - depending on configuration)
- * URLs.
+ * Takes care of rendering URLs.
  * <p>
- * All Urls are rendered relative to the base Url. Base Url is normally Url of the page being
+ * Normally Urls are rendered relative to the base Url. Base Url is normally Url of the page being
  * rendered. However, during Ajax request and redirect to buffer rendering the BaseUrl needs to be
  * adjusted.
  * 
  * @author Matej Knopp
+ * @author Igor Vaynberg
  */
 public class UrlRenderer
 {
+	private static final Map<String, Integer> PROTO_TO_PORT = new HashMap<String, Integer>();
+	static
+	{
+		PROTO_TO_PORT.put("http", 80);
+		PROTO_TO_PORT.put("https", 443);
+	}
+
+	private final Request request;
 	private Url baseUrl;
 
 	/**
 	 * Construct.
 	 * 
-	 * @param base
-	 *            base Url. All generated Urls will be relative to this Url.
+	 * @param request
+	 *            Request that serves as the base for rendering urls
 	 */
-	public UrlRenderer(final Url base)
+	public UrlRenderer(final Request request)
 	{
-		Args.notNull(base, "base");
-
-		baseUrl = base;
+		this.request = request;
+		baseUrl = request.getClientUrl();
 	}
 
 	/**
@@ -75,17 +85,101 @@ public class UrlRenderer
 	}
 
 	/**
-	 * Renders the Url relative to currently set Base Url.
-	 * 
-	 * This method is only intended for Wicket URLs, because the {@link Url} object represents part
-	 * of URL after Wicket Filter.
-	 * 
-	 * For general URLs within context use {@link #renderContextPathRelativeUrl(String, Request)}
+	 * Renders the Url
 	 * 
 	 * @param url
 	 * @return Url rendered as string
 	 */
 	public String renderUrl(final Url url)
+	{
+		if (shouldRenderAsFull(url))
+		{
+			return renderFullUrl(url);
+		}
+		else
+		{
+			return renderRelativeUrl(url);
+		}
+	}
+
+	/**
+	 * Renders a full URL in the {@code protocol://hostname:port/path} format
+	 * 
+	 * @param url
+	 * @return rendered URL
+	 */
+	public String renderFullUrl(final Url url)
+	{
+		final String protocol = resolveProtocol(url);
+		final String host = resolveHost(url);
+		final Integer port = resolvePort(url);
+		final String path = url.toString();
+
+		StringBuilder render = new StringBuilder();
+		render.append(protocol);
+		render.append("://");
+		render.append(host);
+
+		if ((port != null) && !port.equals(PROTO_TO_PORT.get(protocol)))
+		{
+			render.append(':');
+			render.append(port);
+		}
+
+		render.append(request.getContextPath());
+		render.append(request.getFilterPath());
+		return Strings.join("/", render.toString(), path);
+	}
+
+	/**
+	 * Gets port that should be used to render the url
+	 * 
+	 * @param url
+	 *            url being rendered
+	 * @return port or {@code null} if none is set
+	 */
+	protected Integer resolvePort(final Url url)
+	{
+		return choose(url.getPort(), baseUrl.getPort(), request.getClientUrl().getPort());
+	}
+
+	/**
+	 * Gets the host name that should be used to render the url
+	 * 
+	 * @param url
+	 *            url being rendered
+	 * @return the host name or {@code null} if none is set
+	 */
+	protected String resolveHost(final Url url)
+	{
+		return choose(url.getHost(), baseUrl.getHost(), request.getClientUrl().getHost());
+	}
+
+	/**
+	 * Gets the protocol that should be used to render the url
+	 * 
+	 * @param url
+	 *            url being rendered
+	 * @return the protocol or {@code null} if none is set
+	 */
+	protected String resolveProtocol(final Url url)
+	{
+		return choose(url.getProtocol(), baseUrl.getProtocol(), request.getClientUrl()
+			.getProtocol());
+	}
+
+	/**
+	 * Renders the Url relative to currently set Base Url.
+	 * 
+	 * This method is only intended for Wicket URLs, because the {@link Url} object represents part
+	 * of URL after Wicket Filter.
+	 * 
+	 * For general URLs within context use {@link #renderContextPathRelativeUrl(String)}
+	 * 
+	 * @param url
+	 * @return Url rendered as string
+	 */
+	public String renderRelativeUrl(final Url url)
 	{
 		Args.notNull(url, "url");
 
@@ -118,30 +212,64 @@ public class UrlRenderer
 			}
 
 			// we want the new URL to have at least one segment (other than possible ../)
-			if (last != null && (urlSegments.isEmpty() || baseUrlSegments.size() == common))
+			if ((last != null) && (urlSegments.isEmpty() || (baseUrlSegments.size() == common)))
 			{
 				--common;
 				urlSegments.add(0, last);
 			}
 
-			for (int i = common + 1; i < baseUrlSegments.size(); ++i)
+			int baseUrlSize = baseUrlSegments.size();
+			if (common + 1 == baseUrlSize && urlSegments.isEmpty())
 			{
-				newSegments.add("..");
+				newSegments.add(".");
+			}
+			else
+			{
+
+				for (int i = common + 1; i < baseUrlSize; ++i)
+				{
+					newSegments.add("..");
+				}
 			}
 			newSegments.addAll(urlSegments);
 
-			return new Url(newSegments, url.getQueryParameters()).toString();
+			String renderedUrl = new Url(newSegments, url.getQueryParameters()).toString();
+			return Strings.isEmpty(renderedUrl) ? "." : renderedUrl;
 		}
+	}
+
+	/**
+	 * Determines whether a URL should be rendered in its full form
+	 * 
+	 * @param url
+	 * @return {@code true} if URL should be rendered in the full form
+	 */
+	protected boolean shouldRenderAsFull(final Url url)
+	{
+		if (!Strings.isEmpty(url.getProtocol()) &&
+			!url.getProtocol().equals(request.getClientUrl().getProtocol()))
+		{
+			return true;
+		}
+		if (!Strings.isEmpty(url.getHost()) &&
+			!url.getHost().equals(request.getClientUrl().getHost()))
+		{
+			return true;
+		}
+		if ((url.getPort() != null) && !url.getPort().equals(request.getClientUrl().getPort()))
+		{
+			return true;
+		}
+		return false;
 	}
 
 	/**
 	 * Renders the URL within context relative to current base URL.
 	 * 
 	 * @param url
-	 * @param request
 	 * @return relative URL
 	 */
-	public String renderContextPathRelativeUrl(String url, final Request request)
+	public String renderContextRelativeUrl(String url)
 	{
 		Args.notNull(url, "url");
 
@@ -151,7 +279,7 @@ public class UrlRenderer
 		}
 
 		PrependingStringBuffer buffer = new PrependingStringBuffer(url);
-		for (int i = 0; i < baseUrl.getSegments().size() - 1; ++i)
+		for (int i = 0; i < getBaseUrl().getSegments().size() - 1; ++i)
 		{
 			buffer.prepend("../");
 		}
@@ -159,5 +287,45 @@ public class UrlRenderer
 		buffer.prepend(request.getPrefixToContextPath());
 
 		return buffer.toString();
+	}
+
+	/**
+	 * Renders the URL within context relative to current base URL.
+	 * 
+	 * @param url
+	 * @return relative URL
+	 * @deprecated
+	 * @see #renderContextRelativeUrl(String)
+	 */
+	@Deprecated
+	public String renderContextPathRelativeUrl(String url)
+	{
+		return renderContextRelativeUrl(url);
+	}
+
+	private static String choose(String value, final String fallback1, final String fallback2)
+	{
+		if (Strings.isEmpty(value))
+		{
+			value = fallback1;
+			if (Strings.isEmpty(value))
+			{
+				value = fallback2;
+			}
+		}
+		return value;
+	}
+
+	private static Integer choose(Integer value, final Integer fallback1, final Integer fallback2)
+	{
+		if (value == null)
+		{
+			value = fallback1;
+			if (value == null)
+			{
+				value = fallback2;
+			}
+		}
+		return value;
 	}
 }

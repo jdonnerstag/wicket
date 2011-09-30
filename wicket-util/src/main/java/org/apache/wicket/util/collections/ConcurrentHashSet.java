@@ -63,7 +63,7 @@ public class ConcurrentHashSet<E> extends AbstractSet<E>
 	 * @throws NullPointerException
 	 *             if the specified collection is null.
 	 */
-	public ConcurrentHashSet(Collection<? extends E> c)
+	public ConcurrentHashSet(final Collection<? extends E> c)
 	{
 		map = new ConcurrentHashMap<E, Object>(Math.max((int)(c.size() / .75f) + 1, 16));
 		addAll(c);
@@ -80,7 +80,7 @@ public class ConcurrentHashSet<E> extends AbstractSet<E>
 	 * @throws IllegalArgumentException
 	 *             if the initial capacity is less than zero, or if the load factor is nonpositive.
 	 */
-	public ConcurrentHashSet(int initialCapacity, float loadFactor)
+	public ConcurrentHashSet(final int initialCapacity, final float loadFactor)
 	{
 		map = new ConcurrentHashMap<E, Object>(initialCapacity, loadFactor, 16);
 	}
@@ -94,14 +94,13 @@ public class ConcurrentHashSet<E> extends AbstractSet<E>
 	 * @throws IllegalArgumentException
 	 *             if the initial capacity is less than zero.
 	 */
-	public ConcurrentHashSet(int initialCapacity)
+	public ConcurrentHashSet(final int initialCapacity)
 	{
 		map = new ConcurrentHashMap<E, Object>(initialCapacity);
 	}
 
 	/**
-	 * 
-	 * @see java.util.AbstractCollection#iterator()
+	 * {@inheritDoc}
 	 */
 	@Override
 	public Iterator<E> iterator()
@@ -110,8 +109,7 @@ public class ConcurrentHashSet<E> extends AbstractSet<E>
 	}
 
 	/**
-	 * 
-	 * @see java.util.AbstractCollection#size()
+	 * {@inheritDoc}
 	 */
 	@Override
 	public int size()
@@ -120,8 +118,7 @@ public class ConcurrentHashSet<E> extends AbstractSet<E>
 	}
 
 	/**
-	 * 
-	 * @see java.util.AbstractCollection#isEmpty()
+	 * {@inheritDoc}
 	 */
 	@Override
 	public boolean isEmpty()
@@ -130,38 +127,34 @@ public class ConcurrentHashSet<E> extends AbstractSet<E>
 	}
 
 	/**
-	 * 
-	 * @see java.util.AbstractCollection#contains(java.lang.Object)
+	 * {@inheritDoc}
 	 */
 	@Override
-	public boolean contains(Object o)
+	public boolean contains(final Object o)
 	{
 		return map.containsKey(o);
 	}
 
 	/**
-	 * 
-	 * @see java.util.AbstractCollection#add(java.lang.Object)
+	 * {@inheritDoc}
 	 */
 	@Override
-	public boolean add(E o)
+	public boolean add(final E o)
 	{
 		return map.put(o, PRESENT) == null;
 	}
 
 	/**
-	 * 
-	 * @see java.util.AbstractCollection#remove(java.lang.Object)
+	 * {@inheritDoc}
 	 */
 	@Override
-	public boolean remove(Object o)
+	public boolean remove(final Object o)
 	{
 		return map.remove(o) == PRESENT;
 	}
 
 	/**
-	 * 
-	 * @see java.util.AbstractCollection#clear()
+	 * {@inheritDoc}
 	 */
 	@Override
 	public void clear()
@@ -170,12 +163,11 @@ public class ConcurrentHashSet<E> extends AbstractSet<E>
 	}
 
 	/**
-	 * 
-	 * @see java.lang.Object#clone()
+	 * {@inheritDoc}
 	 */
 	@SuppressWarnings("unchecked")
 	@Override
-	public Object clone()
+	public Object clone() throws CloneNotSupportedException
 	{
 		try
 		{
@@ -194,14 +186,14 @@ public class ConcurrentHashSet<E> extends AbstractSet<E>
 	 * @param s
 	 * @throws java.io.IOException
 	 */
-	private void writeObject(java.io.ObjectOutputStream s) throws java.io.IOException
+	private void writeObject(final java.io.ObjectOutputStream s) throws java.io.IOException
 	{
 		s.defaultWriteObject();
 		s.writeInt(map.size());
 
-		for (Iterator<E> i = map.keySet().iterator(); i.hasNext();)
+		for (E key : map.keySet())
 		{
-			s.writeObject(i.next());
+			s.writeObject(key);
 		}
 	}
 
@@ -213,7 +205,7 @@ public class ConcurrentHashSet<E> extends AbstractSet<E>
 	 * @throws IOException
 	 */
 	@SuppressWarnings("unchecked")
-	private void readObject(ObjectInputStream inputStream) throws ClassNotFoundException,
+	private void readObject(final ObjectInputStream inputStream) throws ClassNotFoundException,
 		IOException
 	{
 		inputStream.defaultReadObject();

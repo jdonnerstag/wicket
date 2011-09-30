@@ -42,8 +42,12 @@ import org.apache.wicket.IClusterable;
  * @author Eelco Hillenius
  * @author Jonathan Locke
  * 
+ * @param <C>
+ *            The object to convert from and to String
+ * @see org.apache.wicket.Component#getConverter(Class)
+ * @see org.apache.wicket.Application#getConverterLocator()
  */
-public interface IConverter extends IClusterable
+public interface IConverter<C> extends IClusterable
 {
 	/**
 	 * Converts the given {@link String} value
@@ -54,7 +58,7 @@ public interface IConverter extends IClusterable
 	 *            The locale used to convert the value
 	 * @return The converted value
 	 */
-	Object convertToObject(String value, Locale locale);
+	C convertToObject(String value, Locale locale);
 
 	/**
 	 * Converts the given value to a string.
@@ -66,5 +70,5 @@ public interface IConverter extends IClusterable
 	 * 
 	 * @return The converted string value
 	 */
-	String convertToString(Object value, Locale locale);
+	String convertToString(C value, Locale locale);
 }

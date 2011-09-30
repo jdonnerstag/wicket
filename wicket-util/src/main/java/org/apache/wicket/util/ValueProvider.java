@@ -33,12 +33,11 @@ public class ValueProvider<T> implements IProvider<T>
 	 * @param value
 	 *            value to provide
 	 */
-	public ValueProvider(T value)
+	public ValueProvider(final T value)
 	{
 		this.value = value;
 	}
 
-	/** {@inheritDoc} */
 	public T get()
 	{
 		return value;
@@ -53,9 +52,8 @@ public class ValueProvider<T> implements IProvider<T>
 	 *            value
 	 * @return provider
 	 */
-	public static <T> ValueProvider<T> of(T value)
+	public static <T> ValueProvider<T> of(final T value)
 	{
 		return new ValueProvider<T>(value);
 	}
-
 }

@@ -105,7 +105,7 @@ public class SpringWebApplicationFactory implements IWebApplicationFactory
 	 * @param filter
 	 * @return location of context config
 	 */
-	protected final String getContextConfigLocation(WicketFilter filter)
+	protected final String getContextConfigLocation(final WicketFilter filter)
 	{
 		return filter.getFilterConfig().getInitParameter("contextConfigLocation");
 	}
@@ -124,7 +124,7 @@ public class SpringWebApplicationFactory implements IWebApplicationFactory
 	/**
 	 * @see IWebApplicationFactory#createApplication(WicketFilter)
 	 */
-	public WebApplication createApplication(WicketFilter filter)
+	public WebApplication createApplication(final WicketFilter filter)
 	{
 		ServletContext sc = filter.getFilterConfig().getServletContext();
 
@@ -139,7 +139,7 @@ public class SpringWebApplicationFactory implements IWebApplicationFactory
 		return createApplication((additionalContext != null) ? additionalContext : ac, beanName);
 	}
 
-	private WebApplication createApplication(ApplicationContext ac, String beanName)
+	private WebApplication createApplication(final ApplicationContext ac, final String beanName)
 	{
 		if (beanName != null)
 		{
@@ -147,23 +147,23 @@ public class SpringWebApplicationFactory implements IWebApplicationFactory
 			if (application == null)
 			{
 				throw new IllegalArgumentException(
-						"Unable to find WebApplication bean with name [" + beanName + "]");
+					"Unable to find WebApplication bean with name [" + beanName + "]");
 			}
 			return application;
 		}
 		else
 		{
-			Map< ? , ? > beans = BeanFactoryUtils.beansOfTypeIncludingAncestors(ac,
-					WebApplication.class, false, false);
+			Map<?, ?> beans = BeanFactoryUtils.beansOfTypeIncludingAncestors(ac,
+				WebApplication.class, false, false);
 			if (beans.size() == 0)
 			{
 				throw new IllegalStateException("bean of type [" + WebApplication.class.getName() +
-						"] not found");
+					"] not found");
 			}
 			if (beans.size() > 1)
 			{
 				throw new IllegalStateException("More than one bean of type [" +
-						WebApplication.class.getName() + "] found, must have only one");
+					WebApplication.class.getName() + "] found, must have only one");
 			}
 			return (WebApplication)beans.values().iterator().next();
 		}
@@ -181,7 +181,7 @@ public class SpringWebApplicationFactory implements IWebApplicationFactory
 	 * @throws BeansException
 	 */
 	protected final ConfigurableWebApplicationContext createWebApplicationContext(
-			WebApplicationContext parent, WicketFilter filter) throws BeansException
+		final WebApplicationContext parent, final WicketFilter filter) throws BeansException
 	{
 		ConfigurableWebApplicationContext wac = newApplicationContext();
 		wac.setParent(parent);
@@ -203,14 +203,14 @@ public class SpringWebApplicationFactory implements IWebApplicationFactory
 	 * @param filter
 	 *            wicket filter
 	 */
-	protected void postProcessWebApplicationContext(ConfigurableWebApplicationContext wac,
-			WicketFilter filter)
+	protected void postProcessWebApplicationContext(final ConfigurableWebApplicationContext wac,
+		final WicketFilter filter)
 	{
 		// noop
 	}
 
 	/** {@inheritDoc} */
-	public void destroy()
+	public void destroy(final WicketFilter filter)
 	{
 		if (additionalContext != null)
 		{

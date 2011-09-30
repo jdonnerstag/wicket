@@ -21,14 +21,16 @@ import java.util.List;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.wicket.util.io.Streams;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+/**
+ * TODO javadoc
+ */
 public class SimpleGetCommand extends AbstractGetCommand
 {
-
-	private static final Log log = LogFactory.getLog(SimpleGetCommand.class);
+	private static final Logger log = LoggerFactory.getLogger(SimpleGetCommand.class);
 
 	private boolean printResponse = false;
 
@@ -55,7 +57,7 @@ public class SimpleGetCommand extends AbstractGetCommand
 	 */
 	public SimpleGetCommand(String url, int iterations)
 	{
-		super(Arrays.asList(new String[] { url }), iterations);
+		super(Arrays.asList(url), iterations);
 	}
 
 	/**
@@ -80,8 +82,8 @@ public class SimpleGetCommand extends AbstractGetCommand
 	}
 
 	/**
-	 * @see org.apache.wicket.threadtest.tester.AbstractGetCommand#doGet(org.apache
-	 *      .commons.httpclient.HttpClient, java.lang.String)
+	 * @see org.apache.wicket.threadtest.tester.AbstractGetCommand#doGet(org.apache.commons.httpclient.HttpClient,
+	 *      String)
 	 */
 	@Override
 	protected void doGet(HttpClient client, String url) throws Exception

@@ -62,7 +62,7 @@ public abstract class VariableInterpolator
 	 *            <code>${varname}</code> string will be left in the <code>String</code> so that
 	 *            multiple interpolators can be chained
 	 */
-	public VariableInterpolator(final String string, boolean exceptionOnNullVarValue)
+	public VariableInterpolator(final String string, final boolean exceptionOnNullVarValue)
 	{
 		this.string = string;
 		this.exceptionOnNullVarValue = exceptionOnNullVarValue;
@@ -77,7 +77,7 @@ public abstract class VariableInterpolator
 	 */
 	protected abstract String getValue(String variableName);
 
-	private int lowerPositive(int i1, int i2)
+	private int lowerPositive(final int i1, final int i2)
 	{
 		if (i2 < 0)
 		{
@@ -102,7 +102,7 @@ public abstract class VariableInterpolator
 	public String toString()
 	{
 		// Result buffer
-		final StringBuffer buffer = new StringBuffer();
+		final StringBuilder buffer = new StringBuilder();
 
 		// For each occurrences of "${"or "$$"
 		int start;
@@ -150,7 +150,7 @@ public abstract class VariableInterpolator
 						// Leave variable uninterpolated, allowing multiple
 						// interpolators to
 						// do their work on the same string
-						buffer.append("${" + variableName + "}");
+						buffer.append("${").append(variableName).append("}");
 					}
 				}
 				else

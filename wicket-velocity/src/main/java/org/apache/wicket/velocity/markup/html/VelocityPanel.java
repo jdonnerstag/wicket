@@ -16,7 +16,6 @@
  */
 package org.apache.wicket.velocity.markup.html;
 
-import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -24,9 +23,6 @@ import java.util.Map;
 
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
-import org.apache.velocity.exception.MethodInvocationException;
-import org.apache.velocity.exception.ParseErrorException;
-import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.wicket.MarkupContainer;
 import org.apache.wicket.WicketRuntimeException;
 import org.apache.wicket.markup.ComponentTag;
@@ -35,6 +31,7 @@ import org.apache.wicket.markup.IMarkupResourceStreamProvider;
 import org.apache.wicket.markup.MarkupStream;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.IModel;
+import org.apache.wicket.resource.ResourceUtil;
 import org.apache.wicket.util.resource.IResourceStream;
 import org.apache.wicket.util.resource.IStringResourceStream;
 import org.apache.wicket.util.resource.StringResourceStream;
@@ -46,17 +43,15 @@ import org.apache.wicket.util.string.Strings;
  * {@link StringResourceStream} implementation, of which there are a number of convenient
  * implementations in the {@link org.apache.wicket.util} package. The model can be any normal
  * {@link Map}, which will be used to create the {@link VelocityContext}.
- * 
  * <p>
  * <b>Note:</b> Be sure to properly initialize the Velocity engine before using
  * {@link VelocityPanel }.
  * </p>
  */
-@SuppressWarnings("unchecked")
 public abstract class VelocityPanel extends Panel
-		implements
-			IMarkupResourceStreamProvider,
-			IMarkupCacheKeyProvider
+	implements
+		IMarkupResourceStreamProvider,
+		IMarkupCacheKeyProvider
 {
 	private static final long serialVersionUID = 1L;
 
@@ -72,8 +67,9 @@ public abstract class VelocityPanel extends Panel
 	 *            The template resource
 	 * @return an instance of {@link VelocityPanel}
 	 */
-	public static VelocityPanel forTemplateResource(String id, IModel< ? extends Map> model,
-			final IStringResourceStream templateResource)
+	@SuppressWarnings("rawtypes")
+	public static VelocityPanel forTemplateResource(final String id,
+		final IModel<? extends Map> model, final IResourceStream templateResource)
 	{
 		if (templateResource == null)
 		{
@@ -85,7 +81,7 @@ public abstract class VelocityPanel extends Panel
 			private static final long serialVersionUID = 1L;
 
 			@Override
-			protected IStringResourceStream getTemplateResource()
+			protected IResourceStream getTemplateResource()
 			{
 				return templateResource;
 			}
@@ -93,6 +89,7 @@ public abstract class VelocityPanel extends Panel
 	}
 
 	private transient String stackTraceAsString;
+
 	private transient String evaluatedTemplate;
 
 	/**
@@ -105,7 +102,8 @@ public abstract class VelocityPanel extends Panel
 	 * @param model
 	 *            Model with variables that can be substituted by Velocity.
 	 */
-	public VelocityPanel(final String id, final IModel< ? extends Map> model)
+	@SuppressWarnings("rawtypes")
+	public VelocityPanel(final String id, final IModel<? extends Map> model)
 	{
 		super(id, model);
 	}
@@ -117,13 +115,13 @@ public abstract class VelocityPanel extends Panel
 	 */
 	private Reader getTemplateReader()
 	{
-		final IStringResourceStream resource = getTemplateResource();
+		final IResourceStream resource = getTemplateResource();
 		if (resource == null)
 		{
 			throw new IllegalArgumentException("getTemplateResource must return a resource");
 		}
 
-		final String template = resource.asString();
+		final String template = ResourceUtil.readString(resource);
 		if (template != null)
 		{
 			return new StringReader(template);
@@ -133,28 +131,25 @@ public abstract class VelocityPanel extends Panel
 	}
 
 	/**
-	 * @see org.apache.wicket.markup.html.panel.Panel#onComponentTagBody(org.apache.wicket.markup.
-	 *      MarkupStream, org.apache.wicket.markup.ComponentTag)
+	 * {@inheritDoc}
 	 */
 	@Override
-	protected void onComponentTagBody(MarkupStream markupStream, ComponentTag openTag)
+	public void onComponentTagBody(final MarkupStream markupStream, final ComponentTag openTag)
 	{
 		if (!Strings.isEmpty(stackTraceAsString))
 		{
-			// TODO: only display the velocity error/stacktrace in development
-			// mode?
-			replaceComponentTagBody(markupStream, openTag, Strings
-					.toMultilineMarkup(stackTraceAsString));
+			// TODO: only display the velocity error/stacktrace in development mode?
+			replaceComponentTagBody(markupStream, openTag,
+				Strings.toMultilineMarkup(stackTraceAsString));
 		}
 		else if (!parseGeneratedMarkup())
 		{
 			// check that no components have been added in case the generated
-			// markup should not be
-			// parsed
+			// markup should not be parsed
 			if (size() > 0)
 			{
 				throw new WicketRuntimeException(
-						"Components cannot be added if the generated markup should not be parsed.");
+					"Components cannot be added if the generated markup should not be parsed.");
 			}
 
 			if (evaluatedTemplate == null)
@@ -209,7 +204,7 @@ public abstract class VelocityPanel extends Panel
 	 * 
 	 * @return The template resource
 	 */
-	protected abstract IStringResourceStream getTemplateResource();
+	protected abstract IResourceStream getTemplateResource();
 
 	/**
 	 * Evaluates the template and returns the result.
@@ -218,11 +213,12 @@ public abstract class VelocityPanel extends Panel
 	 *            used to read the template
 	 * @return the result of evaluating the velocity template
 	 */
-	private String evaluateVelocityTemplate(Reader templateReader)
+	private String evaluateVelocityTemplate(final Reader templateReader)
 	{
 		if (evaluatedTemplate == null)
 		{
 			// Get model as a map
+			@SuppressWarnings("rawtypes")
 			final Map map = (Map)getDefaultModelObject();
 
 			// create a Velocity context object using the model if set
@@ -250,19 +246,7 @@ public abstract class VelocityPanel extends Panel
 				}
 				return evaluatedTemplate;
 			}
-			catch (IOException e)
-			{
-				onException(e);
-			}
-			catch (ParseErrorException e)
-			{
-				onException(e);
-			}
-			catch (MethodInvocationException e)
-			{
-				onException(e);
-			}
-			catch (ResourceNotFoundException e)
+			catch (Exception e)
 			{
 				onException(e);
 			}
@@ -291,7 +275,6 @@ public abstract class VelocityPanel extends Panel
 	 * like applications, where 'normal' users are allowed to do basic scripting. On errors, you
 	 * want them to be able to have them correct them while the rest of the application keeps on
 	 * working.
-	 * </p>
 	 * 
 	 * @return Whether any velocity exceptions should be thrown or trapped. The default is false.
 	 */
@@ -301,11 +284,10 @@ public abstract class VelocityPanel extends Panel
 	}
 
 	/**
-	 * @see org.apache.wicket.markup.IMarkupResourceStreamProvider#getMarkupResourceStream(org.apache
-	 *      .wicket.MarkupContainer, java.lang.Class)
+	 * {@inheritDoc}
 	 */
-	public final IResourceStream getMarkupResourceStream(MarkupContainer container,
-			Class< ? > containerClass)
+	public final IResourceStream getMarkupResourceStream(final MarkupContainer container,
+		final Class<?> containerClass)
 	{
 		Reader reader = getTemplateReader();
 		if (reader == null)
@@ -314,7 +296,7 @@ public abstract class VelocityPanel extends Panel
 		}
 
 		// evaluate the template and return a new StringResourceStream
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("<wicket:panel>");
 		sb.append(evaluateVelocityTemplate(reader));
 		sb.append("</wicket:panel>");
@@ -322,17 +304,16 @@ public abstract class VelocityPanel extends Panel
 	}
 
 	/**
-	 * @see org.apache.wicket.markup.IMarkupCacheKeyProvider#getCacheKey(org.apache.wicket.
-	 *      MarkupContainer, java.lang.Class)
+	 * {@inheritDoc}
 	 */
-	public final String getCacheKey(MarkupContainer container, Class< ? > containerClass)
+	public final String getCacheKey(final MarkupContainer container, final Class<?> containerClass)
 	{
 		// don't cache the evaluated template
 		return null;
 	}
 
 	/**
-	 * @see org.apache.wicket.Component#onDetach()
+	 * {@inheritDoc}
 	 */
 	@Override
 	protected void onDetach()

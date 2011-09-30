@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.wicket.util.file.File;
+import org.apache.wicket.util.lang.Bytes;
 import org.apache.wicket.util.time.Time;
 
 
@@ -80,9 +81,6 @@ public class FileResourceStream extends AbstractResourceStream
 		}
 	}
 
-	/**
-	 * @see IResourceStream#getContentType()
-	 */
 	@Override
 	public String getContentType()
 	{
@@ -136,9 +134,6 @@ public class FileResourceStream extends AbstractResourceStream
 		return null;
 	}
 
-	/**
-	 * @see java.lang.Object#toString()
-	 */
 	@Override
 	public String toString()
 	{
@@ -149,22 +144,16 @@ public class FileResourceStream extends AbstractResourceStream
 		return "";
 	}
 
-	/**
-	 * @see org.apache.wicket.util.resource.IResourceStream#length()
-	 */
 	@Override
-	public long length()
+	public Bytes length()
 	{
 		if (file != null)
 		{
-			return file.length();
+			return Bytes.bytes(file.length());
 		}
-		return 0;
+		return null;
 	}
 
-	/**
-	 * @see org.apache.wicket.util.resource.IFixedLocationResourceStream#locationAsString()
-	 */
 	public String locationAsString()
 	{
 		if (file != null)

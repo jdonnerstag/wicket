@@ -18,18 +18,38 @@ package org.apache.wicket.request;
 
 
 /**
- * Encodes {@link IRequestHandler}(s) into {@link Url}(s) and decodes {@link Request}(s) to
+ * Maps {@link IRequestHandler}(s) into {@link Url}(s) and {@link Request}(s) to
  * {@link IRequestHandler}(s). For {@link IRequestHandler}s and {@link Request}s the implementation
- * doesn't know the {@link #mapHandler(IRequestHandler)} and {@link #mapRequest(Request)} methods
- * must return <code>null</code>.
+ * doesn't recognize, the {@link #mapHandler(IRequestHandler)} and {@link #mapRequest(Request)}
+ * methods must return {@code null}.
+ * 
+ * The workflow is: the Application class collects a set of {@link IRequestMapper}s and for each
+ * request the {@link IRequestCycle request cycle} asks these mappers whether any of them knows how
+ * to handle the current {@link Request}’s {@link Url url}. Wicket pre-configures several mappers
+ * which are used for the basic application functionality like a mapper for the home page, a mapper
+ * for Wicket resources, for bookmarkable pages, etc. The user application can add additional
+ * mappers with the various WebApplication#mountXYZ() methods.
+ * 
+ * The mapper has two main tasks:
+ * 
+ * <ol>
+ * <li>To create {@link IRequestHandler} that will produce the response. When a request comes Wicket
+ * uses {@link #getCompatibilityScore(Request)} to decide which mapper should be asked first to
+ * process the request. If two mappers have the same score then the one added later is asked first.
+ * This way user’s mappers have precedence than the system ones. If a mapper knows how to handle the
+ * request’s url then it should return non-{@code null} {@link IRequestHandler}.</li>
+ * <li>
+ * The second task is to produce {@link Url} for an {@link IRequestHandler}. This is needed at
+ * markup rendering time to create the urls for links, forms' action attribute, etc.</li>
+ * </ol>
  * 
  * @author Matej Knopp
  */
 public interface IRequestMapper
 {
 	/**
-	 * Returns {@link IRequestHandler} for the request or <code>null</code> if the encoder does not
-	 * recognize the URL.
+	 * Returns {@link IRequestHandler} for the request or <code>null</code> if the {@link Url} is
+	 * not recognized.
 	 * 
 	 * @param request
 	 *            provides access to request data (i.e. Url and Parameters)
@@ -44,22 +64,22 @@ public interface IRequestMapper
 	 * score to lowest.
 	 * <p>
 	 * A good criteria for calculating the score is the number of matched url segments. For example
-	 * when there are two encoders for mounted page, one mapped to <code>/foo</code> another to
-	 * <code>/foo/bar</code> and the incoming request URL is </code>/foo/bar/baz</code>, the encoder
-	 * mapped to <code>/foo/bar</code> will handle the request first as it has matching segments
+	 * when there are two mappers for a mounted page, one mapped to <code>/foo</code> another to
+	 * <code>/foo/bar</code> and the incoming request URL is </code>/foo/bar/baz</code>, the mapping
+	 * to <code>/foo/bar</code> should probably handle the request first as it has matching segments
 	 * count of 2 while the first one has only matching segments count of 1.
 	 * <p>
-	 * Note that the method can return value greater then zero even if the encoder can not decode
+	 * Note that the method can return value greater then zero even if the mapper does not recognize
 	 * the request.
 	 * 
 	 * @param request
-	 * @return count of matching segments
+	 * @return the compatibility score, e.g. count of matching segments
 	 */
 	int getCompatibilityScore(Request request);
 
 	/**
-	 * Returns the {@link Url} for given {@link IRequestHandler} or <code>null</code> if the encoder
-	 * does not recognize the request handler.
+	 * Returns the {@link Url} for given {@link IRequestHandler} or <code>null</code> if the request
+	 * handler is not recognized.
 	 * 
 	 * @param requestHandler
 	 * @return Url instance or <code>null</code>.

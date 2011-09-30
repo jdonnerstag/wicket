@@ -70,6 +70,7 @@ public class FormInput extends WicketExamplePage
 		 * @param name
 		 *            Component name
 		 */
+		@SuppressWarnings("serial")
 		public InputForm(String name)
 		{
 			super(name, new CompoundPropertyModel<FormInputModel>(new FormInputModel()));
@@ -123,7 +124,7 @@ public class FormInput extends WicketExamplePage
 					radio.setLabel(item.getModel());
 					item.add(radio);
 					item.add(new SimpleFormComponentLabel("number", radio));
-				};
+				}
 			}.setReuseItems(true);
 			group.add(persons);
 
@@ -138,7 +139,7 @@ public class FormInput extends WicketExamplePage
 					check.setLabel(item.getModel());
 					item.add(check);
 					item.add(new SimpleFormComponentLabel("number", check));
-				};
+				}
 			}.setReuseItems(true);
 			checks.add(checksList);
 
@@ -147,31 +148,13 @@ public class FormInput extends WicketExamplePage
 			// TextField using a custom converter.
 			add(new TextField<URL>("urlProperty", URL.class)
 			{
+				@SuppressWarnings("unchecked")
 				@Override
-				public IConverter getConverter(final Class<?> type)
+				public <C> IConverter<C> getConverter(final Class<C> type)
 				{
 					if (URL.class.isAssignableFrom(type))
 					{
-						return new IConverter()
-						{
-							public Object convertToObject(String value, Locale locale)
-							{
-								try
-								{
-									return new URL(value.toString());
-								}
-								catch (MalformedURLException e)
-								{
-									throw new ConversionException("'" + value +
-										"' is not a valid URL");
-								}
-							}
-
-							public String convertToString(Object value, Locale locale)
-							{
-								return value != null ? value.toString() : null;
-							}
-						};
+						return (IConverter<C>)URLConverter.INSTANCE;
 					}
 					else
 					{
@@ -185,12 +168,12 @@ public class FormInput extends WicketExamplePage
 			{
 
 				@Override
-				public IConverter getConverter(final Class<?> type)
+				public <C> IConverter<C> getConverter(final Class<C> type)
 				{
 					if (UsPhoneNumber.class.isAssignableFrom(type))
 					{
 						// US telephone number mask
-						return new MaskConverter("(###) ###-####", UsPhoneNumber.class);
+						return new MaskConverter<C>("(###) ###-####", UsPhoneNumber.class);
 					}
 					else
 					{
@@ -271,8 +254,7 @@ public class FormInput extends WicketExamplePage
 		@Override
 		public Object getDisplayValue(Locale locale)
 		{
-			String display = locale.getDisplayName(getLocale());
-			return display;
+			return locale.getDisplayName(getLocale());
 		}
 	}
 
@@ -324,11 +306,10 @@ public class FormInput extends WicketExamplePage
 	}
 
 	/** available sites for the multiple select. */
-	private static final List<String> SITES = Arrays.asList(new String[] { "The Server Side",
-			"Java Lobby", "Java.Net" });
+	private static final List<String> SITES = Arrays.asList("The Server Side", "Java Lobby", "Java.Net");
 
 	/** available numbers for the radio selection. */
-	static final List<String> NUMBERS = Arrays.asList(new String[] { "1", "2", "3" });
+	static final List<String> NUMBERS = Arrays.asList("1", "2", "3");
 
 	/**
 	 * Constructor
@@ -352,6 +333,28 @@ public class FormInput extends WicketExamplePage
 		if (locale != null)
 		{
 			getSession().setLocale(locale);
+		}
+	}
+
+	private static class URLConverter implements IConverter<URL>
+	{
+		public static final URLConverter INSTANCE = new URLConverter();
+
+		public URL convertToObject(String value, Locale locale)
+		{
+			try
+			{
+				return new URL(value);
+			}
+			catch (MalformedURLException e)
+			{
+				throw new ConversionException("'" + value + "' is not a valid URL");
+			}
+		}
+
+		public String convertToString(URL value, Locale locale)
+		{
+			return value != null ? value.toString() : null;
 		}
 	}
 }

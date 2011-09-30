@@ -23,11 +23,10 @@ import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
 import org.apache.wicket.Component;
 import org.apache.wicket.WicketRuntimeException;
-import org.apache.wicket.behavior.AbstractBehavior;
-import org.apache.wicket.markup.html.IHeaderContributor;
+import org.apache.wicket.behavior.Behavior;
 import org.apache.wicket.markup.html.IHeaderResponse;
-import org.apache.wicket.model.IDetachable;
 import org.apache.wicket.model.IModel;
+import org.apache.wicket.util.lang.Args;
 import org.apache.wicket.util.string.Strings;
 
 /**
@@ -36,13 +35,13 @@ import org.apache.wicket.util.string.Strings;
  * velocity.properties. If you do not have a velocity.properties for your app, it will default to a
  * directory "templates" in the root of your app.
  */
-public class VelocityContributor extends AbstractBehavior
+public class VelocityContributor extends Behavior
 {
 	private static final long serialVersionUID = 1L;
 
 	private String encoding = "ISO-8859-1";
 
-	private final IModel< ? extends Map< ? , ? >> model;
+	private final IModel<? extends Map<?, ?>> model;
 
 	private final String templateName;
 
@@ -53,26 +52,24 @@ public class VelocityContributor extends AbstractBehavior
 	 * "wicket/contrib/util/resource/foo.vm". Wicket provides a nice utility
 	 * {@link org.apache.wicket.util.lang.Packages} for this.
 	 * 
-	 * 
 	 * @param templateName
 	 * @param model
 	 */
-	public VelocityContributor(String templateName, final IModel< ? extends Map< ? , ? >> model)
+	public VelocityContributor(final String templateName, final IModel<? extends Map<?, ?>> model)
 	{
+		Args.notNull(model, "model");
+
 		this.templateName = templateName;
 		this.model = model;
 	}
 
 	/**
-	 * @see org.apache.wicket.behavior.AbstractBehavior#detach(org.apache.wicket.Component)
+	 * {@inheritDoc}
 	 */
 	@Override
-	public void detach(Component c)
+	public void detach(final Component c)
 	{
-		if (model instanceof IDetachable)
-		{
-			((IDetachable)model).detach();
-		}
+		model.detach();
 	}
 
 	/**
@@ -84,10 +81,10 @@ public class VelocityContributor extends AbstractBehavior
 	}
 
 	/**
-	 * @see org.apache.wicket.markup.html.IHeaderContributor#renderHead(org.apache.wicket.markup.html.IHeaderResponse)
+	 * {@inheritDoc}
 	 */
 	@Override
-	public void renderHead(final IHeaderResponse response)
+	public void renderHead(final Component component, final IHeaderResponse response)
 	{
 		CharSequence s = evaluate();
 		if (null != s)
@@ -100,7 +97,7 @@ public class VelocityContributor extends AbstractBehavior
 	 * @param encoding
 	 *            The encoding
 	 */
-	public void setEncoding(String encoding)
+	public void setEncoding(final String encoding)
 	{
 		this.encoding = encoding;
 	}
@@ -124,6 +121,7 @@ public class VelocityContributor extends AbstractBehavior
 		{
 			return null;
 		}
+
 		// create a Velocity context object using the model if set
 		final VelocityContext ctx = new VelocityContext(model.getObject());
 
@@ -151,7 +149,8 @@ public class VelocityContributor extends AbstractBehavior
 		}
 		catch (Exception e)
 		{
-			throw new WicketRuntimeException(e);
+			throw new WicketRuntimeException("Error while executing velocity script: " +
+				templateName, e);
 		}
 	}
 }

@@ -38,7 +38,7 @@ public class Mount
 	 * 
 	 * @param url
 	 */
-	public Mount(Url url)
+	public Mount(final Url url)
 	{
 		this.url = url;
 	}
@@ -47,14 +47,14 @@ public class Mount
 	 * 
 	 * @param mountParameters
 	 */
-	public void setMountParameters(MountParameters mountParameters)
+	public void setMountParameters(final MountParameters mountParameters)
 	{
 		this.mountParameters = mountParameters;
 	}
 
 	/**
 	 * 
-	 * @return
+	 * @return mount parameters
 	 */
 	public MountParameters getMountParameters()
 	{
@@ -63,7 +63,7 @@ public class Mount
 
 	/**
 	 * 
-	 * @return
+	 * @return Url
 	 */
 	public Url getUrl()
 	{

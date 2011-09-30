@@ -17,180 +17,38 @@
 package org.apache.wicket.util.file;
 
 import java.io.File;
-import java.lang.ref.PhantomReference;
-import java.lang.ref.ReferenceQueue;
-import java.util.Collection;
-import java.util.Vector;
 
 /**
- * Keeps track of files awaiting deletion, and deletes them when an associated marker object is
- * reclaimed by the garbage collector.
- * 
- * @author Noel Bergman
- * @author Martin Cooper
+ * Default implementation of {@link IFileCleaner} that uses Apache commons-io
+ * {@link FileCleaningTracker} to track and clean the temporary created files.
+ * <p>
+ * Note: this implementation starts a daemon thread to do the actual work, so it may not be used in
+ * some environments like Google AppEngine.
  */
-public class FileCleaner
+public class FileCleaner implements IFileCleaner
 {
-	/**
-	 * Queue of <code>Tracker</code> instances being watched.
-	 */
-	private static final ReferenceQueue /* Tracker */q = new ReferenceQueue();
+	private final FileCleaningTracker cleaner;
 
 	/**
-	 * Collection of <code>Tracker</code> instances in existence.
+	 * Construct.
 	 */
-	private static Collection /* Tracker */trackers = new Vector();
-
-	/**
-	 * The thread that will clean up registered files.
-	 */
-	private static Thread reaper = new Thread("File Reaper")
+	public FileCleaner()
 	{
-		/**
-		 * Run the reaper thread that will delete files as their associated marker objects are
-		 * reclaimed by the garbage collector.
-		 */
-		@Override
-		public void run()
-		{
-			// Though q is final, it happens while hot deploying that Wicket runs into an infinite
-			// loop because q == null (NullPointerException). To prevent that happening ...
-			while (q != null)
-			{
-				Tracker tracker = null;
-				try
-				{
-					// Wait for a tracker to remove.
-					tracker = (Tracker)q.remove();
-				}
-				catch (InterruptedException e)
-				{
-					break;
-				}
-				catch (Exception e)
-				{
-					continue;
-				}
-
-				tracker.delete();
-				tracker.clear();
-				trackers.remove(tracker);
-			}
-		}
-	};
-
-	/**
-	 * The static initializer that starts the reaper thread.
-	 */
-	static
-	{
-		reaper.setPriority(Thread.MAX_PRIORITY);
-		reaper.setDaemon(true);
-		reaper.start();
+		cleaner = new FileCleaningTracker();
 	}
 
-	/**
-	 * Stop the daemon thread
-	 */
-	public static void destroy()
+	public void track(final File file, final Object marker)
 	{
-		if (reaper != null)
-		{
-			reaper.interrupt();
-
-			// TODO Do we need to manually remove the temp files now?
-		}
+		cleaner.track(file, marker);
 	}
 
-	/**
-	 * Track the specified file, using the provided marker, deleting the file when the marker
-	 * instance is garbage collected.
-	 * 
-	 * @param file
-	 *            The file to be tracked.
-	 * @param marker
-	 *            The marker object used to track the file.
-	 */
-	public static void track(File file, Object marker)
+	public void track(final File file, final Object marker, FileDeleteStrategy deleteStrategy)
 	{
-		trackers.add(new Tracker(file, marker, q));
+		cleaner.track(file, marker, deleteStrategy);
 	}
 
-	/**
-	 * Track the specified file, using the provided marker, deleting the file when the marker
-	 * instance is garbage collected.
-	 * 
-	 * @param path
-	 *            The full path to the file to be tracked.
-	 * @param marker
-	 *            The marker object used to track the file.
-	 */
-	public static void track(String path, Object marker)
+	public void destroy()
 	{
-		trackers.add(new Tracker(path, marker, q));
-	}
-
-	/**
-	 * Retrieve the number of files currently being tracked, and therefore awaiting deletion.
-	 * 
-	 * @return the number of files being tracked.
-	 */
-	public static int getTrackCount()
-	{
-		return trackers.size();
-	}
-
-	/**
-	 * Inner class which acts as the reference for a file pending deletion.
-	 */
-	private static class Tracker extends PhantomReference
-	{
-
-		/**
-		 * The full path to the file being tracked.
-		 */
-		private final String path;
-
-		/**
-		 * Constructs an instance of this class from the supplied parameters.
-		 * 
-		 * @param file
-		 *            The file to be tracked.
-		 * @param marker
-		 *            The marker object used to track the file.
-		 * @param queue
-		 *            The queue on to which the tracker will be pushed.
-		 */
-		public Tracker(File file, Object marker, ReferenceQueue queue)
-		{
-			this(file.getPath(), marker, queue);
-		}
-
-		/**
-		 * Constructs an instance of this class from the supplied parameters.
-		 * 
-		 * @param path
-		 *            The full path to the file to be tracked.
-		 * @param marker
-		 *            The marker object used to track the file.
-		 * @param queue
-		 *            The queue on to which the tracker will be pushed.
-		 */
-		public Tracker(String path, Object marker, ReferenceQueue queue)
-		{
-			super(marker, queue);
-			this.path = path;
-		}
-
-		/**
-		 * Deletes the file associated with this tracker instance.
-		 * 
-		 * @return <code>true</code> if the file was deleted successfully; <code>false</code>
-		 *         otherwise.
-		 */
-		public boolean delete()
-		{
-			return new File(path).delete();
-		}
+		cleaner.exitWhenFinished();
 	}
 }

@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.wicket.util.lang.Args;
 
 /**
  * A variety of static String utility methods.
@@ -55,10 +56,10 @@ public final class Strings
 	public static final String LINE_SEPARATOR;
 
 	/** A table of hex digits */
-	private static final char[] hexDigit = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A',
-			'B', 'C', 'D', 'E', 'F' };
+	private static final char[] HEX_DIGIT = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+			'A', 'B', 'C', 'D', 'E', 'F' };
 
-	private static final Pattern htmlNumber = Pattern.compile("\\&\\#\\d+\\;");
+	private static final Pattern HTML_NUMBER_REGEX = Pattern.compile("&#\\d+;");
 
 	static
 	{
@@ -69,6 +70,13 @@ public final class Strings
 				return System.getProperty("line.separator");
 			}
 		});
+	}
+
+	/**
+	 * Private constructor prevents construction.
+	 */
+	private Strings()
+	{
 	}
 
 	/**
@@ -239,11 +247,11 @@ public final class Strings
 	 * non-breaking space entities (&lt;nbsp&gt;).
 	 * 
 	 * @param s
-	 *            The string to escape
+	 *            The characters to escape
 	 * @see Strings#escapeMarkup(String, boolean)
 	 * @return The escaped string
 	 */
-	public static CharSequence escapeMarkup(final String s)
+	public static CharSequence escapeMarkup(final CharSequence s)
 	{
 		return escapeMarkup(s, false);
 	}
@@ -255,12 +263,12 @@ public final class Strings
 	 * converted to &amp;lt; entities and greater than signs to &amp;gt; entities.
 	 * 
 	 * @param s
-	 *            The string to escape
+	 *            The characters to escape
 	 * @param escapeSpaces
 	 *            True to replace ' ' with nonbreaking space
 	 * @return The escaped string
 	 */
-	public static CharSequence escapeMarkup(final String s, final boolean escapeSpaces)
+	public static CharSequence escapeMarkup(final CharSequence s, final boolean escapeSpaces)
 	{
 		return escapeMarkup(s, escapeSpaces, false);
 	}
@@ -272,105 +280,112 @@ public final class Strings
 	 * converted to &amp;lt; entities and greater than signs to &amp;gt; entities.
 	 * 
 	 * @param s
-	 *            The string to escape
+	 *            The characters to escape
 	 * @param escapeSpaces
 	 *            True to replace ' ' with nonbreaking space
 	 * @param convertToHtmlUnicodeEscapes
 	 *            True to convert non-7 bit characters to unicode HTML (&#...)
 	 * @return The escaped string
 	 */
-	public static CharSequence escapeMarkup(final String s, final boolean escapeSpaces,
+	public static CharSequence escapeMarkup(final CharSequence s, final boolean escapeSpaces,
 		final boolean convertToHtmlUnicodeEscapes)
 	{
 		if (s == null)
 		{
 			return null;
 		}
-		else
+
+		int len = s.length();
+		final AppendingStringBuffer buffer = new AppendingStringBuffer((int)(len * 1.1));
+
+		for (int i = 0; i < len; i++)
 		{
-			int len = s.length();
-			final AppendingStringBuffer buffer = new AppendingStringBuffer((int)(len * 1.1));
+			final char c = s.charAt(i);
 
-			for (int i = 0; i < len; i++)
+			switch (c)
 			{
-				final char c = s.charAt(i);
+				case '\t' :
+					if (escapeSpaces)
+					{
+						// Assumption is four space tabs (sorry, but that's
+						// just how it is!)
+						buffer.append("&nbsp;&nbsp;&nbsp;&nbsp;");
+					}
+					else
+					{
+						buffer.append(c);
+					}
+					break;
 
-				switch (c)
-				{
-					case '\t' :
-						if (escapeSpaces)
-						{
-							// Assumption is four space tabs (sorry, but that's
-							// just how it is!)
-							buffer.append("&nbsp;&nbsp;&nbsp;&nbsp;");
-						}
-						else
-						{
-							buffer.append(c);
-						}
-						break;
+				case ' ' :
+					if (escapeSpaces)
+					{
+						buffer.append("&nbsp;");
+					}
+					else
+					{
+						buffer.append(c);
+					}
+					break;
 
-					case ' ' :
-						if (escapeSpaces)
-						{
-							buffer.append("&nbsp;");
-						}
-						else
-						{
-							buffer.append(c);
-						}
-						break;
+				case '<' :
+					buffer.append("&lt;");
+					break;
 
-					case '<' :
-						buffer.append("&lt;");
-						break;
+				case '>' :
+					buffer.append("&gt;");
+					break;
 
-					case '>' :
-						buffer.append("&gt;");
-						break;
+				case '&' :
 
-					case '&' :
+					buffer.append("&amp;");
+					break;
 
-						buffer.append("&amp;");
-						break;
+				case '"' :
+					buffer.append("&quot;");
+					break;
 
-					case '"' :
-						buffer.append("&quot;");
-						break;
+				case '\'' :
+					buffer.append("&#039;");
+					break;
 
-					case '\'' :
-						buffer.append("&#039;");
-						break;
+				default :
 
-					default :
+					int ci = 0xffff & c;
 
-						if (convertToHtmlUnicodeEscapes)
-						{
-							int ci = 0xffff & c;
-							if (ci < 160)
-							{
-								// nothing special only 7 Bit
-								buffer.append(c);
-							}
-							else
-							{
-								// Not 7 Bit use the unicode system
-								buffer.append("&#");
-								buffer.append(new Integer(ci).toString());
-								buffer.append(';');
-							}
-						}
-						else
-						{
-							buffer.append(c);
-						}
-
-						break;
-				}
+					if (
+					// if this is non-printable and not whitespace (TAB, LF, CR)
+					((ci < 32) && (ci != 9) && (ci != 10) && (ci != 13)) ||
+					// or non-ASCII (XXX: why 160+ ?!) and need to UNICODE escape it
+						(convertToHtmlUnicodeEscapes && (ci > 159)))
+					{
+						buffer.append("&#");
+						buffer.append(Integer.toString(ci));
+						buffer.append(';');
+					}
+					else
+					{
+						// ASCII or whitespace
+						buffer.append(c);
+					}
+					break;
 			}
-
-			return buffer;
 		}
+
+		return buffer;
+	}
+
+	/**
+	 * Unescapes the escaped entities in the <code>markup</code> passed.
+	 * 
+	 * @param markup
+	 *            The source <code>String</code> to unescape.
+	 * @return the unescaped markup or <code>null</null> if the input is <code>null</code>
+	 */
+	public static CharSequence unescapeMarkup(final String markup)
+	{
+		String unescapedMarkup = StringEscapeUtils.unescapeHtml(markup);
+		return unescapedMarkup;
 	}
 
 	/**
@@ -411,14 +426,13 @@ public final class Strings
 	 * 
 	 * @return The actual unicode. Can be used for instance with message bundles
 	 */
-	public static String fromEscapedUnicode(String escapedUnicodeString)
+	public static String fromEscapedUnicode(final String escapedUnicodeString)
 	{
 		int off = 0;
 		char[] in = escapedUnicodeString.toCharArray();
 		int len = in.length;
-		char[] convtBuf = new char[len];
+		char[] out = new char[len];
 		char aChar;
-		char[] out = convtBuf;
 		int outLen = 0;
 		int end = off + len;
 
@@ -512,7 +526,8 @@ public final class Strings
 	 */
 	public static boolean isEmpty(final CharSequence string)
 	{
-		return string == null || string.length() == 0 || string.toString().trim().length() == 0;
+		return (string == null) || (string.length() == 0) ||
+			(string.toString().trim().length() == 0);
 	}
 
 	/**
@@ -534,7 +549,7 @@ public final class Strings
 		{
 			return true;
 		}
-		if (string1 == null || string2 == null)
+		if ((string1 == null) || (string2 == null))
 		{
 			return false;
 		}
@@ -600,7 +615,7 @@ public final class Strings
 	 * @param fragments
 	 * @return combined fragments
 	 */
-	public static String join(String separator, List<String> fragments)
+	public static String join(final String separator, final List<String> fragments)
 	{
 		if (fragments == null)
 		{
@@ -617,7 +632,7 @@ public final class Strings
 	 * @param fragments
 	 * @return combined fragments
 	 */
-	public static String join(String separator, String... fragments)
+	public static String join(final String separator, final String... fragments)
 	{
 		if ((fragments == null) || (fragments.length < 1))
 		{
@@ -632,7 +647,7 @@ public final class Strings
 		else
 		{
 			// two or more elements
-			StringBuffer buff = new StringBuffer(128);
+			StringBuilder buff = new StringBuilder(128);
 			if (fragments[0] != null)
 			{
 				buff.append(fragments[0]);
@@ -717,7 +732,7 @@ public final class Strings
 
 		// If searchFor is null or the empty string, then there is nothing to
 		// replace, so returning s is the only option here.
-		if (searchFor == null || "".equals(searchFor))
+		if ((searchFor == null) || "".equals(searchFor))
 		{
 			return s;
 		}
@@ -754,7 +769,7 @@ public final class Strings
 			int pos = 0;
 			do
 			{
-				// Append text up to the match`
+				// Append text up to the match
 				append(buffer, s, pos, matchIndex);
 
 				// Add replaceWith text
@@ -787,7 +802,7 @@ public final class Strings
 		{
 			return null;
 		}
-		Matcher matcher = htmlNumber.matcher(str);
+		Matcher matcher = HTML_NUMBER_REGEX.matcher(str);
 		while (matcher.find())
 		{
 			int pos = matcher.start();
@@ -795,7 +810,7 @@ public final class Strings
 			int number = Integer.parseInt(str.substring(pos + 2, end - 1));
 			char ch = (char)number;
 			str = str.substring(0, pos) + ch + str.substring(end);
-			matcher = htmlNumber.matcher(str);
+			matcher = HTML_NUMBER_REGEX.matcher(str);
 		}
 
 		return str;
@@ -855,7 +870,7 @@ public final class Strings
 
 		// Stripping a null or empty string from the end returns the
 		// original string.
-		if (ending == null || "".equals(ending))
+		if ((ending == null) || "".equals(ending))
 		{
 			return s;
 		}
@@ -929,7 +944,7 @@ public final class Strings
 	 */
 	public static Boolean toBoolean(final String s) throws StringValueConversionException
 	{
-		return Boolean.valueOf(isTrue(s));
+		return isTrue(s);
 	}
 
 	/**
@@ -966,7 +981,7 @@ public final class Strings
 	 *            The unicode string
 	 * @return The escaped unicode string, like '\u4F60\u597D'.
 	 */
-	public static String toEscapedUnicode(String unicodeString)
+	public static String toEscapedUnicode(final String unicodeString)
 	{
 		if ((unicodeString == null) || (unicodeString.length() == 0))
 		{
@@ -974,7 +989,7 @@ public final class Strings
 		}
 		int len = unicodeString.length();
 		int bufLen = len * 2;
-		StringBuffer outBuffer = new StringBuffer(bufLen);
+		StringBuilder outBuffer = new StringBuilder(bufLen);
 		for (int x = 0; x < len; x++)
 		{
 			char aChar = unicodeString.charAt(x);
@@ -1128,7 +1143,7 @@ public final class Strings
 			return (String)object;
 		}
 
-		if (object instanceof String[] && ((String[])object).length == 1)
+		if ((object instanceof String[]) && (((String[])object).length == 1))
 		{
 			return ((String[])object)[0];
 		}
@@ -1151,7 +1166,7 @@ public final class Strings
 			List<Throwable> al = new ArrayList<Throwable>();
 			Throwable cause = throwable;
 			al.add(cause);
-			while (cause.getCause() != null && cause != cause.getCause())
+			while ((cause.getCause() != null) && (cause != cause.getCause()))
 			{
 				cause = cause.getCause();
 				al.add(cause);
@@ -1187,16 +1202,13 @@ public final class Strings
 		}
 	}
 
-	private static void append(AppendingStringBuffer buffer, CharSequence s, int from, int to)
+	private static void append(final AppendingStringBuffer buffer, final CharSequence s,
+		final int from, final int to)
 	{
 		if (s instanceof AppendingStringBuffer)
 		{
 			AppendingStringBuffer asb = (AppendingStringBuffer)s;
 			buffer.append(asb.getValue(), from, to - from);
-		}
-		else if (s instanceof StringBuffer)
-		{
-			buffer.append((StringBuffer)s, from, to - from);
 		}
 		else
 		{
@@ -1213,8 +1225,8 @@ public final class Strings
 	 * @param sb
 	 * @param stopAtWicketServlet
 	 */
-	private static void outputThrowable(Throwable cause, AppendingStringBuffer sb,
-		boolean stopAtWicketServlet)
+	private static void outputThrowable(final Throwable cause, final AppendingStringBuffer sb,
+		final boolean stopAtWicketServlet)
 	{
 		sb.append(cause);
 		sb.append("\n");
@@ -1222,7 +1234,7 @@ public final class Strings
 		for (int i = 0; i < trace.length; i++)
 		{
 			String traceString = trace[i].toString();
-			if (!(traceString.startsWith("sun.reflect.") && i > 1))
+			if (!(traceString.startsWith("sun.reflect.") && (i > 1)))
 			{
 				sb.append("     at ");
 				sb.append(traceString);
@@ -1236,26 +1248,28 @@ public final class Strings
 		}
 	}
 
-	private static int search(final CharSequence s, String searchString, int pos)
+	private static int search(final CharSequence s, final String searchString, final int pos)
 	{
-		int matchIndex = -1;
 		if (s instanceof String)
 		{
-			matchIndex = ((String)s).indexOf(searchString, pos);
+			return ((String)s).indexOf(searchString, pos);
 		}
 		else if (s instanceof StringBuffer)
 		{
-			matchIndex = ((StringBuffer)s).indexOf(searchString, pos);
+			return ((StringBuffer)s).indexOf(searchString, pos);
+		}
+		else if (s instanceof StringBuilder)
+		{
+			return ((StringBuilder)s).indexOf(searchString, pos);
 		}
 		else if (s instanceof AppendingStringBuffer)
 		{
-			matchIndex = ((AppendingStringBuffer)s).indexOf(searchString, pos);
+			return ((AppendingStringBuffer)s).indexOf(searchString, pos);
 		}
 		else
 		{
-			matchIndex = s.toString().indexOf(searchString, pos);
+			return s.toString().indexOf(searchString, pos);
 		}
-		return matchIndex;
 	}
 
 	/**
@@ -1265,9 +1279,9 @@ public final class Strings
 	 *            the nibble to convert.
 	 * @return hex character
 	 */
-	private static char toHex(int nibble)
+	private static char toHex(final int nibble)
 	{
-		return hexDigit[(nibble & 0xF)];
+		return HEX_DIGIT[(nibble & 0xF)];
 	}
 
 	/**
@@ -1278,7 +1292,7 @@ public final class Strings
 	 *            (optional) character set to use when converting string to bytes
 	 * @return length of string in bytes
 	 */
-	public static int lengthInBytes(String string, Charset charset)
+	public static int lengthInBytes(final String string, final Charset charset)
 	{
 		if (string == null)
 		{
@@ -1300,7 +1314,6 @@ public final class Strings
 		{
 			return string.getBytes().length;
 		}
-
 	}
 
 	/**
@@ -1311,7 +1324,8 @@ public final class Strings
 	 * @param caseSensitive
 	 * @return <code>true</code> if <code>str</code> starts with <code>prefix</code>
 	 */
-	public static boolean startsWith(String str, String prefix, boolean caseSensitive)
+	public static boolean startsWith(final String str, final String prefix,
+		final boolean caseSensitive)
 	{
 		if (caseSensitive)
 		{
@@ -1324,11 +1338,181 @@ public final class Strings
 	}
 
 	/**
-	 * Private constructor prevents construction.
+	 * returns the zero-based index of a character within a char sequence. this method mainly exists
+	 * as an faster alternative for <code>sequence.toString().indexOf(ch)</code>.
+	 * 
+	 * @param sequence
+	 *            character sequence
+	 * @param ch
+	 *            character to search for
+	 * @return index of character within character sequence or <code>-1</code> if not found
 	 */
-	private Strings()
+	public static int indexOf(final CharSequence sequence, final char ch)
 	{
+		if (sequence != null)
+		{
+			for (int i = 0; i < sequence.length(); i++)
+			{
+				if (sequence.charAt(i) == ch)
+				{
+					return i;
+				}
+			}
+		}
+
+		return -1;
 	}
 
+	/**
+	 * <p>
+	 * Find the Levenshtein distance between two Strings.
+	 * </p>
+	 * 
+	 * <p>
+	 * This is the number of changes needed to change one String into another, where each change is
+	 * a single character modification (deletion, insertion or substitution).
+	 * </p>
+	 * 
+	 * <p>
+	 * The previous implementation of the Levenshtein distance algorithm was from <a
+	 * href="http://www.merriampark.com/ld.htm">http://www.merriampark.com/ld.htm</a>
+	 * </p>
+	 * 
+	 * <p>
+	 * Chas Emerick has written an implementation in Java, which avoids an OutOfMemoryError which
+	 * can occur when my Java implementation is used with very large strings.<br>
+	 * This implementation of the Levenshtein distance algorithm is from <a
+	 * href="http://www.merriampark.com/ldjava.htm">http://www.merriampark.com/ldjava.htm</a>
+	 * </p>
+	 * 
+	 * <pre>
+	 * StringUtils.getLevenshteinDistance(null, *)             = IllegalArgumentException
+	 * StringUtils.getLevenshteinDistance(*, null)             = IllegalArgumentException
+	 * StringUtils.getLevenshteinDistance("","")               = 0
+	 * StringUtils.getLevenshteinDistance("","a")              = 1
+	 * StringUtils.getLevenshteinDistance("aaapppp", "")       = 7
+	 * StringUtils.getLevenshteinDistance("frog", "fog")       = 1
+	 * StringUtils.getLevenshteinDistance("fly", "ant")        = 3
+	 * StringUtils.getLevenshteinDistance("elephant", "hippo") = 7
+	 * StringUtils.getLevenshteinDistance("hippo", "elephant") = 7
+	 * StringUtils.getLevenshteinDistance("hippo", "zzzzzzzz") = 8
+	 * StringUtils.getLevenshteinDistance("hello", "hallo")    = 1
+	 * </pre>
+	 * 
+	 * Copied from Apache commons-lang StringUtils 3.0
+	 * 
+	 * @param s
+	 *            the first String, must not be null
+	 * @param t
+	 *            the second String, must not be null
+	 * @return result distance
+	 * @throws IllegalArgumentException
+	 *             if either String input {@code null}
+	 */
+	public static int getLevenshteinDistance(CharSequence s, CharSequence t)
+	{
+		if (s == null || t == null)
+		{
+			throw new IllegalArgumentException("Strings must not be null");
+		}
 
+		/*
+		 * The difference between this impl. and the previous is that, rather than creating and
+		 * retaining a matrix of size s.length()+1 by t.length()+1, we maintain two
+		 * single-dimensional arrays of length s.length()+1. The first, d, is the 'current working'
+		 * distance array that maintains the newest distance cost counts as we iterate through the
+		 * characters of String s. Each time we increment the index of String t we are comparing, d
+		 * is copied to p, the second int[]. Doing so allows us to retain the previous cost counts
+		 * as required by the algorithm (taking the minimum of the cost count to the left, up one,
+		 * and diagonally up and to the left of the current cost count being calculated). (Note that
+		 * the arrays aren't really copied anymore, just switched...this is clearly much better than
+		 * cloning an array or doing a System.arraycopy() each time through the outer loop.)
+		 * 
+		 * Effectively, the difference between the two implementations is this one does not cause an
+		 * out of memory condition when calculating the LD over two very large strings.
+		 */
+
+		int n = s.length(); // length of s
+		int m = t.length(); // length of t
+
+		if (n == 0)
+		{
+			return m;
+		}
+		else if (m == 0)
+		{
+			return n;
+		}
+
+		if (n > m)
+		{
+			// swap the input strings to consume less memory
+			CharSequence tmp = s;
+			s = t;
+			t = tmp;
+			n = m;
+			m = t.length();
+		}
+
+		int p[] = new int[n + 1]; // 'previous' cost array, horizontally
+		int d[] = new int[n + 1]; // cost array, horizontally
+		int _d[]; // placeholder to assist in swapping p and d
+
+		// indexes into strings s and t
+		int i; // iterates through s
+		int j; // iterates through t
+
+		char t_j; // jth character of t
+
+		int cost; // cost
+
+		for (i = 0; i <= n; i++)
+		{
+			p[i] = i;
+		}
+
+		for (j = 1; j <= m; j++)
+		{
+			t_j = t.charAt(j - 1);
+			d[0] = j;
+
+			for (i = 1; i <= n; i++)
+			{
+				cost = s.charAt(i - 1) == t_j ? 0 : 1;
+				// minimum of cell to the left+1, to the top+1, diagonally left and up +cost
+				d[i] = Math.min(Math.min(d[i - 1] + 1, p[i] + 1), p[i - 1] + cost);
+			}
+
+			// copy current distance counts to 'previous row' distance counts
+			_d = p;
+			p = d;
+			d = _d;
+		}
+
+		// our last action in the above loop was to switch d and p, so p now
+		// actually has the most recent cost counts
+		return p[n];
+	}
+
+	/**
+	 * convert byte array to hex string
+	 * 
+	 * @param bytes
+	 *          bytes to convert to hexadecimal representation
+	 *
+	 * @return hex string 
+	 */
+	public static String toHexString(byte[] bytes)
+	{
+		Args.notNull(bytes, "bytes");
+
+		final StringBuilder hex = new StringBuilder(bytes.length << 1);
+
+		for (final byte b : bytes)
+		{
+			hex.append(toHex(b >> 4));
+			hex.append(toHex(b));
+		}
+		return hex.toString();
+	}
 }

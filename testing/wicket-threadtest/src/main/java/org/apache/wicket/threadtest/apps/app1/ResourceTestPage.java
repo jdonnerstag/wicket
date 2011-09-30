@@ -20,7 +20,6 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
@@ -42,6 +41,7 @@ import com.sun.image.codec.jpeg.JPEGImageEncoder;
  */
 public class ResourceTestPage extends WebPage
 {
+	private static final long serialVersionUID = 1L;
 	/**
 	 * Defines the number of images per page
 	 */
@@ -75,10 +75,11 @@ public class ResourceTestPage extends WebPage
 				{
 					encoder.encode(image);
 				}
-				catch (IOException e)
+				catch (Exception e)
 				{
 					throw new WicketRuntimeException(e);
 				}
+
 				final byte[] imageData = baos.toByteArray();
 
 				item.add(new Image("image", new DynamicImageResource("jpeg")

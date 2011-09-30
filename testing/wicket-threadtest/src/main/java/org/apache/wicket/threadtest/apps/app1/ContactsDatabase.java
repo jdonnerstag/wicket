@@ -64,7 +64,7 @@ public class ContactsDatabase
 	 */
 	public void delete(final Contact contact)
 	{
-		Contact c = map.remove(new Long(contact.getId()));
+		Contact c = map.remove(contact.getId());
 
 		fnameIdx.remove(contact);
 		lnameIdx.remove(contact);
@@ -85,8 +85,7 @@ public class ContactsDatabase
 	 */
 	public List<Contact> find(int first, int count, String sortProperty, boolean sortAsc)
 	{
-		List<Contact> sublist = getIndex(sortProperty, sortAsc).subList(first, first + count);
-		return sublist;
+		return getIndex(sortProperty, sortAsc).subList(first, first + count);
 	}
 
 	/**
@@ -97,7 +96,7 @@ public class ContactsDatabase
 	 */
 	public Contact get(long id)
 	{
-		Contact c = map.get(new Long(id));
+		Contact c = map.get(id);
 		if (c == null)
 		{
 			throw new RuntimeException("contact with id [" + id + "] not found in the database");
@@ -135,7 +134,7 @@ public class ContactsDatabase
 
 	protected void add(final Contact contact)
 	{
-		map.put(new Long(contact.getId()), contact);
+		map.put(contact.getId(), contact);
 		fnameIdx.add(contact);
 		lnameIdx.add(contact);
 		fnameDescIdx.add(contact);

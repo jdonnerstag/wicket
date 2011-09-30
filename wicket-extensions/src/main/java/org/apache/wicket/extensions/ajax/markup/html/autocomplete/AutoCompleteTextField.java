@@ -44,7 +44,6 @@ import org.apache.wicket.model.IModel;
  */
 public abstract class AutoCompleteTextField<T> extends TextField<T>
 {
-
 	private static final long serialVersionUID = 1L;
 
 	/** auto complete behavior attached to this textfield */
@@ -56,14 +55,13 @@ public abstract class AutoCompleteTextField<T> extends TextField<T>
 	/** settings */
 	private final AutoCompleteSettings settings;
 
-
 	/**
 	 * @param id
 	 * @param type
 	 */
-	public AutoCompleteTextField(String id, Class<T> type)
+	public AutoCompleteTextField(final String id, final Class<T> type)
 	{
-		this(id, (IModel<T>)null, type, new AutoCompleteSettings());
+		this(id, null, type, new AutoCompleteSettings());
 	}
 
 	/**
@@ -75,8 +73,10 @@ public abstract class AutoCompleteTextField<T> extends TextField<T>
 	 * @deprecated use the constructor {@link AutoCompleteTextField}
 	 *             {@link #AutoCompleteTextField(String, IModel, Class, AutoCompleteSettings)}
 	 */
+	@SuppressWarnings("unchecked")
 	@Deprecated
-	public AutoCompleteTextField(String id, IModel<T> model, Class<T> type, boolean preselect)
+	public AutoCompleteTextField(final String id, final IModel<T> model, final Class<T> type,
+		final boolean preselect)
 	{
 		this(id, model, type, StringAutoCompleteRenderer.INSTANCE,
 			new AutoCompleteSettings().setPreselect(preselect));
@@ -90,8 +90,9 @@ public abstract class AutoCompleteTextField<T> extends TextField<T>
 	 * @param type
 	 * @param settings
 	 */
-	public AutoCompleteTextField(String id, IModel<T> model, Class<T> type,
-		AutoCompleteSettings settings)
+	@SuppressWarnings("unchecked")
+	public AutoCompleteTextField(final String id, final IModel<T> model, final Class<T> type,
+		final AutoCompleteSettings settings)
 	{
 		this(id, model, type, StringAutoCompleteRenderer.INSTANCE, settings);
 	}
@@ -104,9 +105,9 @@ public abstract class AutoCompleteTextField<T> extends TextField<T>
 	 *             {@link #AutoCompleteTextField(String, IModel, AutoCompleteSettings)}
 	 */
 	@Deprecated
-	public AutoCompleteTextField(String id, IModel<T> object, boolean preselect)
+	public AutoCompleteTextField(final String id, final IModel<T> object, final boolean preselect)
 	{
-		this(id, object, (Class<T>)null, new AutoCompleteSettings().setPreselect(preselect));
+		this(id, object, null, new AutoCompleteSettings().setPreselect(preselect));
 	}
 
 	/**
@@ -116,19 +117,19 @@ public abstract class AutoCompleteTextField<T> extends TextField<T>
 	 * @param object
 	 * @param settings
 	 */
-	public AutoCompleteTextField(String id, IModel<T> object, AutoCompleteSettings settings)
+	public AutoCompleteTextField(final String id, final IModel<T> object,
+		final AutoCompleteSettings settings)
 	{
-		this(id, object, (Class<T>)null, settings);
+		this(id, object, null, settings);
 	}
-
 
 	/**
 	 * @param id
 	 * @param object
 	 */
-	public AutoCompleteTextField(String id, IModel<T> object)
+	public AutoCompleteTextField(final String id, final IModel<T> object)
 	{
-		this(id, object, (Class<T>)null, new AutoCompleteSettings());
+		this(id, object, null, new AutoCompleteSettings());
 	}
 
 	/**
@@ -138,9 +139,9 @@ public abstract class AutoCompleteTextField<T> extends TextField<T>
 	 *             {@link #AutoCompleteTextField(String, AutoCompleteSettings)}
 	 */
 	@Deprecated
-	public AutoCompleteTextField(String id, boolean preselect)
+	public AutoCompleteTextField(final String id, final boolean preselect)
 	{
-		this(id, (IModel<T>)null, new AutoCompleteSettings().setPreselect(preselect));
+		this(id, null, new AutoCompleteSettings().setPreselect(preselect));
 	}
 
 	/**
@@ -149,26 +150,24 @@ public abstract class AutoCompleteTextField<T> extends TextField<T>
 	 * @param id
 	 * @param settings
 	 */
-	public AutoCompleteTextField(String id, AutoCompleteSettings settings)
+	public AutoCompleteTextField(final String id, final AutoCompleteSettings settings)
 	{
-		this(id, (IModel<T>)null, settings);
-
+		this(id, null, settings);
 	}
 
 	/**
 	 * @param id
 	 */
-	public AutoCompleteTextField(String id)
+	public AutoCompleteTextField(final String id)
 	{
-		this(id, (IModel<T>)null, new AutoCompleteSettings());
-
+		this(id, null, new AutoCompleteSettings());
 	}
 
 	/**
 	 * @param id
 	 * @param renderer
 	 */
-	public AutoCompleteTextField(String id, IAutoCompleteRenderer<T> renderer)
+	public AutoCompleteTextField(final String id, final IAutoCompleteRenderer<T> renderer)
 	{
 		this(id, (IModel<T>)null, renderer);
 	}
@@ -178,7 +177,8 @@ public abstract class AutoCompleteTextField<T> extends TextField<T>
 	 * @param type
 	 * @param renderer
 	 */
-	public AutoCompleteTextField(String id, Class<T> type, IAutoCompleteRenderer<T> renderer)
+	public AutoCompleteTextField(final String id, final Class<T> type,
+		final IAutoCompleteRenderer<T> renderer)
 	{
 		this(id, null, type, renderer, new AutoCompleteSettings());
 	}
@@ -188,9 +188,10 @@ public abstract class AutoCompleteTextField<T> extends TextField<T>
 	 * @param model
 	 * @param renderer
 	 */
-	public AutoCompleteTextField(String id, IModel<T> model, IAutoCompleteRenderer<T> renderer)
+	public AutoCompleteTextField(final String id, final IModel<T> model,
+		final IAutoCompleteRenderer<T> renderer)
 	{
-		this(id, model, (Class<T>)null, renderer, new AutoCompleteSettings());
+		this(id, model, null, renderer, new AutoCompleteSettings());
 	}
 
 	/**
@@ -203,8 +204,8 @@ public abstract class AutoCompleteTextField<T> extends TextField<T>
 	 *             {@link #AutoCompleteTextField(String, IModel, Class, IAutoCompleteRenderer, AutoCompleteSettings)}
 	 */
 	@Deprecated
-	public AutoCompleteTextField(String id, IModel<T> model, Class<T> type,
-		IAutoCompleteRenderer<T> renderer, boolean preselect)
+	public AutoCompleteTextField(final String id, final IModel<T> model, final Class<T> type,
+		final IAutoCompleteRenderer<T> renderer, final boolean preselect)
 	{
 		this(id, model, type, renderer, new AutoCompleteSettings().setPreselect(preselect));
 	}
@@ -218,14 +219,13 @@ public abstract class AutoCompleteTextField<T> extends TextField<T>
 	 * @param renderer
 	 * @param settings
 	 */
-	public AutoCompleteTextField(String id, IModel<T> model, Class<T> type,
-		IAutoCompleteRenderer<T> renderer, AutoCompleteSettings settings)
+	public AutoCompleteTextField(final String id, final IModel<T> model, final Class<T> type,
+		final IAutoCompleteRenderer<T> renderer, final AutoCompleteSettings settings)
 	{
 		super(id, model, type);
 		this.renderer = renderer;
 		this.settings = settings;
 	}
-
 
 	/**
 	 * Factory method for autocomplete behavior that will be added to this textfield
@@ -236,15 +236,15 @@ public abstract class AutoCompleteTextField<T> extends TextField<T>
 	 *            auto complete settings
 	 * @return auto complete behavior
 	 */
-	protected AutoCompleteBehavior<T> newAutoCompleteBehavior(IAutoCompleteRenderer<T> renderer,
-		AutoCompleteSettings settings)
+	protected AutoCompleteBehavior<T> newAutoCompleteBehavior(
+		final IAutoCompleteRenderer<T> renderer, final AutoCompleteSettings settings)
 	{
 		return new AutoCompleteBehavior<T>(renderer, settings)
 		{
 			private static final long serialVersionUID = 1L;
 
 			@Override
-			protected Iterator<T> getChoices(String input)
+			protected Iterator<T> getChoices(final String input)
 			{
 				return AutoCompleteTextField.this.getChoices(input);
 			}
@@ -258,15 +258,14 @@ public abstract class AutoCompleteTextField<T> extends TextField<T>
 		// add auto complete behavior to this component if its not already there
 		if (behavior == null)
 		{
-			// we do this here instad of constructor so we can have an overridable factory method
+			// we do this here instead of constructor so we can have an overridable factory method
 			add(behavior = newAutoCompleteBehavior(renderer, settings));
 		}
 		super.onBeforeRender();
 	}
 
-	/** {@inheritDoc} */
 	@Override
-	protected void onComponentTag(ComponentTag tag)
+	protected void onComponentTag(final ComponentTag tag)
 	{
 		super.onComponentTag(tag);
 

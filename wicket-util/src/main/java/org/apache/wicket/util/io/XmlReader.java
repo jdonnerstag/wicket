@@ -16,7 +16,7 @@
  */
 package org.apache.wicket.util.io;
 
-import java.io.BufferedReader;
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -24,7 +24,8 @@ import java.io.Reader;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.wicket.util.string.AppendingStringBuffer;
+import org.apache.wicket.util.lang.Args;
+import org.apache.wicket.util.string.Strings;
 
 
 /**
@@ -44,9 +45,6 @@ public final class XmlReader extends Reader
 
 	/** Null, if JVM default. Else from <?xml encoding=""> */
 	private String encoding;
-
-	/** Null or if found in the markup, the whole <?xml ...?> string */
-	private String xmlDeclarationString;
 
 	/** The input stream to read the data from */
 	private final InputStream inputStream;
@@ -68,16 +66,17 @@ public final class XmlReader extends Reader
 	public XmlReader(final InputStream inputStream, final String defaultEncoding)
 		throws IOException
 	{
-		// The xml parser does not have a parent filter
-		super();
+		Args.notNull(inputStream, "inputStream");
 
-		this.inputStream = inputStream;
-		encoding = defaultEncoding;
-
-		if (inputStream == null)
+		if (!inputStream.markSupported())
 		{
-			throw new IllegalArgumentException("Parameter 'inputStream' must not be null");
+			this.inputStream = new BufferedInputStream(inputStream);
 		}
+		else
+		{
+			this.inputStream = inputStream;
+		}
+		encoding = defaultEncoding;
 
 		init();
 	}
@@ -87,19 +86,9 @@ public final class XmlReader extends Reader
 	 * 
 	 * @return if null, then JVM default
 	 */
-	public String getEncoding()
+	public final String getEncoding()
 	{
 		return encoding;
-	}
-
-	/**
-	 * Return the XML declaration string, in case if found in the markup.
-	 * 
-	 * @return Null, if not found.
-	 */
-	public String getXmlDeclaration()
-	{
-		return xmlDeclarationString;
 	}
 
 	/**
@@ -109,21 +98,16 @@ public final class XmlReader extends Reader
 	 */
 	public void init() throws IOException
 	{
-		if (!inputStream.markSupported())
-		{
-			throw new IOException("The InputStream must support mark/reset");
-		}
-
-		// read ahead buffer required for the first line of the markup
-		// (encoding)
+		// read ahead buffer required for the first line of the markup (encoding)
 		final int readAheadSize = 80;
 		inputStream.mark(readAheadSize);
 
 		// read-ahead the input stream and check if it starts with <?xml..?>.
-		if (getXmlDeclaration(inputStream, readAheadSize))
+		String xmlDeclaration = getXmlDeclaration(inputStream, readAheadSize);
+		if (!Strings.isEmpty(xmlDeclaration))
 		{
 			// If yes than determine the encoding from the xml decl
-			encoding = determineEncoding(xmlDeclarationString);
+			encoding = determineEncoding(xmlDeclaration);
 		}
 		else
 		{
@@ -134,12 +118,12 @@ public final class XmlReader extends Reader
 		if (encoding == null)
 		{
 			// Use JVM default
-			reader = new BufferedReader(new InputStreamReader(inputStream));
+			reader = new InputStreamReader(inputStream);
 		}
 		else
 		{
 			// Use the encoding provided
-			reader = new BufferedReader(new InputStreamReader(inputStream, encoding));
+			reader = new InputStreamReader(inputStream, encoding);
 		}
 	}
 
@@ -150,7 +134,7 @@ public final class XmlReader extends Reader
 	 *            The xmlDecl string
 	 * @return The encoding. Null, if not found
 	 */
-	private final String determineEncoding(final String string)
+	private final String determineEncoding(final CharSequence string)
 	{
 		// Does the string match the <?xml .. ?> pattern
 		final Matcher matcher = encodingPattern.matcher(string);
@@ -188,11 +172,11 @@ public final class XmlReader extends Reader
 	 * @return true, if &lt;?xml ..?&gt; has been found
 	 * @throws IOException
 	 */
-	private final boolean getXmlDeclaration(final InputStream in, final int readAheadSize)
+	private final String getXmlDeclaration(final InputStream in, final int readAheadSize)
 		throws IOException
 	{
 		// Max one line
-		final AppendingStringBuffer pushBack = new AppendingStringBuffer(readAheadSize);
+		final StringBuilder pushBack = new StringBuilder(readAheadSize);
 
 		// The current char from the markup file
 		int value;
@@ -214,12 +198,11 @@ public final class XmlReader extends Reader
 		if (!matcher.matches())
 		{
 			// No
-			return false;
+			return null;
 		}
 
 		// Save the whole <?xml ..> string for later
-		xmlDeclarationString = pushBack.toString().trim();
-		return true;
+		return pushBack.toString().trim();
 	}
 
 	/**
@@ -228,15 +211,21 @@ public final class XmlReader extends Reader
 	@Override
 	public void close() throws IOException
 	{
-		reader.close();
-		inputStream.close();
+		try
+		{
+			reader.close();
+		}
+		finally
+		{
+			inputStream.close();
+		}
 	}
 
 	/**
 	 * @see java.io.Reader#read(char[], int, int)
 	 */
 	@Override
-	public int read(char[] buf, int from, int to) throws IOException
+	public int read(final char[] buf, final int from, final int to) throws IOException
 	{
 		return reader.read(buf, from, to);
 	}

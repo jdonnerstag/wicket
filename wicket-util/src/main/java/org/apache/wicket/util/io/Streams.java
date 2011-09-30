@@ -17,28 +17,12 @@
 package org.apache.wicket.util.io;
 
 import java.io.BufferedReader;
-import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
-import java.io.StringReader;
 import java.util.Properties;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.EntityResolver;
-import org.xml.sax.ErrorHandler;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-import org.xml.sax.SAXParseException;
 
 /**
  * Utilities methods for working with input and output streams.
@@ -48,28 +32,29 @@ import org.xml.sax.SAXParseException;
  */
 public final class Streams
 {
-	private static final String XML_PROPERTIES_DTD = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-		+ "<!-- DTD for properties -->" + "<!ELEMENT properties ( comment?, entry* ) >"
-		+ "<!ATTLIST properties" + " version CDATA #FIXED \"1.0\">"
-		+ "<!ELEMENT comment (#PCDATA) >" + "<!ELEMENT entry (#PCDATA) >" + "<!ATTLIST entry "
-		+ " key CDATA #REQUIRED>";
-
 	/**
-	 * Closes a closeable. Guards against null closables.
+	 * Writes the input stream to the output stream. Input is done without a Reader object, meaning
+	 * that the input is copied in its raw form. After it is copied it will close the streams.
 	 * 
-	 * @param closeable
-	 *            closeable to close
+	 * @param in
+	 *            The input stream
+	 * @param out
+	 *            The output stream
+	 * @return Number of bytes copied from one stream to the other
 	 * @throws IOException
-	 *             when close fails
 	 */
-	public static void close(Closeable closeable) throws IOException
+	public static int copyAndClose(final InputStream in, final OutputStream out) throws IOException
 	{
-		if (closeable != null)
+		try
 		{
-			closeable.close();
+			return copy(in, out);
+		}
+		finally
+		{
+			IOUtils.closeQuietly(in);
+			IOUtils.closeQuietly(out);
 		}
 	}
-
 
 	/**
 	 * Writes the input stream to the output stream. Input is done without a Reader object, meaning
@@ -132,7 +117,7 @@ public final class Streams
 	 * @throws IOException
 	 *             When the input stream could not be read from
 	 */
-	public static void loadFromXml(Properties properties, InputStream inputStream)
+	public static void loadFromXml(final Properties properties, final InputStream inputStream)
 		throws IOException
 	{
 		if (properties == null)
@@ -144,76 +129,7 @@ public final class Streams
 			throw new IllegalArgumentException("inputStream must not be null");
 		}
 
-		// TODO in a Wicket version that supports Java 5 (Wicket 2.0?), we can
-		// just use the loadFromXml method on java.util.Properties directly
-		// rather than manual as we do here
-
-		DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
-		documentBuilderFactory.setIgnoringElementContentWhitespace(true);
-		documentBuilderFactory.setValidating(true);
-		documentBuilderFactory.setCoalescing(true);
-		documentBuilderFactory.setIgnoringComments(true);
-		try
-		{
-			DocumentBuilder db = documentBuilderFactory.newDocumentBuilder();
-			db.setEntityResolver(new EntityResolver()
-			{
-				public InputSource resolveEntity(String publicId, String systemId)
-					throws SAXException
-				{
-					if (systemId.equals("http://java.sun.com/dtd/properties.dtd"))
-					{
-						InputSource inputSource;
-						inputSource = new InputSource(new StringReader(XML_PROPERTIES_DTD));
-						inputSource.setSystemId("http://java.sun.com/dtd/properties.dtd");
-						return inputSource;
-					}
-					else
-					{
-						throw new SAXException("Invalid system identifier: " + systemId);
-					}
-				}
-			});
-			db.setErrorHandler(new ErrorHandler()
-			{
-				public void error(SAXParseException e) throws SAXException
-				{
-					throw e;
-				}
-
-				public void fatalError(SAXParseException e) throws SAXException
-				{
-					throw e;
-				}
-
-				public void warning(SAXParseException e) throws SAXException
-				{
-					throw e;
-				}
-			});
-			InputSource is = new InputSource(inputStream);
-			Document doc = db.parse(is);
-			NodeList entries = ((Element)doc.getChildNodes().item(1)).getChildNodes();
-			int len = entries.getLength();
-			for (int i = (len > 0 && entries.item(0).getNodeName().equals("comment")) ? 1 : 0; i < len; i++)
-			{
-				Element entry = (Element)entries.item(i);
-				if (entry.hasAttribute("key"))
-				{
-					Node node = entry.getFirstChild();
-					String val = (node == null) ? "" : node.getNodeValue();
-					properties.setProperty(entry.getAttribute("key"), val);
-				}
-			}
-		}
-		catch (ParserConfigurationException e)
-		{
-			throw new RuntimeException(e);
-		}
-		catch (SAXException e)
-		{
-			throw new RuntimeException("invalid XML properties format", e);
-		}
+		properties.loadFromXML(inputStream);
 	}
 
 	/**
@@ -255,7 +171,7 @@ public final class Streams
 	 */
 	public static String readString(final Reader in) throws IOException
 	{
-		final StringBuffer buffer = new StringBuffer(2048);
+		final StringBuilder buffer = new StringBuilder(2048);
 		int value;
 
 		while ((value = in.read()) != -1)

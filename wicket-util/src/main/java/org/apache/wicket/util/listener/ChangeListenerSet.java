@@ -26,24 +26,24 @@ package org.apache.wicket.util.listener;
  */
 public final class ChangeListenerSet extends ListenerCollection<IChangeListener>
 {
-	/**
-	 * @see org.apache.wicket.util.listener.ListenerCollection#notifyListener(org.apache.wicket.util.listener.IListener)
-	 */
-	protected void notifyListener(IChangeListener listener)
-	{
+	private static final long serialVersionUID = 1L;
 
+	protected void notifyListener(final IChangeListener listener)
+	{
 	}
 
+	/**
+	 * 
+	 */
 	public void notifyListeners()
 	{
 		notify(new INotifier<IChangeListener>()
 		{
 
-			public void notify(IChangeListener object)
+			public void notify(final IChangeListener object)
 			{
 				object.onChange();
 			}
-
 		});
 	}
 }

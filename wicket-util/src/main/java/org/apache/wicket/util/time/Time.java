@@ -20,6 +20,9 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.Locale;
+import java.util.TimeZone;
 
 /**
  * An immutable <code>Time</code> class that represents a specific point in time. The underlying
@@ -36,26 +39,27 @@ public final class Time extends AbstractTime
 	private static final long serialVersionUID = 1L;
 
 	/** the beginning of UNIX time: January 1, 1970, 0:00 GMT. */
-	public static final Time START_OF_UNIX_TIME = milliseconds(0);
+	public static final Time START_OF_UNIX_TIME = millis(0);
 
 	/** parser in 'yyyy.MM.dd' format. */
-	private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy.MM.dd");
+	private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy.MM.dd",
+		Locale.ENGLISH);
 
 	/** parser in 'yyyy.MM.dd-h.mma' format. */
-	private static final SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy.MM.dd-h.mma");
+	private static final SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy.MM.dd-h.mma",
+		Locale.ENGLISH);
 
-	/**
-	 * Retrieves a <code>Time</code> instance based on the given milliseconds.
-	 * 
-	 * @param time
-	 *            the time value in milliseconds since START_OF_UNIX_TIME
-	 * @return the given <code>Time</code>
-	 */
-	public static Time milliseconds(final long time)
-	{
-		return new Time(time);
-	}
+	/** required for rfc1123 date format */
+	private static final String[] DAYS =
+		{"Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 
+	/** required for rfc1123 date format */
+	private static final String[] MONTHS =
+		{"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan"};
+
+	/** time zone for greenwich mean time */
+	public static final TimeZone GMT = TimeZone.getTimeZone("GMT");
+	
 	/**
 	 * Retrieves a <code>Time</code> instance based on the current time.
 	 * 
@@ -63,7 +67,19 @@ public final class Time extends AbstractTime
 	 */
 	public static Time now()
 	{
-		return new Time(System.currentTimeMillis());
+		return millis(System.currentTimeMillis());
+	}
+
+	/**
+	 * Retrieves a <code>Time</code> instance based on the given milliseconds.
+	 * 
+	 * @param time
+	 *            the <code>Time</code> value in milliseconds since START_OF_UNIX_TIME
+	 * @return a corresponding immutable <code>Time</code> object
+	 */
+	public static Time millis(final long time)
+	{
+		return new Time(time);
 	}
 
 	/**
@@ -104,6 +120,21 @@ public final class Time extends AbstractTime
 		return parseDate(localtime, string);
 	}
 
+
+	/**
+	 * Retrieves a <code>Time</code> instance based on the given milliseconds.
+	 * 
+	 * @param time
+	 *            the <code>Time</code> value in milliseconds since START_OF_UNIX_TIME
+	 * @return a corresponding immutable <code>Time</code> object
+	 * 
+	 * @deprecated use {@link Time#millis(long)} instead
+	 */
+	public static Time valueOf(final long time)
+	{
+		return millis(time);
+	}
+	
 	/**
 	 * Retrieves a <code>Time</code> instance by parsing 'yyyy.MM.dd-h.mma' format.
 	 * 
@@ -149,7 +180,7 @@ public final class Time extends AbstractTime
 			calendar.set(Calendar.MILLISECOND, 0); // WICKET-1670
 
 			// Add time of day milliseconds to midnight
-			return valueOf(calendar.getTimeInMillis() + timeOfDay.getMilliseconds());
+			return millis(calendar.getTimeInMillis() + timeOfDay.getMilliseconds());
 		}
 	}
 
@@ -163,18 +194,6 @@ public final class Time extends AbstractTime
 	public static Time valueOf(final Date date)
 	{
 		return new Time(date.getTime());
-	}
-
-	/**
-	 * Retrieves a <code>Time</code> instance based on the given milliseconds.
-	 * 
-	 * @param time
-	 *            the <code>Time</code> value in milliseconds since START_OF_UNIX_TIME
-	 * @return a corresponding immutable <code>Time</code> object
-	 */
-	public static Time valueOf(final long time)
-	{
-		return new Time(time);
 	}
 
 	/**
@@ -202,7 +221,7 @@ public final class Time extends AbstractTime
 	 */
 	public static Time valueOf(final String string, final String pattern) throws ParseException
 	{
-		final SimpleDateFormat dateTimeFormat = new SimpleDateFormat(pattern);
+		final SimpleDateFormat dateTimeFormat = new SimpleDateFormat(pattern, Locale.ENGLISH);
 		dateTimeFormat.setCalendar(localtime);
 		return valueOf(dateTimeFormat.parse(string));
 	}
@@ -240,7 +259,7 @@ public final class Time extends AbstractTime
 	 */
 	public Time add(final Duration duration)
 	{
-		return milliseconds(getMilliseconds() + duration.getMilliseconds());
+		return millis(getMilliseconds() + duration.getMilliseconds());
 	}
 
 	/**
@@ -446,7 +465,7 @@ public final class Time extends AbstractTime
 	 */
 	public Time subtract(final Duration duration)
 	{
-		return milliseconds(getMilliseconds() - duration.getMilliseconds());
+		return millis(getMilliseconds() - duration.getMilliseconds());
 	}
 
 	/**
@@ -530,7 +549,7 @@ public final class Time extends AbstractTime
 	 */
 	public String toString(final Calendar calendar, final String format)
 	{
-		final SimpleDateFormat dateTimeFormat = new SimpleDateFormat(format);
+		final SimpleDateFormat dateTimeFormat = new SimpleDateFormat(format, Locale.ENGLISH);
 		dateTimeFormat.setCalendar(calendar == null ? localtime : calendar);
 		return dateTimeFormat.format(new Date(getMilliseconds()));
 	}
@@ -545,5 +564,64 @@ public final class Time extends AbstractTime
 	public String toString(final String format)
 	{
 		return toString(null, format);
+	}
+
+	/**
+	 * return timestamp string in RFC1123 format
+	 * <p/>
+	 * Contrary to {@link java.text.SimpleDateFormat} this is thread-safe.
+	 * <p/> 
+	 * taken from the source code of jetty 7.3.0, credits + thanks to Greg Wilkins!
+	 */
+	public String toRfc1123TimestampString()
+	{
+		final Calendar cal = GregorianCalendar.getInstance(GMT);
+		final StringBuilder buf = new StringBuilder(32);
+
+		cal.setTimeInMillis(getMilliseconds());
+
+		int day_of_week = cal.get(Calendar.DAY_OF_WEEK);
+		int day_of_month = cal.get(Calendar.DAY_OF_MONTH);
+		int month = cal.get(Calendar.MONTH);
+		int year = cal.get(Calendar.YEAR);
+		int century = year / 100;
+		year = year % 100;
+
+		int hours = cal.get(Calendar.HOUR_OF_DAY);
+		int minutes = cal.get(Calendar.MINUTE);
+		int seconds = cal.get(Calendar.SECOND);
+
+		buf.append(DAYS[day_of_week]);
+		buf.append(',');
+		buf.append(' ');
+		appendTwoDigits(buf, day_of_month);
+
+		buf.append(' ');
+		buf.append(MONTHS[month]);
+		buf.append(' ');
+		appendTwoDigits(buf, century);
+		appendTwoDigits(buf, year);
+
+		buf.append(' ');
+		appendTwoDigits(buf, hours);
+		buf.append(':');
+		appendTwoDigits(buf, minutes);
+		buf.append(':');
+		appendTwoDigits(buf, seconds);
+		buf.append(" GMT");
+
+		return buf.toString();
+	}
+
+	/**
+	 * helper method for {@link #toRfc1123TimestampString()}
+	 * 
+	 * @param str
+	 * @param number
+	 */
+	private static void appendTwoDigits(StringBuilder str, int number)
+	{
+		str.append((char)(number / 10 + '0'));
+		str.append((char)(number % 10 + '0'));
 	}
 }

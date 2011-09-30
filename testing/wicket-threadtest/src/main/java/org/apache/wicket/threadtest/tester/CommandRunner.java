@@ -19,8 +19,8 @@ package org.apache.wicket.threadtest.tester;
 import java.util.List;
 
 import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Runs a command.
@@ -30,15 +30,25 @@ import org.apache.commons.logging.LogFactory;
 public class CommandRunner implements Runnable
 {
 
+	/**
+	 * TODO javadoc
+	 */
 	public static interface CommandRunnerObserver
 	{
 
+		/**
+		 * @param runner
+		 */
 		void onDone(CommandRunner runner);
 
+		/**
+		 * @param runner
+		 * @param e
+		 */
 		void onError(CommandRunner runner, Exception e);
 	}
 
-	private static final Log log = LogFactory.getLog(CommandRunner.class);
+	private static final Logger log = LoggerFactory.getLogger(CommandRunner.class);
 
 	private HttpClient client;
 
@@ -51,6 +61,7 @@ public class CommandRunner implements Runnable
 	 * 
 	 * @param commands
 	 * @param client
+	 * @param observer
 	 */
 	public CommandRunner(List<Command> commands, HttpClient client, CommandRunnerObserver observer)
 	{
@@ -66,7 +77,7 @@ public class CommandRunner implements Runnable
 	 */
 	public HttpClient getClient()
 	{
-		return this.client;
+		return client;
 	}
 
 	/**
@@ -83,7 +94,7 @@ public class CommandRunner implements Runnable
 			}
 			catch (Exception e)
 			{
-				log.fatal("execution of command " + command + ", thread " + Thread.currentThread() +
+				log.error("execution of command " + command + ", thread " + Thread.currentThread() +
 					" failed", e);
 				observer.onError(this, e);
 				return;

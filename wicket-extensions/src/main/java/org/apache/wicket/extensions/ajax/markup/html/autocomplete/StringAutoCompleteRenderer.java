@@ -31,12 +31,12 @@ public final class StringAutoCompleteRenderer extends AbstractAutoCompleteTextRe
 	/**
 	 * A singleton instance
 	 */
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings("rawtypes")
 	public static final IAutoCompleteRenderer INSTANCE = new StringAutoCompleteRenderer();
 
 	/**
 	 * @param <T>
-	 * @return
+	 * @return the single instance
 	 */
 	@SuppressWarnings("unchecked")
 	public static final <T> IAutoCompleteRenderer<T> instance()
@@ -44,11 +44,8 @@ public final class StringAutoCompleteRenderer extends AbstractAutoCompleteTextRe
 		return INSTANCE;
 	}
 
-	/**
-	 * @see AbstractAutoCompleteTextRenderer#getTextValue(Object)
-	 */
 	@Override
-	protected String getTextValue(Object object)
+	protected String getTextValue(final Object object)
 	{
 		return object.toString();
 	}

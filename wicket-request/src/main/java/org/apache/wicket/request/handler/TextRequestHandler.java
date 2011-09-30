@@ -22,6 +22,7 @@ import java.nio.charset.Charset;
 import org.apache.wicket.request.IRequestCycle;
 import org.apache.wicket.request.IRequestHandler;
 import org.apache.wicket.request.http.WebResponse;
+import org.apache.wicket.util.lang.Args;
 import org.apache.wicket.util.string.Strings;
 
 
@@ -50,7 +51,7 @@ public class TextRequestHandler implements IRequestHandler
 	 * @param string
 	 *            the string for the response
 	 */
-	public TextRequestHandler(String string)
+	public TextRequestHandler(final String string)
 	{
 		this("text/plain", null, string);
 	}
@@ -59,29 +60,17 @@ public class TextRequestHandler implements IRequestHandler
 	 * Constructor
 	 * 
 	 * @param contentType
-	 *            content type of the data the string represents eg
+	 *            content type of the data the string represents, e.g.
 	 *            <code>text/html; charset=utf-8</code>
 	 * @param encoding
 	 *            charset to use
 	 * @param string
 	 *            string for the response
 	 */
-	public TextRequestHandler(String contentType, String encoding, String string)
+	public TextRequestHandler(final String contentType, final String encoding, final String string)
 	{
-		if (string == null)
-		{
-			throw new IllegalArgumentException("Argument string must be not null");
-		}
-		if (Strings.isEmpty(contentType))
-		{
-			throw new IllegalArgumentException("Argument contentType must not be null or empty");
-		}
-		if (encoding == null)
-		{
-			throw new IllegalArgumentException("Argument charset must not be null");
-		}
-		this.contentType = contentType;
-		this.string = string;
+		this.contentType = Args.notEmpty(contentType, "contentType");
+		this.string = Args.notNull(string, "string");
 		this.encoding = encoding;
 	}
 
@@ -89,9 +78,9 @@ public class TextRequestHandler implements IRequestHandler
 	/**
 	 * Responds by sending the string property.
 	 * 
-	 * @see org.apache.wicket.request.IRequestHandler#respond(org.apache.wicket.request.cycle.RequestCycle)
+	 * @see org.apache.wicket.request.IRequestHandler#respond(org.apache.wicket.request.IRequestCycle)
 	 */
-	public void respond(IRequestCycle requestCycle)
+	public void respond(final IRequestCycle requestCycle)
 	{
 		String encoding = getEncoding(requestCycle);
 
@@ -102,7 +91,9 @@ public class TextRequestHandler implements IRequestHandler
 		// send string to client
 		try
 		{
-			response.write(string.getBytes(encoding));
+			byte[] bytes = string.getBytes(encoding);
+			response.setContentLength(bytes.length);
+			response.write(bytes);
 		}
 		catch (IOException e)
 		{
@@ -112,9 +103,9 @@ public class TextRequestHandler implements IRequestHandler
 
 	/**
 	 * @param requestCycle
-	 * @return
+	 * @return the configured encoding or the request's one as default
 	 */
-	private String getEncoding(IRequestCycle requestCycle)
+	private String getEncoding(final IRequestCycle requestCycle)
 	{
 		String encoding = this.encoding;
 		if (Strings.isEmpty(encoding))
@@ -128,10 +119,8 @@ public class TextRequestHandler implements IRequestHandler
 		return encoding;
 	}
 
-	/**
-	 * @see org.apache.wicket.request.IRequestHandler#detach(org.apache.wicket.request.cycle.RequestCycle)
-	 */
-	public void detach(IRequestCycle requestCycle)
+	/** {@inheritDoc} */
+	public void detach(final IRequestCycle requestCycle)
 	{
 	}
 
@@ -144,6 +133,5 @@ public class TextRequestHandler implements IRequestHandler
 	{
 		return string;
 	}
-
 
 }

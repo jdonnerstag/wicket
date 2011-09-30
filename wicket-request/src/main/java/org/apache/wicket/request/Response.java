@@ -40,10 +40,34 @@ public abstract class Response
 	 * Writes the buffer to output.
 	 * 
 	 * @param array
+	 *            the data.
 	 * @throws IllegalStateException
 	 *             if {@link #write(CharSequence)} has already been called on this instance
 	 */
 	public abstract void write(byte[] array);
+
+	/**
+	 * Writes the buffer to output.
+	 * 
+	 * @param array
+	 *            the data.
+	 * @param offset
+	 *            the start offset in the data.
+	 * @param length
+	 *            the number of bytes to write.
+	 * 
+	 * @throws IllegalStateException
+	 *             if {@link #write(CharSequence)} has already been called on this instance
+	 * @since 1.5.1
+	 */
+	// TODO Wicket 1.6: make it abstract like other methods in this class
+	public void write(byte[] array, int offset, int length)
+	{
+		// default impl to be able to introduce it in 1.5.x series
+		byte[] towrite = new byte[length];
+		System.arraycopy(array, offset, towrite, 0, length);
+		write(towrite);
+	}
 
 	/**
 	 * Closes the response
@@ -69,4 +93,13 @@ public abstract class Response
 	public void reset()
 	{
 	}
+
+	/**
+	 * Provides access to the low-level container response object that implementaion of this
+	 * {@link Response} delegate to. This allows users to access features provided by the container
+	 * response but not by generalized Wicket {@link Response} objects.
+	 * 
+	 * @return low-level container response object, or {@code null} if none
+	 */
+	public abstract Object getContainerResponse();
 }

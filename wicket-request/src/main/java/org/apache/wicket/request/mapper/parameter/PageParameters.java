@@ -16,14 +16,15 @@
  */
 package org.apache.wicket.request.mapper.parameter;
 
-import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.apache.wicket.IClusterable;
 import org.apache.wicket.request.IRequestMapper;
 import org.apache.wicket.util.lang.Args;
 import org.apache.wicket.util.lang.Objects;
@@ -47,15 +48,52 @@ import org.apache.wicket.util.value.ValueMap;
  * 
  * @author Matej Knopp
  */
-public class PageParameters implements Serializable
+public class PageParameters implements IClusterable, IIndexedParameters, INamedParameters
 {
-	private static class Entry implements Serializable
+	private static class Entry implements IClusterable
 	{
 		private static final long serialVersionUID = 1L;
 
 		private String key;
 		private String value;
-	};
+
+		@Override
+		public int hashCode()
+		{
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + ((key == null) ? 0 : key.hashCode());
+			result = prime * result + ((value == null) ? 0 : value.hashCode());
+			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj)
+		{
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			Entry other = (Entry)obj;
+			if (key == null)
+			{
+				if (other.key != null)
+					return false;
+			}
+			else if (!key.equals(other.key))
+				return false;
+			if (value == null)
+			{
+				if (other.value != null)
+					return false;
+			}
+			else if (!value.equals(other.value))
+				return false;
+			return true;
+		}
+	}
 
 	private static final long serialVersionUID = 1L;
 
@@ -98,7 +136,7 @@ public class PageParameters implements Serializable
 	 * @param keyValuePairs
 	 *            List of key value pairs separated by commas. For example, "param1=foo,param2=bar"
 	 * @see ValueMap#ValueMap(String)
-	 * @deprecated use varios setter methods to set parameters
+	 * @deprecated use various setter methods to set parameters
 	 */
 	@Deprecated
 	public PageParameters(final String keyValuePairs)
@@ -115,7 +153,7 @@ public class PageParameters implements Serializable
 	 *            Delimiter string used to separate key/value pairs
 	 * @see ValueMap#ValueMap(String)
 	 * 
-	 * @deprecated use varios setter methods to set parameters
+	 * @deprecated use various setter methods to set parameters
 	 */
 	@Deprecated
 	public PageParameters(final String keyValuePairs, final String delimiter)
@@ -152,7 +190,8 @@ public class PageParameters implements Serializable
 			else
 			{
 				final String key = pair.trim();
-				final String value = null;
+				// null value is not allowed by #add
+				final String value = "";
 
 				add(key, value);
 			}
@@ -169,13 +208,9 @@ public class PageParameters implements Serializable
 	}
 
 	/**
-	 * Sets the indexed parameter on given index
-	 * 
-	 * @param index
-	 * @param object
-	 * @return this
+	 * @see org.apache.wicket.request.mapper.parameter.IIndexedParameters#set(int, java.lang.Object)
 	 */
-	public PageParameters set(int index, Object object)
+	public PageParameters set(final int index, final Object object)
 	{
 		if (indexedParameters == null)
 		{
@@ -192,14 +227,13 @@ public class PageParameters implements Serializable
 	}
 
 	/**
-	 * @param index
-	 * @return indexed parameter on given index
+	 * @see org.apache.wicket.request.mapper.parameter.IIndexedParameters#get(int)
 	 */
-	public StringValue get(int index)
+	public StringValue get(final int index)
 	{
 		if (indexedParameters != null)
 		{
-			if (index >= 0 && index < indexedParameters.size())
+			if ((index >= 0) && (index < indexedParameters.size()))
 			{
 				return StringValue.valueOf(indexedParameters.get(index));
 			}
@@ -208,16 +242,13 @@ public class PageParameters implements Serializable
 	}
 
 	/**
-	 * Removes indexed parameter on given index
-	 * 
-	 * @param index
-	 * @return this
+	 * @see org.apache.wicket.request.mapper.parameter.IIndexedParameters#remove(int)
 	 */
-	public PageParameters remove(int index)
+	public PageParameters remove(final int index)
 	{
 		if (indexedParameters != null)
 		{
-			if (index >= 0 && index < indexedParameters.size())
+			if ((index >= 0) && (index < indexedParameters.size()))
 			{
 				indexedParameters.remove(index);
 			}
@@ -226,13 +257,11 @@ public class PageParameters implements Serializable
 	}
 
 	/**
-	 * Return set of all named parameter names.
-	 * 
-	 * @return named parameter names
+	 * @see org.apache.wicket.request.mapper.parameter.INamedParameters#getNamedKeys()
 	 */
 	public Set<String> getNamedKeys()
 	{
-		if (namedParameters == null || namedParameters.isEmpty())
+		if ((namedParameters == null) || namedParameters.isEmpty())
 		{
 			return Collections.emptySet();
 		}
@@ -245,10 +274,7 @@ public class PageParameters implements Serializable
 	}
 
 	/**
-	 * Returns parameter value of named parameter with given name
-	 * 
-	 * @param name
-	 * @return parameter value
+	 * @see org.apache.wicket.request.mapper.parameter.INamedParameters#get(java.lang.String)
 	 */
 	public StringValue get(final String name)
 	{
@@ -268,10 +294,7 @@ public class PageParameters implements Serializable
 	}
 
 	/**
-	 * Return list of all values for named parameter with given name
-	 * 
-	 * @param name
-	 * @return list of parameter values
+	 * @see org.apache.wicket.request.mapper.parameter.INamedParameters#getValues(java.lang.String)
 	 */
 	public List<StringValue> getValues(final String name)
 	{
@@ -306,8 +329,15 @@ public class PageParameters implements Serializable
 		private final String key;
 		private final String value;
 
-		private NamedPair(String key, String value)
+		/**
+		 * Constructor
+		 * 
+		 * @param key
+		 * @param value
+		 */
+		public NamedPair(final String key, final String value)
 		{
+			Args.notEmpty(key, "key");
 			this.key = key;
 			this.value = value;
 		}
@@ -327,10 +357,10 @@ public class PageParameters implements Serializable
 		{
 			return value;
 		}
-	};
+	}
 
 	/**
-	 * @return All named parameters in exact order.
+	 * @see org.apache.wicket.request.mapper.parameter.INamedParameters#getAllNamed()
 	 */
 	public List<NamedPair> getAllNamed()
 	{
@@ -346,12 +376,40 @@ public class PageParameters implements Serializable
 	}
 
 	/**
-	 * Removes named parameter with given name.
-	 * 
-	 * @param name
-	 * @return this
+	 * @see org.apache.wicket.request.mapper.parameter.INamedParameters#getPosition(String)
 	 */
+	public int getPosition(final String name)
+	{
+		int index = -1;
+		if (namedParameters != null)
+		{
+			for (int i = 0; i < namedParameters.size(); i++)
+			{
+				Entry entry = namedParameters.get(i);
+				if (entry.key.equals(name))
+				{
+					index = i;
+					break;
+				}
+			}
+		}
+		return index;
+	}
+
+	/**
+	 * @see org.apache.wicket.request.mapper.parameter.INamedParameters#remove(java.lang.String)
+	 */
+	// TODO Wicket 1.6 - remove this method and leave only #remove(String, String...)
 	public PageParameters remove(final String name)
+	{
+		return remove(name, new String[0]);
+	}
+
+	/**
+	 * @see org.apache.wicket.request.mapper.parameter.INamedParameters#remove(java.lang.String,
+	 *      java.lang.String...)
+	 */
+	public PageParameters remove(final String name, final String... values)
 	{
 		Args.notNull(name, "name");
 
@@ -362,7 +420,21 @@ public class PageParameters implements Serializable
 				Entry e = i.next();
 				if (e.key.equals(name))
 				{
-					i.remove();
+					if (values != null && values.length > 0)
+					{
+						for (String value : values)
+						{
+							if (e.value.equals(value))
+							{
+								i.remove();
+								break;
+							}
+						}
+					}
+					else
+					{
+						i.remove();
+					}
 				}
 			}
 		}
@@ -370,11 +442,8 @@ public class PageParameters implements Serializable
 	}
 
 	/**
-	 * Adds value to named parameter with given name.
-	 * 
-	 * @param name
-	 * @param value
-	 * @return this
+	 * @see org.apache.wicket.request.mapper.parameter.INamedParameters#add(java.lang.String,
+	 *      java.lang.Object)
 	 */
 	public PageParameters add(final String name, final Object value)
 	{
@@ -383,13 +452,8 @@ public class PageParameters implements Serializable
 	}
 
 	/**
-	 * Adds named parameter to a specified position. The {@link IRequestMapper}s may or may not take
-	 * the order into account.
-	 * 
-	 * @param name
-	 * @param value
-	 * @param index
-	 * @return this
+	 * @see org.apache.wicket.request.mapper.parameter.INamedParameters#add(java.lang.String,
+	 *      java.lang.Object, int)
 	 */
 	public PageParameters add(final String name, final Object value, final int index)
 	{
@@ -400,58 +464,63 @@ public class PageParameters implements Serializable
 		{
 			namedParameters = new ArrayList<Entry>(1);
 		}
-		Entry entry = new Entry();
-		entry.key = name;
-		entry.value = value.toString();
 
-		if (index == -1)
+		List<String> values = new ArrayList<String>();
+		if (value instanceof String[])
 		{
-			namedParameters.add(entry);
+			values.addAll(Arrays.asList((String[])value));
 		}
 		else
 		{
-			namedParameters.add(index, entry);
+			values.add(value.toString());
+		}
+
+		for (String val : values)
+		{
+			Entry entry = new Entry();
+			entry.key = name;
+			entry.value = val;
+
+			if (index < 0 || index > namedParameters.size())
+			{
+				namedParameters.add(entry);
+			}
+			else
+			{
+				namedParameters.add(index, entry);
+			}
 		}
 		return this;
 	}
 
 	/**
-	 * Sets the named parameter on specified position. The {@link IRequestMapper}s may or may not
-	 * take the order into account.
-	 * 
-	 * @param name
-	 * @param value
-	 * @param index
-	 * @return this
+	 * @see org.apache.wicket.request.mapper.parameter.INamedParameters#set(java.lang.String,
+	 *      java.lang.Object, int)
 	 */
-	public PageParameters set(String name, Object value, int index)
+	public PageParameters set(final String name, final Object value, final int index)
 	{
 		remove(name);
 
 		if (value != null)
 		{
-			add(name, value);
+			add(name, value, index);
 		}
 		return this;
 	}
 
 	/**
-	 * Sets the value for named parameter with given name.
-	 * 
-	 * @param name
-	 * @param value
-	 * @return this
+	 * @see org.apache.wicket.request.mapper.parameter.INamedParameters#set(java.lang.String,
+	 *      java.lang.Object)
 	 */
-	public PageParameters set(String name, Object value)
+	public PageParameters set(final String name, final Object value)
 	{
-		set(name, value, -1);
+		int position = getPosition(name);
+		set(name, value, position);
 		return this;
 	}
 
 	/**
-	 * Removes all indexed parameters.
-	 * 
-	 * @return this
+	 * @see org.apache.wicket.request.mapper.parameter.IIndexedParameters#clearIndexed()
 	 */
 	public PageParameters clearIndexed()
 	{
@@ -460,23 +529,21 @@ public class PageParameters implements Serializable
 	}
 
 	/**
-	 * Removes all named parameters.
-	 * 
-	 * @return this
+	 * @see org.apache.wicket.request.mapper.parameter.INamedParameters#clearNamed()
 	 */
-	public PageParameters clearaNamed()
+	public PageParameters clearNamed()
 	{
 		namedParameters = null;
 		return this;
 	}
 
 	/**
-	 * Copy the paga parameters
+	 * Copy the page parameters
 	 * 
 	 * @param other
 	 * @return this
 	 */
-	public PageParameters overwriteWith(PageParameters other)
+	public PageParameters overwriteWith(final PageParameters other)
 	{
 		if (this != other)
 		{
@@ -486,57 +553,40 @@ public class PageParameters implements Serializable
 		return this;
 	}
 
-	/**
-	 * @see java.lang.Object#equals(java.lang.Object)
-	 */
+	@Override
+	public int hashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((indexedParameters == null) ? 0 : indexedParameters.hashCode());
+		result = prime * result + ((namedParameters == null) ? 0 : namedParameters.hashCode());
+		return result;
+	}
+
 	@Override
 	public boolean equals(Object obj)
 	{
 		if (this == obj)
-		{
 			return true;
-		}
-
-		if (obj instanceof PageParameters == false)
-		{
+		if (obj == null)
 			return false;
-		}
-
-		PageParameters rhs = (PageParameters)obj;
-		if (!Objects.equal(indexedParameters, rhs.indexedParameters))
-		{
+		if (getClass() != obj.getClass())
 			return false;
-		}
-
-		if (namedParameters == null || rhs.namedParameters == null)
+		PageParameters other = (PageParameters)obj;
+		if (indexedParameters == null)
 		{
-			return rhs.namedParameters == namedParameters;
-		}
-
-		if (namedParameters.size() != rhs.namedParameters.size())
-		{
-			return false;
-		}
-
-		for (String key : getNamedKeys())
-		{
-			List<StringValue> values1 = getValues(key);
-			Set<String> v1 = new TreeSet<String>();
-			List<StringValue> values2 = rhs.getValues(key);
-			Set<String> v2 = new TreeSet<String>();
-			for (StringValue sv : values1)
-			{
-				v1.add(sv.toString());
-			}
-			for (StringValue sv : values2)
-			{
-				v2.add(sv.toString());
-			}
-			if (v1.equals(v2) == false)
-			{
+			if (other.indexedParameters != null)
 				return false;
-			}
 		}
+		else if (!indexedParameters.equals(other.indexedParameters))
+			return false;
+		if (namedParameters == null)
+		{
+			if (other.namedParameters != null)
+				return false;
+		}
+		else if (!namedParameters.equals(other.namedParameters))
+			return false;
 		return true;
 	}
 
@@ -547,19 +597,17 @@ public class PageParameters implements Serializable
 	 * @param p2
 	 * @return <code>true</code> if the objects are equal, <code>false</code> otherwise.
 	 */
-	public static boolean equals(PageParameters p1, PageParameters p2)
+	public static boolean equals(final PageParameters p1, final PageParameters p2)
 	{
-		// @TODO see wicket-2698 and review patch applied to 1.4 if it needs to be applied here as
-		// well.
 		if (Objects.equal(p1, p2))
 		{
 			return true;
 		}
-		if (p1 == null && p2.getIndexedCount() == 0 && p2.getNamedKeys().isEmpty())
+		if ((p1 == null) && (p2.getIndexedCount() == 0) && p2.getNamedKeys().isEmpty())
 		{
 			return true;
 		}
-		if (p2 == null && p1.getIndexedCount() == 0 && p1.getNamedKeys().isEmpty())
+		if ((p2 == null) && (p1.getIndexedCount() == 0) && p1.getNamedKeys().isEmpty())
 		{
 			return true;
 		}
@@ -571,6 +619,50 @@ public class PageParameters implements Serializable
 	 */
 	public boolean isEmpty()
 	{
-		return getIndexedCount() == 0 && getNamedKeys().isEmpty();
+		return (getIndexedCount() == 0) && getNamedKeys().isEmpty();
+	}
+
+	@Override
+	public String toString()
+	{
+		StringBuilder str = new StringBuilder();
+
+		if (indexedParameters != null)
+		{
+			for (int i = 0; i < indexedParameters.size(); i++)
+			{
+				if (i > 0)
+				{
+					str.append(", ");
+				}
+
+				str.append(i);
+				str.append('=');
+				str.append('[').append(indexedParameters.get(i)).append(']');
+			}
+		}
+
+		if (str.length() > 0)
+		{
+			str.append(", ");
+		}
+
+		if (namedParameters != null)
+		{
+			for (int i = 0; i < namedParameters.size(); i++)
+			{
+				Entry entry = namedParameters.get(i);
+
+				if (i > 0)
+				{
+					str.append(", ");
+				}
+
+				str.append(entry.key);
+				str.append('=');
+				str.append('[').append(entry.value).append(']');
+			}
+		}
+		return str.toString();
 	}
 }

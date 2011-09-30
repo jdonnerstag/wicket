@@ -17,8 +17,8 @@
 package org.apache.wicket.examples.authentication3;
 
 import org.apache.wicket.Page;
-import org.apache.wicket.authentication.AuthenticatedWebApplication;
-import org.apache.wicket.authentication.AuthenticatedWebSession;
+import org.apache.wicket.authroles.authentication.AbstractAuthenticatedWebSession;
+import org.apache.wicket.authroles.authentication.AuthenticatedWebApplication;
 import org.apache.wicket.markup.html.WebPage;
 
 
@@ -42,7 +42,7 @@ public class MyAuthenticatedWebApplication extends AuthenticatedWebApplication
 	 * @see org.apache.wicket.authentication.AuthenticatedWebApplication#getWebSessionClass()
 	 */
 	@Override
-	protected Class<? extends AuthenticatedWebSession> getWebSessionClass()
+	protected Class<? extends AbstractAuthenticatedWebSession> getWebSessionClass()
 	{
 		return MyAuthenticatedWebSession.class;
 	}

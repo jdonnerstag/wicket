@@ -20,14 +20,14 @@ import java.lang.management.ManagementFactory;
 
 import javax.management.MBeanServer;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.mortbay.jetty.Server;
-import org.mortbay.jetty.webapp.WebAppContext;
-import org.mortbay.management.MBeanContainer;
+import org.eclipse.jetty.jmx.MBeanContainer;
+import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.bio.SocketConnector;
+import org.eclipse.jetty.webapp.WebAppContext;
 
 /**
- * Seperate startup class for people that want to run the examples directly. Use parameter
+ * Separate startup class for people that want to run the examples directly. Use parameter
  * -Dcom.sun.management.jmxremote to startup JMX (and e.g. connect with jconsole).
  */
 public class StartExamples
@@ -35,7 +35,6 @@ public class StartExamples
 	/**
 	 * Used for logging.
 	 */
-	private static final Log log = LogFactory.getLog(StartExamples.class);
 
 	/**
 	 * Main function, starts the jetty server.
@@ -44,16 +43,29 @@ public class StartExamples
 	 */
 	public static void main(String[] args)
 	{
-		Server server = new Server(8080);
-		WebAppContext web = new WebAppContext(server, "src/main/webapp", "/wicket-examples");
+		Server server = new Server();
+		SocketConnector connector = new SocketConnector();
+
+		// Set some timeout options to make debugging easier.
+		connector.setMaxIdleTime(1000 * 60 * 60);
+		connector.setSoLingerTime(-1);
+		connector.setPort(8080);
+		server.setConnectors(new Connector[] { connector });
+
+		WebAppContext bb = new WebAppContext();
+		bb.setServer(server);
+		bb.setContextPath("/");
+		bb.setWar("src/main/webapp");
+
+		server.setHandler(bb);
 
 		MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
 		MBeanContainer mBeanContainer = new MBeanContainer(mBeanServer);
 		server.getContainer().addEventListener(mBeanContainer);
-		mBeanContainer.start();
 
 		try
 		{
+			mBeanContainer.start();
 			server.start();
 			server.join();
 		}

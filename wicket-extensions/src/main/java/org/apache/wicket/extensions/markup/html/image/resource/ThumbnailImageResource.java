@@ -29,6 +29,7 @@ import org.apache.wicket.WicketRuntimeException;
 import org.apache.wicket.request.resource.DynamicImageResource;
 import org.apache.wicket.request.resource.IResource;
 import org.apache.wicket.response.ByteArrayResponse;
+import org.apache.wicket.util.io.IOUtils;
 import org.apache.wicket.util.time.Time;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,7 +67,7 @@ public class ThumbnailImageResource extends DynamicImageResource
 	 * @param maxSize
 	 *            maximum size (width or height) for resize operation
 	 */
-	public ThumbnailImageResource(IResource unscaledImageResource, int maxSize)
+	public ThumbnailImageResource(final IResource unscaledImageResource, final int maxSize)
 	{
 		super();
 
@@ -83,7 +84,7 @@ public class ThumbnailImageResource extends DynamicImageResource
 	 * @return The image data for this dynamic image
 	 */
 	@Override
-	protected byte[] getImageData(Attributes attributes)
+	protected byte[] getImageData(final Attributes attributes)
 	{
 		if (thumbnail == null)
 		{
@@ -97,11 +98,11 @@ public class ThumbnailImageResource extends DynamicImageResource
 	/**
 	 * get resized image instance.
 	 * 
-	 * @param attributes2
+	 * @param attributes
 	 * 
 	 * @return BufferedImage
 	 */
-	protected final BufferedImage getScaledImageInstance(Attributes attributes)
+	protected final BufferedImage getScaledImageInstance(final Attributes attributes)
 	{
 		InputStream is = null;
 		BufferedImage originalImage = null;
@@ -124,16 +125,13 @@ public class ThumbnailImageResource extends DynamicImageResource
 		}
 		finally
 		{
-			if (is != null)
+			try
 			{
-				try
-				{
-					is.close();
-				}
-				catch (IOException e)
-				{
-					log.error(e.getMessage(), e);
-				}
+				IOUtils.close(is);
+			}
+			catch (IOException e)
+			{
+				log.error(e.getMessage(), e);
 			}
 		}
 

@@ -54,7 +54,7 @@ public class DateTextField extends TextField<Date> implements ITextFormatProvide
 	/**
 	 * The converter for the TextField
 	 */
-	private IConverter converter = null;
+	private final IConverter<Date> converter;
 
 	/**
 	 * Creates a new DateTextField, without a specified pattern. This is the same as calling
@@ -65,7 +65,7 @@ public class DateTextField extends TextField<Date> implements ITextFormatProvide
 	 * 
 	 * @see org.apache.wicket.markup.html.form.TextField
 	 */
-	public DateTextField(String id)
+	public DateTextField(final String id)
 	{
 		this(id, null, defaultDatePattern());
 	}
@@ -81,7 +81,7 @@ public class DateTextField extends TextField<Date> implements ITextFormatProvide
 	 * 
 	 * @see org.apache.wicket.markup.html.form.TextField
 	 */
-	public DateTextField(String id, IModel<Date> model)
+	public DateTextField(final String id, final IModel<Date> model)
 	{
 		this(id, model, defaultDatePattern());
 	}
@@ -96,7 +96,7 @@ public class DateTextField extends TextField<Date> implements ITextFormatProvide
 	 * 
 	 * @see org.apache.wicket.markup.html.form.TextField
 	 */
-	public DateTextField(String id, String datePattern)
+	public DateTextField(final String id, final String datePattern)
 	{
 		this(id, null, datePattern);
 	}
@@ -113,7 +113,7 @@ public class DateTextField extends TextField<Date> implements ITextFormatProvide
 	 * 
 	 * @see org.apache.wicket.markup.html.form.TextField
 	 */
-	public DateTextField(String id, IModel<Date> model, String datePattern)
+	public DateTextField(final String id, final IModel<Date> model, final String datePattern)
 	{
 		super(id, model, Date.class);
 		this.datePattern = datePattern;
@@ -147,16 +147,17 @@ public class DateTextField extends TextField<Date> implements ITextFormatProvide
 	 * 
 	 * @see org.apache.wicket.markup.html.form.TextField
 	 */
+	@SuppressWarnings("unchecked")
 	@Override
-	public IConverter getConverter(Class<?> type)
+	public <C> IConverter<C> getConverter(final Class<C> type)
 	{
-		if (converter == null)
+		if (Date.class.isAssignableFrom(type))
 		{
-			return super.getConverter(type);
+			return (IConverter<C>)converter;
 		}
 		else
 		{
-			return converter;
+			return super.getConverter(type);
 		}
 	}
 

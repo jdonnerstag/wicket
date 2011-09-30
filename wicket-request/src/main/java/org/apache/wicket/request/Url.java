@@ -19,10 +19,13 @@ package org.apache.wicket.request;
 import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 
 import org.apache.wicket.util.lang.Args;
+import org.apache.wicket.util.lang.Generics;
 import org.apache.wicket.util.lang.Objects;
 import org.apache.wicket.util.string.StringValue;
 import org.apache.wicket.util.string.Strings;
@@ -60,19 +63,24 @@ public final class Url implements Serializable
 
 	private static final String DEFAULT_CHARSET_NAME = "UTF-8";
 
-	private final List<String> segments = new ArrayList<String>();
+	private final List<String> segments = Generics.newArrayList();
 
-	private final List<QueryParameter> parameters = new ArrayList<QueryParameter>();
+	private final List<QueryParameter> parameters = Generics.newArrayList();
 
 	private String charsetName;
 	private transient Charset _charset;
 
+	private String protocol;
+	private Integer port;
+	private String host;
+
 	/**
 	 * 
 	 * @param qp
+	 * @param charset
 	 * @return query parameters
 	 */
-	private static QueryParameter parseQueryParameter(final String qp, Charset charset)
+	private static QueryParameter parseQueryParameter(final String qp, final Charset charset)
 	{
 		if (qp.indexOf('=') == -1)
 		{
@@ -94,23 +102,23 @@ public final class Url implements Serializable
 		}
 	}
 
-
 	/**
 	 * Parses the given URL string.
 	 * 
 	 * @param url
+	 *            absolute or relative url with query string
 	 * @return Url object
 	 */
-	public static Url parse(String url)
+	public static Url parse(final String url)
 	{
 		return parse(url, null);
 	}
 
-
 	/**
 	 * Parses the given URL string.
 	 * 
 	 * @param url
+	 *            absolute or relative url with query string
 	 * @param charset
 	 * @return Url object
 	 */
@@ -118,41 +126,85 @@ public final class Url implements Serializable
 	{
 		Args.notNull(url, "url");
 
-		Url result = new Url(charset);
+		final Url result = new Url(charset);
 
 		// the url object resolved the charset, use that
 		charset = result.getCharset();
 
-		String segments;
-		String query;
+		// extract query string part
+		final String queryString;
+		final String absoluteUrl;
 
-		int qIndex = url.indexOf('?');
+		final int queryAt = url.indexOf('?');
 
-		if (qIndex == -1)
+		if (queryAt == -1)
 		{
-			segments = url;
-			query = "";
+			queryString = "";
+			absoluteUrl = url;
 		}
 		else
 		{
-			segments = url.substring(0, qIndex);
-			query = url.substring(qIndex + 1);
+			absoluteUrl = url.substring(0, queryAt);
+			queryString = url.substring(queryAt + 1);
 		}
 
-		if (segments.length() > 0)
-		{
+		// get absolute / relative part of url
+		String relativeUrl;
 
+		// absolute urls contain a scheme://
+		final int protocolAt = absoluteUrl.indexOf("://");
+
+		if (protocolAt != -1)
+		{
+			result.protocol = absoluteUrl.substring(0, protocolAt).toLowerCase(Locale.US);
+
+			final String afterProto = absoluteUrl.substring(protocolAt + 3);
+			final String hostAndPort;
+
+			final int relativeAt = afterProto.indexOf('/');
+
+			if (relativeAt == -1)
+			{
+				relativeUrl = "";
+				hostAndPort = afterProto;
+			}
+			else
+			{
+				relativeUrl = afterProto.substring(relativeAt);
+				hostAndPort = afterProto.substring(0, relativeAt);
+			}
+
+			final int portAt = hostAndPort.lastIndexOf(':');
+
+			if (portAt == -1)
+			{
+				result.host = hostAndPort;
+				result.port = getDefaultPortForProtocol(result.protocol);
+			}
+			else
+			{
+				result.host = hostAndPort.substring(0, portAt);
+				result.port = Integer.parseInt(hostAndPort.substring(portAt + 1));
+			}
+		}
+		else
+		{
+			relativeUrl = absoluteUrl;
+		}
+
+		if (relativeUrl.length() > 0)
+		{
 			boolean removeLast = false;
-			if (segments.endsWith("/"))
+			if (relativeUrl.endsWith("/"))
 			{
 				// we need to append something and remove it after splitting
 				// because otherwise the
 				// trailing slashes will be lost
-				segments += "/x";
+				relativeUrl += "/x";
 				removeLast = true;
 			}
 
-			String segmentArray[] = Strings.split(segments, '/');
+			String segmentArray[] = Strings.split(relativeUrl, '/');
 
 			if (removeLast)
 			{
@@ -168,9 +220,9 @@ public final class Url implements Serializable
 			}
 		}
 
-		if (query.length() > 0)
+		if (queryString.length() > 0)
 		{
-			String queryArray[] = Strings.split(query, '&');
+			String queryArray[] = Strings.split(queryString, '&');
 			for (String s : queryArray)
 			{
 				result.parameters.add(parseQueryParameter(s, charset));
@@ -178,28 +230,33 @@ public final class Url implements Serializable
 		}
 
 		return result;
-	};
-
-	public Charset getCharset()
-	{
-		if (Strings.isEmpty(charsetName))
-		{
-			charsetName = DEFAULT_CHARSET_NAME;
-		}
-		if (_charset == null)
-		{
-			_charset = Charset.forName(charsetName);
-		}
-		return _charset;
 	}
 
-	private void setCharset(Charset charset)
+	/**
+	 * get default port number for protocol
+	 * 
+	 * @param protocol
+	 *            name of protocol
+	 * @return default port for protocol or <code>null</code> if unknown
+	 */
+	private static Integer getDefaultPortForProtocol(String protocol)
 	{
-		if (charset == null)
+		if ("http".equals(protocol))
 		{
-			charsetName = "UTF-8";
+			return 80;
 		}
-		_charset = null;
+		else if ("https".equals(protocol))
+		{
+			return 443;
+		}
+		else if ("ftp".equals(protocol))
+		{
+			return 21;
+		}
+		else
+		{
+			return null;
+		}
 	}
 
 	/**
@@ -209,7 +266,12 @@ public final class Url implements Serializable
 	{
 	}
 
-	public Url(Charset charset)
+	/**
+	 * Construct.
+	 * 
+	 * @param charset
+	 */
+	public Url(final Charset charset)
 	{
 		setCharset(charset);
 	}
@@ -221,7 +283,7 @@ public final class Url implements Serializable
 	 * @param url
 	 *            url being copied
 	 */
-	public Url(Url url)
+	public Url(final Url url)
 	{
 		Args.notNull(url, "url");
 
@@ -236,7 +298,7 @@ public final class Url implements Serializable
 	 * @param segments
 	 * @param parameters
 	 */
-	public Url(List<String> segments, List<QueryParameter> parameters)
+	public Url(final List<String> segments, final List<QueryParameter> parameters)
 	{
 		this(segments, parameters, null);
 	}
@@ -245,9 +307,22 @@ public final class Url implements Serializable
 	 * Construct.
 	 * 
 	 * @param segments
-	 * @param parameters
+	 * @param charset
 	 */
-	public Url(List<String> segments, List<QueryParameter> parameters, Charset charset)
+	public Url(final List<String> segments, final Charset charset)
+	{
+		this(segments, Collections.<QueryParameter> emptyList(), charset);
+	}
+
+	/**
+	 * Construct.
+	 * 
+	 * @param segments
+	 * @param parameters
+	 * @param charset
+	 */
+	public Url(final List<String> segments, final List<QueryParameter> parameters,
+		final Charset charset)
 	{
 		Args.notNull(segments, "segments");
 		Args.notNull(parameters, "parameters");
@@ -257,16 +332,39 @@ public final class Url implements Serializable
 		setCharset(charset);
 	}
 
-	public void resolveRelativeTo(Url base)
+	/**
+	 * 
+	 * @return charset
+	 */
+	public Charset getCharset()
 	{
-		Url url = new Url(base);
-
-		while (!getSegments().isEmpty() && "..".equals(getSegments().get(0)))
+		if (Strings.isEmpty(charsetName))
 		{
-			removeLeadingSegments(0);
-			url.getSegments().remove(url.getSegments().size() - 1);
+			charsetName = DEFAULT_CHARSET_NAME;
 		}
-		getSegments().addAll(url.getSegments());
+		if (_charset == null)
+		{
+			_charset = Charset.forName(charsetName);
+		}
+		return _charset;
+	}
+
+	/**
+	 * 
+	 * @param charset
+	 */
+	private void setCharset(final Charset charset)
+	{
+		if (charset == null)
+		{
+			charsetName = "UTF-8";
+			_charset = null;
+		}
+		else
+		{
+			charsetName = charset.name();
+			_charset = charset;
+		}
 	}
 
 	/**
@@ -305,7 +403,7 @@ public final class Url implements Serializable
 	 * @param name
 	 *            query parameter name
 	 */
-	public void removeQueryParameters(String name)
+	public void removeQueryParameters(final String name)
 	{
 		for (Iterator<QueryParameter> i = getQueryParameters().iterator(); i.hasNext();)
 		{
@@ -322,7 +420,7 @@ public final class Url implements Serializable
 	 * 
 	 * @param count
 	 */
-	public void removeLeadingSegments(int count)
+	public void removeLeadingSegments(final int count)
 	{
 		Args.withinRange(0, segments.size(), count, "count");
 		for (int i = 0; i < count; i++)
@@ -336,7 +434,7 @@ public final class Url implements Serializable
 	 * 
 	 * @param newSegments
 	 */
-	public void prependLeadingSegments(List<String> newSegments)
+	public void prependLeadingSegments(final List<String> newSegments)
 	{
 		Args.notNull(newSegments, "segments");
 		segments.addAll(0, newSegments);
@@ -349,7 +447,7 @@ public final class Url implements Serializable
 	 * @param name
 	 * @param value
 	 */
-	public void setQueryParameter(String name, Object value)
+	public void setQueryParameter(final String name, final Object value)
 	{
 		removeQueryParameters(name);
 		addQueryParameter(name, value);
@@ -361,7 +459,7 @@ public final class Url implements Serializable
 	 * @param name
 	 * @param value
 	 */
-	public void addQueryParameter(String name, Object value)
+	public void addQueryParameter(final String name, final Object value)
 	{
 		if (value != null)
 		{
@@ -377,7 +475,7 @@ public final class Url implements Serializable
 	 * @param name
 	 * @return query parameter or <code>null</code>
 	 */
-	public QueryParameter getQueryParameter(String name)
+	public QueryParameter getQueryParameter(final String name)
 	{
 		for (QueryParameter parameter : parameters)
 		{
@@ -398,7 +496,7 @@ public final class Url implements Serializable
 	 * @param name
 	 * @return {@link StringValue} instance wrapping the parameter value
 	 */
-	public StringValue getQueryParameterValue(String name)
+	public StringValue getQueryParameterValue(final String name)
 	{
 		QueryParameter parameter = getQueryParameter(name);
 		if (parameter == null)
@@ -412,16 +510,16 @@ public final class Url implements Serializable
 	}
 
 	/**
-	 * @see java.lang.Object#equals(java.lang.Object)
+	 * {@inheritDoc}
 	 */
 	@Override
-	public boolean equals(Object obj)
+	public boolean equals(final Object obj)
 	{
 		if (this == obj)
 		{
 			return true;
 		}
-		if (obj instanceof Url == false)
+		if ((obj instanceof Url) == false)
 		{
 			return false;
 		}
@@ -432,7 +530,7 @@ public final class Url implements Serializable
 	}
 
 	/**
-	 * @see java.lang.Object#hashCode()
+	 * {@inheritDoc}
 	 */
 	@Override
 	public int hashCode()
@@ -443,9 +541,10 @@ public final class Url implements Serializable
 	/**
 	 * 
 	 * @param string
+	 * @param charset
 	 * @return encoded segment
 	 */
-	private static String encodeSegment(String string, Charset charset)
+	private static String encodeSegment(final String string, final Charset charset)
 	{
 		return UrlEncoder.PATH_INSTANCE.encode(string, charset);
 	}
@@ -453,9 +552,10 @@ public final class Url implements Serializable
 	/**
 	 * 
 	 * @param string
+	 * @param charset
 	 * @return decoded segment
 	 */
-	private static String decodeSegment(String string, Charset charset)
+	private static String decodeSegment(final String string, final Charset charset)
 	{
 		return UrlDecoder.PATH_INSTANCE.decode(string, charset);
 	}
@@ -463,9 +563,10 @@ public final class Url implements Serializable
 	/**
 	 * 
 	 * @param string
+	 * @param charset
 	 * @return encoded parameter
 	 */
-	private static String encodeParameter(String string, Charset charset)
+	private static String encodeParameter(final String string, final Charset charset)
 	{
 		return UrlEncoder.QUERY_INSTANCE.encode(string, charset);
 	}
@@ -473,16 +574,16 @@ public final class Url implements Serializable
 	/**
 	 * 
 	 * @param string
+	 * @param charset
 	 * @return decoded parameter
 	 */
-	private static String decodeParameter(String string, Charset charset)
+	private static String decodeParameter(final String string, final Charset charset)
 	{
 		return UrlDecoder.QUERY_INSTANCE.decode(string, charset);
 	}
 
-
 	/**
-	 * @see java.lang.Object#toString()
+	 * {@inheritDoc}
 	 */
 	@Override
 	public String toString()
@@ -491,38 +592,55 @@ public final class Url implements Serializable
 	}
 
 	/**
-	 * @see java.lang.Object#toString()
+	 * render full representation of url (including protocol, host and port) into string
+	 * representation
+	 * 
+	 * @return absolute representation of the url
 	 */
-	public String toString(Charset charset)
+	public String toAbsoluteString()
+	{
+		return toAbsoluteString(getCharset());
+	}
+
+	/**
+	 * render full representation of url (including protocol, host and port) into string
+	 * representation
+	 * 
+	 * @param charset
+	 * 
+	 * @return see toStringRepresentation
+	 */
+	public String toAbsoluteString(final Charset charset)
 	{
 		StringBuilder result = new StringBuilder();
-		boolean first = true;
-		for (String s : getSegments())
+
+		// output scheme://host:port if specified
+		if (protocol != null && Strings.isEmpty(host) == false)
 		{
-			if (!first)
+			result.append(protocol);
+			result.append("://");
+			result.append(host);
+
+			if (port != null && port.equals(getDefaultPortForProtocol(protocol)) == false)
 			{
-				result.append('/');
+				result.append(':');
+				result.append(port);
 			}
-			first = false;
-			result.append(encodeSegment(s, charset));
 		}
 
-		first = true;
+		// append relative part
+		return Strings.join("/", result.toString(), this.toString());
+	}
 
-		for (QueryParameter p : getQueryParameters())
-		{
-			if (first)
-			{
-				result.append("?");
-				first = false;
-			}
-			else
-			{
-				result.append("&");
-			}
-			result.append(p.toString(charset));
-		}
-
+	/**
+	 * @param charset
+	 * @return see toString()
+	 */
+	public String toString(final Charset charset)
+	{
+		StringBuilder result = new StringBuilder();
+		result.append(getPath(charset));
+		result.append(getQueryString(charset));
 		return result.toString();
 	}
 
@@ -537,14 +655,14 @@ public final class Url implements Serializable
 			return false;
 		}
 		String last = segments.get(segments.size() - 1);
-		return last.length() > 0 && !".".equals(last) && !"..".equals(last);
+		return (last.length() > 0) && !".".equals(last) && !"..".equals(last);
 	}
 
 	/**
 	 * @param segments
 	 * @return true if last segment is empty
 	 */
-	private boolean isLastSegmentEmpty(List<String> segments)
+	private boolean isLastSegmentEmpty(final List<String> segments)
 	{
 		if (segments.isEmpty())
 		{
@@ -554,16 +672,25 @@ public final class Url implements Serializable
 		return last.length() == 0;
 	}
 
+	/**
+	 * 
+	 * @return true, if last segement is empty
+	 */
 	private boolean isLastSegmentEmpty()
 	{
 		return isLastSegmentEmpty(segments);
 	}
 
-	private boolean isAtLeastOnSegmentReal(List<String> segments)
+	/**
+	 * 
+	 * @param segments
+	 * @return true if at least one segement is real
+	 */
+	private boolean isAtLeastOnSegmentReal(final List<String> segments)
 	{
 		for (String s : segments)
 		{
-			if (s.length() > 0 && !".".equals(s) && !"..".equals(s))
+			if ((s.length() > 0) && !".".equals(s) && !"..".equals(s))
 			{
 				return true;
 			}
@@ -610,7 +737,7 @@ public final class Url implements Serializable
 			}
 		}
 
-		if (this.segments.size() == 1 && this.segments.get(0).length() == 0)
+		if ((this.segments.size() == 1) && (this.segments.get(0).length() == 0))
 		{
 			this.segments.clear();
 		}
@@ -623,6 +750,8 @@ public final class Url implements Serializable
 	 */
 	public final static class QueryParameter implements Serializable
 	{
+		private static final long serialVersionUID = 1L;
+
 		private final String name;
 		private final String value;
 
@@ -635,7 +764,7 @@ public final class Url implements Serializable
 		 * @param value
 		 *            parameter value
 		 */
-		public QueryParameter(String name, String value)
+		public QueryParameter(final String name, final String value)
 		{
 			Args.notNull(name, "name");
 			Args.notNull(value, "value");
@@ -665,16 +794,16 @@ public final class Url implements Serializable
 		}
 
 		/**
-		 * @see java.lang.Object#equals(java.lang.Object)
+		 * {@inheritDoc}
 		 */
 		@Override
-		public boolean equals(Object obj)
+		public boolean equals(final Object obj)
 		{
 			if (this == obj)
 			{
 				return true;
 			}
-			if (obj instanceof QueryParameter == false)
+			if ((obj instanceof QueryParameter) == false)
 			{
 				return false;
 			}
@@ -684,7 +813,7 @@ public final class Url implements Serializable
 		}
 
 		/**
-		 * @see java.lang.Object#hashCode()
+		 * {@inheritDoc}
 		 */
 		@Override
 		public int hashCode()
@@ -693,15 +822,20 @@ public final class Url implements Serializable
 		}
 
 		/**
-		 * @see java.lang.Object#toString()
+		 * {@inheritDoc}
 		 */
 		@Override
 		public String toString()
 		{
-			return toString(Charset.forName("UTF-8"));
+			return toString(Charset.forName(DEFAULT_CHARSET_NAME));
 		}
 
-		public String toString(Charset charset)
+		/**
+		 * 
+		 * @param charset
+		 * @return see toString()
+		 */
+		public String toString(final Charset charset)
 		{
 			StringBuilder result = new StringBuilder();
 			result.append(encodeParameter(getName(), charset));
@@ -744,13 +878,21 @@ public final class Url implements Serializable
 	 * @param relative
 	 *            relative url
 	 */
-	public void resolveRelative(Url relative)
+	public void resolveRelative(final Url relative)
 	{
-		// strip the first non-folder segment
-		getSegments().remove(getSegments().size() - 1);
+		if (getSegments().size() > 0)
+		{
+			// strip the first non-folder segment
+			getSegments().remove(getSegments().size() - 1);
+		}
+		// remove all './' (current folder) from the relative url
+		if (!relative.getSegments().isEmpty() && ".".equals(relative.getSegments().get(0)))
+		{
+			relative.getSegments().remove(0);
+		}
 
 		// process any ../ segments in the relative url
-		while (!relative.getSegments().isEmpty() && "".equals(relative.getSegments().get(0)))
+		while (!relative.getSegments().isEmpty() && "..".equals(relative.getSegments().get(0)))
 		{
 			relative.getSegments().remove(0);
 			getSegments().remove(getSegments().size() - 1);
@@ -762,5 +904,134 @@ public final class Url implements Serializable
 		// replace query params with the ones from relative
 		parameters.clear();
 		parameters.addAll(relative.getQueryParameters());
+	}
+
+	/**
+	 * Gets the protocol of this url (http/https/etc)
+	 * 
+	 * @return protocol or {@code null} if none has been set
+	 */
+	public String getProtocol()
+	{
+		return protocol;
+	}
+
+	/**
+	 * Sets the protocol of this url (http/https/etc)
+	 * 
+	 * @param protocol
+	 */
+	public void setProtocol(final String protocol)
+	{
+		this.protocol = protocol;
+	}
+
+	/**
+	 * Gets the port of this url
+	 * 
+	 * @return port or {@code null} if none has been set
+	 */
+	public Integer getPort()
+	{
+		return port;
+	}
+
+	/**
+	 * Sets the port of this url
+	 * 
+	 * @param port
+	 */
+	public void setPort(final Integer port)
+	{
+		this.port = port;
+	}
+
+	/**
+	 * Gets the host name of this url
+	 * 
+	 * @return host name or {@code null} if none is seto
+	 */
+	public String getHost()
+	{
+		return host;
+	}
+
+	/**
+	 * Sets the host name of this url
+	 * 
+	 * @param host
+	 */
+	public void setHost(final String host)
+	{
+		this.host = host;
+	}
+
+	/**
+	 * return path for current url in given encoding
+	 * 
+	 * @param charset
+	 *            character set for encoding
+	 * 
+	 * @return path string
+	 */
+	public String getPath(Charset charset)
+	{
+		Args.notNull(charset, "charset");
+
+		StringBuilder path = new StringBuilder();
+		boolean slash = false;
+
+		for (String segment : getSegments())
+		{
+			if (slash)
+			{
+				path.append('/');
+			}
+			path.append(encodeSegment(segment, charset));
+			slash = true;
+		}
+		return path.toString();
+	}
+
+	/**
+	 * return path for current url in original encoding
+	 * 
+	 * @return path string
+	 */
+	public String getPath()
+	{
+		return getPath(getCharset());
+	}
+
+	/**
+	 * return query string part of url in given encoding
+	 * 
+	 * @param charset
+	 *            character set for encoding
+	 * 
+	 * @return query string
+	 */
+	public String getQueryString(Charset charset)
+	{
+		Args.notNull(charset, "charset");
+
+		StringBuilder query = new StringBuilder();
+
+		for (QueryParameter parameter : getQueryParameters())
+		{
+			query.append(query.length() == 0 ? '?' : '&');
+			query.append(parameter.toString(charset));
+		}
+		return query.toString();
+	}
+
+	/**
+	 * return query string part of url in original encoding
+	 * 
+	 * @return query string
+	 */
+	public String getQueryString()
+	{
+		return getQueryString(getCharset());
 	}
 }

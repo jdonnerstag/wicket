@@ -40,7 +40,6 @@ import org.apache.wicket.markup.html.image.Image;
 import org.apache.wicket.markup.html.image.NonCachingImage;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.AbstractReadOnlyModel;
-import org.apache.wicket.protocol.http.RequestUtils;
 import org.apache.wicket.request.Request;
 import org.apache.wicket.request.cycle.RequestCycle;
 import org.apache.wicket.request.http.WebResponse;
@@ -165,7 +164,7 @@ public class KittenCaptchaPanel extends Panel
 			private static final long serialVersionUID = 7480352029955897654L;
 
 			@Override
-			protected CharSequence getCallbackScript(boolean onlyTargetActivePage)
+			protected CharSequence getCallbackScript()
 			{
 				// Call-back script shows loading indicator and makes wicket
 				// ajax request passing in mouse co-ordinates
@@ -197,19 +196,22 @@ public class KittenCaptchaPanel extends Panel
 					// Instead of reload entire image just change the src
 					// attribute, this reduces the flicker
 					final StringBuilder javascript = new StringBuilder();
-					javascript.append("Wicket.$('" + image.getMarkupId() + "').src = '");
+					javascript.append("Wicket.$('")
+						.append(image.getMarkupId())
+						.append("').src = '");
 					CharSequence url = image.urlFor(IResourceListener.INTERFACE);
 					javascript.append(url);
-					javascript.append((url.toString().indexOf('?') > -1 ? "&amp;" : "?") + "rand=" +
-						Math.random());
+					javascript.append(url.toString().indexOf('?') > -1 ? "&amp;" : "?")
+						.append("rand=")
+						.append(Math.random());
 					javascript.append("'");
-					target.appendJavascript(javascript.toString());
+					target.appendJavaScript(javascript.toString());
 				}
 				else
 				{
 					// The user didn't click on an animal, so hide the loading
 					// indicator
-					target.appendJavascript(" hideLoadingIndicator();");
+					target.appendJavaScript(" hideLoadingIndicator();");
 				}
 
 				// Update the selection label
@@ -374,7 +376,7 @@ public class KittenCaptchaPanel extends Panel
 	/**
 	 * Resource which renders the actual captcha image
 	 */
-	private class CaptchaImageResource extends DynamicImageResource
+	private static class CaptchaImageResource extends DynamicImageResource
 	{
 		private static final long serialVersionUID = -1560784998742404278L;
 
@@ -389,7 +391,8 @@ public class KittenCaptchaPanel extends Panel
 		private transient SoftReference<byte[]> data = null;
 
 		@Override
-		protected void configureResponse(ResourceResponse response, Attributes attributes)
+		protected void configureResponse(final ResourceResponse response,
+			final Attributes attributes)
 		{
 			super.configureResponse(response, attributes);
 			response.disableCaching();
@@ -409,7 +412,7 @@ public class KittenCaptchaPanel extends Panel
 		 * @return Rendered image data
 		 */
 		@Override
-		protected byte[] getImageData(Attributes attributes)
+		protected byte[] getImageData(final Attributes attributes)
 		{
 			// Handle caching
 			setLastModifiedTime(Time.now());
@@ -417,7 +420,7 @@ public class KittenCaptchaPanel extends Panel
 			response.setHeader("Cache-Control", "no-cache, must-revalidate, max-age=0, no-store");
 
 			// If we don't have data
-			if (data == null || data.get() == null)
+			if ((data == null) || (data.get() == null))
 			{
 				// Create the image and turn it into data
 				final BufferedImage composedImage = animals.createImage();
@@ -473,7 +476,7 @@ public class KittenCaptchaPanel extends Panel
 	/**
 	 * An animal that has a location
 	 */
-	private class PlacedAnimal implements Serializable
+	private static class PlacedAnimal implements Serializable
 	{
 		private static final long serialVersionUID = -6703909440564862486L;
 
@@ -597,7 +600,7 @@ public class KittenCaptchaPanel extends Panel
 		 *            Maximum random value
 		 * @return A random value in the given range
 		 */
-		private float random(float min, float max)
+		private float random(final float min, final float max)
 		{
 			return min + Math.abs(random.nextFloat() * (max - min));
 		}

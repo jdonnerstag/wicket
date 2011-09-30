@@ -17,6 +17,7 @@
 package org.apache.wicket.extensions.markup.html.repeater.util;
 
 import org.apache.wicket.extensions.markup.html.repeater.data.sort.ISortState;
+import org.apache.wicket.extensions.markup.html.repeater.data.sort.SortOrder;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.ISortableDataProvider;
 
 
@@ -47,20 +48,6 @@ public abstract class SortableDataProvider<T> implements ISortableDataProvider<T
 	}
 
 	/**
-	 * @see ISortableDataProvider#setSortState(org.apache.wicket.extensions.markup.html.repeater.data.sort.ISortState)
-	 */
-	public final void setSortState(ISortState state)
-	{
-		if (!(state instanceof SingleSortState))
-		{
-			throw new IllegalArgumentException(
-				"argument [state] must be an instance of SingleSortState, but it is [" +
-					state.getClass().getName() + "]:[" + state.toString() + "]");
-		}
-		this.state = (SingleSortState)state;
-	}
-
-	/**
 	 * Returns current sort state
 	 * 
 	 * @return current sort state
@@ -76,7 +63,7 @@ public abstract class SortableDataProvider<T> implements ISortableDataProvider<T
 	 * @param param
 	 *            parameter containing new sorting information
 	 */
-	public void setSort(SortParam param)
+	public void setSort(final SortParam param)
 	{
 		state.setSort(param);
 	}
@@ -86,12 +73,12 @@ public abstract class SortableDataProvider<T> implements ISortableDataProvider<T
 	 * 
 	 * @param property
 	 *            sort property
-	 * @param ascending
-	 *            sort direction
+	 * @param order
+	 *            sort order
 	 */
-	public void setSort(String property, boolean ascending)
+	public void setSort(final String property, final SortOrder order)
 	{
-		setSort(new SortParam(property, ascending));
+		state.setPropertySortOrder(property, order);
 	}
 
 	/**

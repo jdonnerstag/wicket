@@ -17,9 +17,19 @@
 package org.apache.wicket.threadtest.apps.app2;
 
 import org.apache.wicket.Application;
+import org.apache.wicket.DefaultPageManagerProvider;
 import org.apache.wicket.Page;
 import org.apache.wicket.markup.html.image.resource.DefaultButtonImageResource;
+import org.apache.wicket.page.IPageManager;
+import org.apache.wicket.page.IPageManagerContext;
+import org.apache.wicket.page.PageStoreManager;
+import org.apache.wicket.pageStore.DefaultPageStore;
+import org.apache.wicket.pageStore.IDataStore;
+import org.apache.wicket.pageStore.IPageStore;
+import org.apache.wicket.pageStore.memory.HttpSessionDataStore;
+import org.apache.wicket.pageStore.memory.PageNumberEvictionStrategy;
 import org.apache.wicket.protocol.http.WebApplication;
+import org.apache.wicket.serialize.java.JavaSerializer;
 
 /**
  * Test application
@@ -49,12 +59,21 @@ public class TestApp2 extends WebApplication
 	protected void init()
 	{
 		getSharedResources().add("cancelButton", new DefaultButtonImageResource("Cancel"));
+
+		setPageManagerProvider(new DefaultPageManagerProvider(this)
+		{
+			@Override
+			public IPageManager get(IPageManagerContext pageManagerContext)
+			{
+				IDataStore dataStore = new HttpSessionDataStore(pageManagerContext,
+					new PageNumberEvictionStrategy(100));
+				IPageStore pageStore = new DefaultPageStore(
+					new JavaSerializer(getApplicationKey()), dataStore,
+					getStoreSettings().getInmemoryCacheSize());
+				return new PageStoreManager(getName(), pageStore, pageManagerContext);
+
+			}
+		});
 	}
 
-	// TODO ng change the store/pagemanager to a non-disk one
-// @Override
-// protected ISessionStore newSessionStore()
-// {
-// return super.newSessionStore();
-// }
 }

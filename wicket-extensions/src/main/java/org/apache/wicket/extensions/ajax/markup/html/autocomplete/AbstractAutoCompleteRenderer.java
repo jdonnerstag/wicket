@@ -28,21 +28,12 @@ import org.apache.wicket.request.Response;
  * @since 1.2
  * 
  * @author Igor Vaynberg (ivaynberg)
- * 
  */
 public abstract class AbstractAutoCompleteRenderer<T> implements IAutoCompleteRenderer<T>
 {
-
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L;
 
-	/**
-	 * @see org.apache.wicket.extensions.ajax.markup.html.autocomplete.IAutoCompleteRenderer#render(java.lang.Object,
-	 *      org.apache.wicket.request.Response, String)
-	 */
-	public final void render(T object, Response response, String criteria)
+	public final void render(final T object, final Response response, final String criteria)
 	{
 		String textValue = getTextValue(object);
 		if (textValue == null)
@@ -54,27 +45,22 @@ public abstract class AbstractAutoCompleteRenderer<T> implements IAutoCompleteRe
 		textValue = textValue.replaceAll("\\\"", "&quot;");
 
 		response.write("<li textvalue=\"" + textValue + "\"");
-		final CharSequence handler = getOnSelectJavascriptExpression(object);
+		final CharSequence handler = getOnSelectJavaScriptExpression(object);
 		if (handler != null)
+		{
 			response.write(" onselect=\"" + handler + '"');
+		}
 		response.write(">");
 		renderChoice(object, response, criteria);
 		response.write("</li>");
 	}
 
-
-	/**
-	 * @see org.apache.wicket.extensions.ajax.markup.html.autocomplete.IAutoCompleteRenderer#renderHeader(org.apache.wicket.request.Response)
-	 */
-	public final void renderHeader(Response response)
+	public final void renderHeader(final Response response)
 	{
 		response.write("<ul>");
 	}
 
-	/**
-	 * @see org.apache.wicket.extensions.ajax.markup.html.autocomplete.IAutoCompleteRenderer#renderFooter(org.apache.wicket.request.Response)
-	 */
-	public final void renderFooter(Response response)
+	public final void renderFooter(final Response response, int count)
 	{
 		response.write("</ul>");
 	}
@@ -114,7 +100,7 @@ public abstract class AbstractAutoCompleteRenderer<T> implements IAutoCompleteRe
 	 * example 1:
 	 * 
 	 * <pre>
-	 * protected CharSequence getOnSelectJavascript(Address address)
+	 * protected CharSequence getOnSelectJavaScript(Address address)
 	 * {
 	 * 	final StringBuilder js = new StringBuilder();
 	 * 	js.append(&quot;wicketGet('street').value ='&quot; + address.getStreet() + &quot;';&quot;);
@@ -128,7 +114,7 @@ public abstract class AbstractAutoCompleteRenderer<T> implements IAutoCompleteRe
 	 * example 2:
 	 * 
 	 * <pre>
-	 * protected CharSequence getOnSelectJavascript(Currency currency)
+	 * protected CharSequence getOnSelectJavaScript(Currency currency)
 	 * {
 	 * 	final StringBuilder js = new StringBuilder();
 	 * 	js.append(&quot;val rate = ajaxGetExchangeRateForCurrency(currencySymbol);&quot;);
@@ -145,7 +131,7 @@ public abstract class AbstractAutoCompleteRenderer<T> implements IAutoCompleteRe
 	 * @return javascript to execute on selection or <code>null</code> if default behavior is
 	 *         intented
 	 */
-	protected CharSequence getOnSelectJavascriptExpression(T item)
+	protected CharSequence getOnSelectJavaScriptExpression(final T item)
 	{
 		return null;
 	}

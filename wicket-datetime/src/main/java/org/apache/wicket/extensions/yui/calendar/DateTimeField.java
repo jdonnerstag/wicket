@@ -17,14 +17,16 @@
 package org.apache.wicket.extensions.yui.calendar;
 
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 
 import org.apache.wicket.Session;
-import org.apache.wicket.datetime.StyleDateConverter;
 import org.apache.wicket.datetime.markup.html.form.DateTextField;
+import org.apache.wicket.markup.html.IHeaderResponse;
+import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.form.DropDownChoice;
 import org.apache.wicket.markup.html.form.FormComponentPanel;
 import org.apache.wicket.markup.html.form.TextField;
@@ -52,13 +54,15 @@ import org.joda.time.format.DateTimeFormat;
  */
 public class DateTimeField extends FormComponentPanel<Date>
 {
-	private static final long serialVersionUID = 1L;
-
 	/**
 	 * Enumerated type for different ways of handling the render part of requests.
 	 */
-	private static enum AM_PM {
-		AM("AM"), PM("PM");
+	public static enum AM_PM {
+		/** */
+		AM("AM"),
+
+		/** */
+		PM("PM");
 
 		/** */
 		private String value;
@@ -78,23 +82,35 @@ public class DateTimeField extends FormComponentPanel<Date>
 		}
 	}
 
-	private static final IConverter MINUTES_CONVERTER = new ZeroPaddingIntegerConverter(2);
+	private static final long serialVersionUID = 1L;
 
+	// Component-IDs
+	protected static final String DATE = "date";
+	protected static final String HOURS = "hours";
+	protected static final String MINUTES = "minutes";
+	protected static final String AM_OR_PM_CHOICE = "amOrPmChoice";
+
+	// PropertyModel string to access getAmOrPm
+	private static final String AM_OR_PM = "amOrPm";
+
+	private static final IConverter<Integer> MINUTES_CONVERTER = new ZeroPaddingIntegerConverter(2);
+
+	// The dropdown list for AM/PM and it's associated model object
+	private DropDownChoice<AM_PM> amOrPmChoice;
 	private AM_PM amOrPm = AM_PM.AM;
 
-	private DropDownChoice<AM_PM> amOrPmChoice;
-
-	private MutableDateTime date;
-
+	// The date TextField and it's associated model object
+	// Note that any time information in date will be ignored
 	private DateTextField dateField;
+	private Date date;
 
+	// The TextField for "hours" and it's associated model object
+	private TextField<Integer> hoursField;
 	private Integer hours;
 
-	private TextField<Integer> hoursField;
-
-	private Integer minutes;
-
+	// The TextField for "minutes" and it's associated model object
 	private TextField<Integer> minutesField;
+	private Integer minutes;
 
 	/**
 	 * Construct.
@@ -116,74 +132,126 @@ public class DateTimeField extends FormComponentPanel<Date>
 	{
 		super(id, model);
 
+		// Sets the type that will be used when updating the model for this component.
 		setType(Date.class);
-		PropertyModel<Date> dateFieldModel = new PropertyModel<Date>(this, "date");
-		add(dateField = newDateTextField("date", dateFieldModel));
+
+		// Create and add the date TextField
+		PropertyModel<Date> dateFieldModel = new PropertyModel<Date>(this, DATE);
+		add(dateField = newDateTextField(DATE, dateFieldModel));
+
+		// Add a date picker to the date TextField
 		dateField.add(newDatePicker());
-		add(hoursField = new TextField<Integer>("hours", new PropertyModel<Integer>(this, "hours"),
-				Integer.class));
+
+		// Create and add the "hours" TextField
+		add(hoursField = new TextField<Integer>(HOURS, new PropertyModel<Integer>(this, HOURS),
+			Integer.class));
 		hoursField.add(new HoursValidator());
-		hoursField.setLabel(new Model<String>("hours"));
-		add(minutesField = new TextField<Integer>("minutes", new PropertyModel<Integer>(this,
-				"minutes"), Integer.class)
+		hoursField.setLabel(new Model<String>(HOURS));
+
+		// Create and add the "minutes" TextField
+		add(minutesField = new TextField<Integer>(MINUTES,
+			new PropertyModel<Integer>(this, MINUTES), Integer.class)
 		{
 			private static final long serialVersionUID = 1L;
 
 			@SuppressWarnings("unchecked")
 			@Override
-			public IConverter getConverter(Class type)
+			public <C> IConverter<C> getConverter(Class<C> type)
 			{
-				return MINUTES_CONVERTER;
+				if (Integer.class.isAssignableFrom(type))
+				{
+					return (IConverter<C>)MINUTES_CONVERTER;
+				}
+				else
+				{
+					return super.getConverter(type);
+				}
 			}
 		});
 		minutesField.add(new RangeValidator<Integer>(0, 59));
-		minutesField.setLabel(new Model<String>("minutes"));
-		add(amOrPmChoice = new DropDownChoice<AM_PM>("amOrPmChoice", new PropertyModel<AM_PM>(this,
-				"amOrPm"), Arrays.asList(AM_PM.values())));
+		minutesField.setLabel(new Model<String>(MINUTES));
+
+		// Create and add the "AM/PM" Listbox
+		add(amOrPmChoice = new DropDownChoice<AM_PM>(AM_OR_PM_CHOICE, new PropertyModel<AM_PM>(
+			this, AM_OR_PM), Arrays.asList(AM_PM.values())));
+
+		add(new WebMarkupContainer("hoursSeparator")
+		{
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public boolean isVisible()
+			{
+				return minutesField.determineVisibility();
+			}
+		});
 	}
 
 	/**
-	 * Gets amOrPm.
+	 * 
+	 * @return The date TextField
+	 */
+	protected final DateTextField getDateTextField()
+	{
+		return dateField;
+	}
+
+	/**
+	 * Gets the amOrPm model object of the drop down choice.
 	 * 
 	 * @return amOrPm
 	 */
-	public AM_PM getAmOrPm()
+	public final AM_PM getAmOrPm()
 	{
 		return amOrPm;
 	}
 
 	/**
-	 * Gets date.
+	 * Gets the date model object for the date TextField. Any associated time information will be
+	 * ignored.
 	 * 
 	 * @return date
 	 */
-	public Date getDate()
+	public final Date getDate()
 	{
-		return (date != null) ? date.toDate() : null;
+		return date;
 	}
 
 	/**
-	 * Gets hours.
+	 * Gets the hours model object for the TextField
 	 * 
 	 * @return hours
 	 */
-	public Integer getHours()
+	public final Integer getHours()
 	{
 		return hours;
 	}
 
 	/**
-	 * TODO comment
+	 * Gets the minutes model object for the TextField
 	 * 
-	 * @param widgetProperties
+	 * @return minutes
 	 */
-	protected void configure(Map< ? , ? > widgetProperties)
+	public final Integer getMinutes()
 	{
+		return minutes;
 	}
 
 	/**
-	 * @see org.apache.wicket.markup.html.form.FormComponent#getInput()
+	 * Gives overriding classes the option of adding (or even changing/ removing) configuration
+	 * properties for the javascript widget. See <a
+	 * href="http://developer.yahoo.com/yui/calendar/">the widget's documentation</a> for the
+	 * available options. If you want to override/ remove properties, you should call
+	 * super.configure(properties) first. If you don't call that, be aware that you will have to
+	 * call {@link #localize(Map)} manually if you like localized strings to be added.
+	 * 
+	 * @param widgetProperties
+	 *            the current widget properties
 	 */
+	protected void configure(Map<String, Object> widgetProperties)
+	{
+	}
+
 	@Override
 	public String getInput()
 	{
@@ -193,57 +261,26 @@ public class DateTimeField extends FormComponentPanel<Date>
 	}
 
 	/**
-	 * Gets minutes.
-	 * 
-	 * @return minutes
-	 */
-	public Integer getMinutes()
-	{
-		return minutes;
-	}
-
-	/**
-	 * Sets amOrPm.
+	 * Sets the amOrPm model object associated with the drop down choice.
 	 * 
 	 * @param amOrPm
 	 *            amOrPm
 	 */
-	public void setAmOrPm(final AM_PM amOrPm)
+	public final void setAmOrPm(final AM_PM amOrPm)
 	{
 		this.amOrPm = amOrPm;
 	}
 
 	/**
-	 * Sets date.
+	 * Sets the date model object associated with the date TextField. It does not affect hours or
+	 * minutes.
 	 * 
 	 * @param date
 	 *            date
 	 */
-	public void setDate(final Date date)
+	public final void setDate(final Date date)
 	{
-		if (date == null)
-		{
-			this.date = null;
-			setDefaultModelObject(null);
-			setHours(null);
-			setMinutes(null);
-			return;
-		}
-
-		this.date = new MutableDateTime(date);
-
-		Integer hours = getHours();
-		if (hours != null)
-		{
-			boolean use12HourFormat = use12HourFormat();
-			this.date.set(DateTimeFieldType.hourOfDay(), hours.intValue() %
-					(use12HourFormat ? 12 : 24));
-
-			Integer minutes = getMinutes();
-			this.date.setMinuteOfHour((minutes != null) ? minutes.intValue() : 0);
-		}
-
-		setDefaultModelObject(this.date.toDate());
+		this.date = date;
 	}
 
 	/**
@@ -252,7 +289,7 @@ public class DateTimeField extends FormComponentPanel<Date>
 	 * @param hours
 	 *            hours
 	 */
-	public void setHours(final Integer hours)
+	public final void setHours(final Integer hours)
 	{
 		this.hours = hours;
 	}
@@ -263,7 +300,7 @@ public class DateTimeField extends FormComponentPanel<Date>
 	 * @param minutes
 	 *            minutes
 	 */
-	public void setMinutes(final Integer minutes)
+	public final void setMinutes(final Integer minutes)
 	{
 		this.minutes = minutes;
 	}
@@ -292,79 +329,66 @@ public class DateTimeField extends FormComponentPanel<Date>
 	 * used by form validators without having to depend on the actual model being updated, and this
 	 * method is called by the default implementation of {@link #updateModel()} anyway (so we don't
 	 * have to override that anymore).
-	 * </p>
-	 * 
-	 * @see org.apache.wicket.markup.html.form.FormComponent#convertInput()
 	 */
 	@Override
 	protected void convertInput()
 	{
-		Object dateFieldInput = dateField.getConvertedInput();
-		if (dateFieldInput != null)
+		try
 		{
-			MutableDateTime date = new MutableDateTime(dateFieldInput);
-			Integer hours = hoursField.getConvertedInput();
-			Integer minutes = minutesField.getConvertedInput();
-			AM_PM amOrPm = amOrPmChoice.getConvertedInput();
+			// Get the converted input values
+			Date dateFieldInput = dateField.getConvertedInput();
+			Integer hoursInput = hoursField.getConvertedInput();
+			Integer minutesInput = minutesField.getConvertedInput();
+			AM_PM amOrPmInput = amOrPmChoice.getConvertedInput();
 
-			try
+			if (dateFieldInput == null)
 			{
-				boolean use12HourFormat = use12HourFormat();
-				if (hours != null)
-				{
-					date.set(DateTimeFieldType.hourOfDay(), hours.intValue() %
-							getMaximumHours(use12HourFormat));
-					date.setMinuteOfHour((minutes != null) ? minutes.intValue() : 0);
-				}
-				if (use12HourFormat)
-				{
-					date.set(DateTimeFieldType.halfdayOfDay(), amOrPm == AM_PM.PM ? 1 : 0);
-				}
-
-				TimeZone zone = getClientTimeZone();
-				if (zone != null)
-				{
-					date.setMillis(getMillis(zone, TimeZone.getDefault(), date.getMillis()));
-				}
-
-				// the date will be in the server's timezone
-				setConvertedInput(date.toDate());
+				return;
 			}
-			catch (RuntimeException e)
+
+			// Get year, month and day ignoring any timezone of the Date object
+			Calendar cal = Calendar.getInstance();
+			cal.setTime(dateFieldInput);
+			int year = cal.get(Calendar.YEAR);
+			int month = cal.get(Calendar.MONTH) + 1;
+			int day = cal.get(Calendar.DAY_OF_MONTH);
+			int hours = (hoursInput == null ? 0 : hoursInput % 24);
+			int minutes = (minutesInput == null ? 0 : minutesInput);
+
+			// Use the input to create a date object with proper timezone
+			MutableDateTime date = new MutableDateTime(year, month, day, hours, minutes, 0, 0,
+				DateTimeZone.forTimeZone(getClientTimeZone()));
+
+			// Adjust for halfday if needed
+			if (use12HourFormat())
 			{
-				DateTimeField.this.error(e.getMessage());
-				invalid();
+				int halfday = (amOrPmInput == AM_PM.PM ? 1 : 0);
+				date.set(DateTimeFieldType.halfdayOfDay(), halfday);
+				date.set(DateTimeFieldType.hourOfHalfday(), hours % 12);
 			}
+
+			// The date will be in the server's timezone
+			setConvertedInput(new Date(date.getMillis()));
 		}
-		else
+		catch (RuntimeException e)
 		{
-			setConvertedInput(null);
+			DateTimeField.this.error(e.getMessage());
+			invalid();
 		}
-	}
-
-	/**
-	 * 
-	 * @param to
-	 * @param from
-	 * @param instant
-	 * @return millis
-	 */
-	private long getMillis(TimeZone to, TimeZone from, long instant)
-	{
-		return DateTimeZone.forTimeZone(from).getMillisKeepLocal(DateTimeZone.forTimeZone(to),
-				instant);
 	}
 
 	/**
 	 * create a new {@link DateTextField} instance to be added to this panel.
 	 * 
+	 * @param id
+	 *            the component id
 	 * @param dateFieldModel
 	 *            model that should be used by the {@link DateTextField}
 	 * @return a new date text field instance
 	 */
 	protected DateTextField newDateTextField(String id, PropertyModel<Date> dateFieldModel)
 	{
-		return new DateTextField(id, dateFieldModel, new StyleDateConverter(false));
+		return DateTextField.forShortStyle(id, dateFieldModel, false);
 	}
 
 	/**
@@ -380,47 +404,67 @@ public class DateTimeField extends FormComponentPanel<Date>
 		boolean use12HourFormat = use12HourFormat();
 		amOrPmChoice.setVisible(use12HourFormat);
 
-		Date d = (Date)getDefaultModelObject();
-		if (d != null)
-		{
-			date = new MutableDateTime(d);
-		}
-		else
+		Date modelObject = (Date)getDefaultModelObject();
+		if (modelObject == null)
 		{
 			date = null;
 			hours = null;
 			minutes = null;
 		}
-
-		if (date != null)
+		else
 		{
 			// convert date to the client's time zone if we have that info
 			TimeZone zone = getClientTimeZone();
-			// instantiate with the previously set date
 			if (zone != null)
 			{
-				date.setMillis(getMillis(TimeZone.getDefault(), zone, date.getMillis()));
+				modelObject = changeTimeZone(modelObject, zone);
 			}
+
+			MutableDateTime mDate = new MutableDateTime(modelObject);
+
+			date = mDate.toDate();
 
 			if (use12HourFormat)
 			{
-				int hourOfHalfDay = date.get(DateTimeFieldType.hourOfHalfday());
-				hours = new Integer(hourOfHalfDay == 0 ? 12 : hourOfHalfDay);
+				int hourOfHalfDay = mDate.get(DateTimeFieldType.hourOfHalfday());
+				hours = hourOfHalfDay == 0 ? 12 : hourOfHalfDay;
 			}
 			else
 			{
-				hours = new Integer(date.get(DateTimeFieldType.hourOfDay()));
+				hours = mDate.get(DateTimeFieldType.hourOfDay());
 			}
-			amOrPm = (date.get(DateTimeFieldType.halfdayOfDay()) == 0) ? AM_PM.AM : AM_PM.PM;
-			minutes = new Integer(date.getMinuteOfHour());
 
-			// we don't really have to reset the date field to the server's
-			// timezone, as it's the same milliseconds from EPOCH anyway, and
-			// toDate will always get the Date object initialized for the time zone
-			// of the server
+			amOrPm = (mDate.get(DateTimeFieldType.halfdayOfDay()) == 0) ? AM_PM.AM : AM_PM.PM;
+			minutes = mDate.getMinuteOfHour();
 		}
 
 		super.onBeforeRender();
+	}
+
+	/**
+	 * Change a date in another timezone
+	 * 
+	 * @param date
+	 *            The input date.
+	 * @param zone
+	 *            The target timezone.
+	 * @return A new converted date.
+	 */
+	public static Date changeTimeZone(Date date, TimeZone zone)
+	{
+		Calendar first = Calendar.getInstance(zone);
+		first.setTimeInMillis(date.getTime());
+
+		Calendar output = Calendar.getInstance();
+		output.set(Calendar.YEAR, first.get(Calendar.YEAR));
+		output.set(Calendar.MONTH, first.get(Calendar.MONTH));
+		output.set(Calendar.DAY_OF_MONTH, first.get(Calendar.DAY_OF_MONTH));
+		output.set(Calendar.HOUR_OF_DAY, first.get(Calendar.HOUR_OF_DAY));
+		output.set(Calendar.MINUTE, first.get(Calendar.MINUTE));
+		output.set(Calendar.SECOND, first.get(Calendar.SECOND));
+		output.set(Calendar.MILLISECOND, first.get(Calendar.MILLISECOND));
+
+		return output.getTime();
 	}
 
 	/**
@@ -434,7 +478,7 @@ public class DateTimeField extends FormComponentPanel<Date>
 	{
 		String pattern = DateTimeFormat.patternForStyle("-S", getLocale());
 		return pattern.indexOf('a') != -1 || pattern.indexOf('h') != -1 ||
-				pattern.indexOf('K') != -1;
+			pattern.indexOf('K') != -1;
 	}
 
 	/**
@@ -489,6 +533,8 @@ public class DateTimeField extends FormComponentPanel<Date>
 	/**
 	 * The DatePicker that gets added to the DateTimeField component. Users may override this method
 	 * with a DatePicker of their choice.
+	 * 
+	 * @return a new {@link DatePicker} instance
 	 */
 	protected DatePicker newDatePicker()
 	{
@@ -497,9 +543,11 @@ public class DateTimeField extends FormComponentPanel<Date>
 			private static final long serialVersionUID = 1L;
 
 			@Override
-			protected void configure(Map<String, Object> widgetProperties)
+			protected void configure(final Map<String, Object> widgetProperties,
+				final IHeaderResponse response, final Map<String, Object> initVariables)
 			{
-				super.configure(widgetProperties);
+				super.configure(widgetProperties, response, initVariables);
+
 				DateTimeField.this.configure(widgetProperties);
 			}
 		};

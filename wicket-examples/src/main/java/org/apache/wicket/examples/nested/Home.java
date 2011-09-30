@@ -17,7 +17,6 @@
 package org.apache.wicket.examples.nested;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -28,9 +27,9 @@ import javax.swing.tree.TreeNode;
 import org.apache.wicket.examples.WicketExamplePage;
 import org.apache.wicket.examples.ajax.builtin.tree.SimpleTreePage;
 import org.apache.wicket.extensions.markup.html.tree.Tree;
-import org.apache.wicket.extensions.markup.html.tree.DefaultAbstractTree.LinkType;
 import org.apache.wicket.markup.html.link.BookmarkablePageLink;
 import org.apache.wicket.markup.html.link.Link;
+import org.apache.wicket.markup.html.tree.LinkType;
 import org.apache.wicket.request.mapper.parameter.PageParameters;
 
 
@@ -117,18 +116,17 @@ public class Home extends WicketExamplePage
 	@SuppressWarnings("unchecked")
 	private void add(DefaultMutableTreeNode parent, List<Object> sub)
 	{
-		for (Iterator<Object> i = sub.iterator(); i.hasNext();)
+		for (Object obj : sub)
 		{
-			Object o = i.next();
-			if (o instanceof List)
+			if (obj instanceof List)
 			{
-				DefaultMutableTreeNode child = new DefaultMutableTreeNode(o);
+				DefaultMutableTreeNode child = new DefaultMutableTreeNode(obj);
 				parent.add(child);
-				add(child, (List<Object>)o);
+				add(child, (List<Object>)obj);
 			}
 			else
 			{
-				DefaultMutableTreeNode child = new DefaultMutableTreeNode(o);
+				DefaultMutableTreeNode child = new DefaultMutableTreeNode(obj);
 				parent.add(child);
 			}
 		}

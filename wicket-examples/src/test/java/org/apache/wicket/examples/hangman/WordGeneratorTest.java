@@ -20,11 +20,10 @@ import java.util.HashSet;
 import java.util.Set;
 
 import junit.framework.Assert;
-import junit.framework.TestCase;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.wicket.util.tester.WicketTester;
+import org.apache.wicket.examples.WicketTestCase;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Test case for the <code>WordGenerator</code> class.
@@ -32,33 +31,9 @@ import org.apache.wicket.util.tester.WicketTester;
  * @author Chris Turner
  * @version 1.0
  */
-public class WordGeneratorTest extends TestCase
+public class WordGeneratorTest extends WicketTestCase
 {
-
-	private static final Log log = LogFactory.getLog(WordGeneratorTest.class);
-
-	public WicketTester tester;
-
-	/**
-	 * Create the test case.
-	 * 
-	 * @param message
-	 *            The test name
-	 */
-	public WordGeneratorTest(String message)
-	{
-		super(message);
-	}
-
-	protected void setUp() throws Exception
-	{
-		tester = new WicketTester();
-	}
-
-	protected void tearDown() throws Exception
-	{
-		tester.destroy();
-	}
+	private static final Logger log = LoggerFactory.getLogger(WordGeneratorTest.class);
 
 	/**
 	 * Tests word generator
@@ -69,7 +44,7 @@ public class WordGeneratorTest extends TestCase
 	{
 		WordGenerator wg = new WordGenerator();
 		int wordCount = wg.size();
-		Set words = new HashSet();
+		Set<Word> words = new HashSet<Word>();
 		log.info("First iteration...");
 		for (int i = 0; i < wordCount; i++)
 		{
@@ -83,8 +58,8 @@ public class WordGeneratorTest extends TestCase
 		{
 			Word word = wg.next();
 			log.info("Word found: " + word);
-			Assert.assertTrue("Word " + word + " should have been returned only once", words
-					.remove(word));
+			Assert.assertTrue("Word " + word + " should have been returned only once",
+				words.remove(word));
 		}
 		Assert.assertTrue("All words should have been returned twice", words.isEmpty());
 	}

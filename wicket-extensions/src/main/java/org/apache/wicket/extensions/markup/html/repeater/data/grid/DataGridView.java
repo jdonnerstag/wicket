@@ -45,10 +45,10 @@ import org.apache.wicket.markup.repeater.data.IDataProvider;
  * 
  * <pre>
  * 
- * ICellPopulator[] columns = new ICellPopulator[2];
+ * List&lt;ICellPopulator&gt; columns = new ArrayList&lt;ICellPopulator&gt;();
  * 
- * columns[0] = new PropertyPopulator(&quot;firstName&quot;);
- * columns[1] = new PropertyPopulator(&quot;lastName&quot;);
+ * columns.add(new PropertyPopulator(&quot;firstName&quot;));
+ * columns.add(new PropertyPopulator(&quot;lastName&quot;));
  * 
  * add(new DataGridView(&quot;rows&quot;, columns, new UserProvider()));
  * 
@@ -78,57 +78,20 @@ public class DataGridView<T> extends AbstractDataGridView<T>
 	 * @param dataProvider
 	 *            data provider
 	 */
-	@SuppressWarnings("unchecked")
-	public DataGridView(String id, List<ICellPopulator<T>> populators, IDataProvider<T> dataProvider)
-	{
-		super(id, populators.toArray(new ICellPopulator[populators.size()]), dataProvider);
-	}
-
-	/**
-	 * Constructor
-	 * 
-	 * Notice cells are created in the same order as cell populators in the array
-	 * 
-	 * @param id
-	 *            component id
-	 * @param populators
-	 *            array of ICellPopulators used to populate cells
-	 * @param dataProvider
-	 *            data provider
-	 */
-	public DataGridView(String id, ICellPopulator<T>[] populators, IDataProvider<T> dataProvider)
+	public DataGridView(final String id, final List<? extends ICellPopulator<T>> populators,
+		final IDataProvider<T> dataProvider)
 	{
 		super(id, populators, dataProvider);
 	}
 
 	/**
-	 * Returns the array of cell populators
+	 * Returns the list of cell populators
 	 * 
-	 * @return the array of cell populators
+	 * @return the list of cell populators
 	 */
-	public ICellPopulator<T>[] getPopulators()
+	public List<? extends ICellPopulator<T>> getPopulators()
 	{
 		return internalGetPopulators();
-	}
-
-	/**
-	 * Sets the number of items to be displayed per page
-	 * 
-	 * @param items
-	 *            number of items to display per page
-	 * 
-	 */
-	public void setRowsPerPage(int items)
-	{
-		internalSetRowsPerPage(items);
-	}
-
-	/**
-	 * @return number of items displayed per page
-	 */
-	public int getRowsPerPage()
-	{
-		return internalGetRowsPerPage();
 	}
 
 	/**

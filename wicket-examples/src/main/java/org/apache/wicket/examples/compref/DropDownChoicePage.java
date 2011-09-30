@@ -36,11 +36,10 @@ import org.apache.wicket.model.CompoundPropertyModel;
 public class DropDownChoicePage extends WicketExamplePage
 {
 	/** available sites for selection. */
-	private static final List<String> SITES = Arrays.asList(new String[] { "The Server Side",
-			"Java Lobby", "Java.Net" });
+	private static final List<String> SITES = Arrays.asList("The Server Side", "Java Lobby", "Java.Net");
 
 	/** available numbers for selection. */
-	private static final List<Integer> INTEGERS = Arrays.asList(new Integer[] { 1, 2, 3 });
+	private static final List<Integer> INTEGERS = Arrays.asList(1, 2, 3);
 
 	/**
 	 * Constructor
@@ -92,28 +91,22 @@ public class DropDownChoicePage extends WicketExamplePage
 			 * 
 			 * @see org.apache.wicket.markup.html.form.IChoiceRenderer#getDisplayValue(java.lang.Object)
 			 */
-			public Object getDisplayValue(Integer object)
+			public Object getDisplayValue(Integer value)
 			{
 				// Use an ugly switch statement. Usually you would hide this in
 				// your business
 				// object or in a utility.
-				String stringrep;
-				int value = object;
 				switch (value)
 				{
 					case 1 :
-						stringrep = "One";
-						break;
+						return "One";
 					case 2 :
-						stringrep = "Two";
-						break;
+						return "Two";
 					case 3 :
-						stringrep = "Three";
-						break;
+						return "Three";
 					default :
 						throw new IllegalStateException(value + " is not mapped!");
 				}
-				return stringrep;
 			}
 
 			/**

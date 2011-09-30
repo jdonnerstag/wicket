@@ -21,6 +21,7 @@ import javax.servlet.ServletContext;
 import org.apache.wicket.protocol.http.IWebApplicationFactory;
 import org.apache.wicket.protocol.http.WebApplication;
 import org.apache.wicket.protocol.http.WicketFilter;
+import org.apache.wicket.util.string.Strings;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -39,7 +40,7 @@ import com.google.inject.Stage;
  *   &lt;filter-name&gt;MyApplication&lt;/filter-name&gt;
  *   &lt;filter-class&gt;org.apache.wicket.protocol.http.WicketFilter&lt;/filter-class&gt;
  *   &lt;init-param&gt;
- *     &lt;param-name&gt;applicationClassName&lt;/param-name&gt;
+ *     &lt;param-name&gt;applicationFactoryClassName&lt;/param-name&gt;
  *     &lt;param-value&gt;org.apache.wicket.guice.GuiceWebApplicationFactory&lt;/param-value&gt;
  *   &lt;/init-param&gt;
  *   &lt;init-param&gt;
@@ -70,7 +71,7 @@ import com.google.inject.Stage;
  *   &lt;filter-name&gt;MyApplication&lt;/filter-name&gt;
  *   &lt;filter-class&gt;org.apache.wicket.protocol.http.WicketFilter&lt;/filter-class&gt;
  *   &lt;init-param&gt;
- *     &lt;param-name&gt;applicationClassName&lt;/param-name&gt;
+ *     &lt;param-name&gt;applicationFactoryClassName&lt;/param-name&gt;
  *     &lt;param-value&gt;org.apache.wicket.guice.GuiceWebApplicationFactory&lt;/param-value&gt;
  *   &lt;/init-param&gt;
  *   &lt;init-param&gt;
@@ -88,12 +89,13 @@ import com.google.inject.Stage;
  */
 public class GuiceWebApplicationFactory implements IWebApplicationFactory
 {
+	/** */
 	public static final String STAGE_PARAMETER = "wicket-guice.stage";
 
 	/**
 	 * @see IWebApplicationFactory#createApplication(WicketFilter)
 	 */
-	public WebApplication createApplication(WicketFilter filter)
+	public WebApplication createApplication(final WicketFilter filter)
 	{
 		Injector injector;
 
@@ -131,14 +133,16 @@ public class GuiceWebApplicationFactory implements IWebApplicationFactory
 		else if (filter.getFilterConfig().getInitParameter("module") != null)
 		{
 			String paramValue = filter.getFilterConfig().getInitParameter("module");
-			String moduleNames[] = paramValue.split(",");
+			String moduleNames[] = Strings.split(paramValue, ',');
 			Module modules[] = new Module[moduleNames.length];
+			ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 			for (int i = 0; i < moduleNames.length; i++)
 			{
 				String moduleName = moduleNames[i].trim();
 				try
 				{
-					Class<?> moduleClazz = Class.forName(moduleName);
+					// see http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6500212
+					Class<?> moduleClazz = Class.forName(moduleName, false, classLoader);
 					Object moduleObject = moduleClazz.newInstance();
 					modules[i] = (Module)moduleObject;
 				}
@@ -177,7 +181,8 @@ public class GuiceWebApplicationFactory implements IWebApplicationFactory
 		return app;
 	}
 
-	public void destroy()
+	/** {@inheritDoc} */
+	public void destroy(final WicketFilter filter)
 	{
 	}
 }

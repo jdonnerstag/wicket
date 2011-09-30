@@ -17,6 +17,7 @@
 package org.apache.wicket.util.listener;
 
 import java.io.Serializable;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -29,13 +30,13 @@ import org.slf4j.LoggerFactory;
  * NOTE: Ordering of listeners is not guaranteed and should not be relied upon
  * </p>
  * 
- * @autor ivaynberg (Igor Vaynberg)
+ * @author ivaynberg (Igor Vaynberg)
  * @author Jonathan Locke
  * 
  * @param <T>
  *            type of listeners
  */
-public abstract class ListenerCollection<T> implements Serializable
+public abstract class ListenerCollection<T> implements Serializable, Iterable<T>
 {
 	private static final long serialVersionUID = 1L;
 
@@ -53,7 +54,7 @@ public abstract class ListenerCollection<T> implements Serializable
 	 */
 	public boolean add(final T listener)
 	{
-		if (listener == null && !isAllowingNulls())
+		if ((listener == null) && !isAllowingNulls())
 		{
 			return false;
 		}
@@ -71,7 +72,7 @@ public abstract class ListenerCollection<T> implements Serializable
 	 * @param notifier
 	 *            notifier used to notify each listener
 	 */
-	protected void notify(INotifier<T> notifier)
+	protected void notify(final INotifier<T> notifier)
 	{
 		for (T listener : listeners)
 		{
@@ -85,7 +86,7 @@ public abstract class ListenerCollection<T> implements Serializable
 	 * @param notifier
 	 *            notifier used to notify each listener
 	 */
-	protected void notifyIgnoringExceptions(INotifier<T> notifier)
+	protected void notifyIgnoringExceptions(final INotifier<T> notifier)
 	{
 		for (T listener : listeners)
 		{
@@ -97,6 +98,27 @@ public abstract class ListenerCollection<T> implements Serializable
 			{
 				logger.error("Error invoking listener: " + listener, e);
 			}
+		}
+	}
+
+	/**
+	 * Notifies each listener in this in reversed order
+	 * 
+	 * @param notifier
+	 *            notifier used to notify each listener
+	 */
+	protected void reversedNotify(final INotifier<T> notifier)
+	{
+		reversedNotify(iterator(), notifier);
+	}
+
+	private void reversedNotify(Iterator<T> iterator, final INotifier<T> notifier)
+	{
+		if (iterator.hasNext())
+		{
+			T listener = iterator.next();
+			reversedNotify(iterator, notifier);
+			notifier.notify(listener);
 		}
 	}
 
@@ -143,4 +165,13 @@ public abstract class ListenerCollection<T> implements Serializable
 		void notify(T listener);
 	}
 
+	/**
+	 * Returns an iterator that can iterate the listeners.
+	 * 
+	 * @return an iterator that can iterate the listeners.
+	 */
+	public Iterator<T> iterator()
+	{
+		return listeners.iterator();
+	}
 }

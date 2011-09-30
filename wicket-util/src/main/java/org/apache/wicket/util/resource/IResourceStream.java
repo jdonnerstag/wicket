@@ -22,6 +22,7 @@ import java.io.InputStream;
 import java.util.Locale;
 
 import org.apache.wicket.IClusterable;
+import org.apache.wicket.util.lang.Bytes;
 import org.apache.wicket.util.watch.IModifiable;
 
 
@@ -49,13 +50,11 @@ public interface IResourceStream extends IModifiable, IClusterable, Closeable
 	String getContentType();
 
 	/**
-	 * Gets the size of this resource in bytes
+	 * Gets the size of this resource
 	 * 
-	 * TODO 1.5: rename to lengthInBytes() or let it return some sort of size object
-	 * 
-	 * @return The size of this resource in the number of bytes, or -1 if unknown
+	 * @return The size of this resource in the number of bytes, or <code>null</code> if unknown
 	 */
-	long length();
+	Bytes length();
 
 	/**
 	 * Gets the resource stream. You should not directly close this stream. Instead call the close()
@@ -81,7 +80,7 @@ public interface IResourceStream extends IModifiable, IClusterable, Closeable
 	Locale getLocale();
 
 	/**
-	 * This method shouldn't be used for the outside, It is used by the Loaders to set the resolved
+	 * This method shouldn't be used from the outside. It is used by the Loaders to set the resolved
 	 * locale.
 	 * 
 	 * @param locale
@@ -95,7 +94,7 @@ public interface IResourceStream extends IModifiable, IClusterable, Closeable
 	String getStyle();
 
 	/**
-	 * This method shouldn't be used for the outside, It is used by the Loaders to set the resolved
+	 * This method shouldn't be used from the outside. It is used by the Loaders to set the resolved
 	 * Style.
 	 * 
 	 * @param style
@@ -109,7 +108,7 @@ public interface IResourceStream extends IModifiable, IClusterable, Closeable
 	String getVariation();
 
 	/**
-	 * This method shouldn't be used for the outside, It is used by the Loaders to set the resolved
+	 * This method shouldn't be used from the outside. It is used by the Loaders to set the resolved
 	 * variation.
 	 * 
 	 * @param variation

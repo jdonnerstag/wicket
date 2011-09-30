@@ -17,7 +17,7 @@
 package org.apache.wicket.examples.stateless;
 
 import org.apache.wicket.Session;
-import org.apache.wicket.markup.html.WebPage;
+import org.apache.wicket.examples.WicketExamplePage;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.link.BookmarkablePageLink;
 import org.apache.wicket.markup.html.link.StatelessLink;
@@ -27,8 +27,13 @@ import org.apache.wicket.markup.html.link.StatelessLink;
  * 
  * @author Eelco Hillenius
  */
-public class Index extends WebPage
+public class Index extends WicketExamplePage
 {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
 	/**
 	 * Constructor
 	 */
@@ -43,8 +48,10 @@ public class Index extends WebPage
 		add(new BookmarkablePageLink<Void>("linkToStatelessPage3", StatelessPage3.class));
 		// The second with a stateless link, so the onclick will be called but
 		// on a stateless page.
-		add(new StatelessLink("linkToStatefulPage")
+		add(new StatelessLink<Void>("linkToStatefulPage")
 		{
+			private static final long serialVersionUID = 1L;
+
 			/**
 			 * @see org.apache.wicket.markup.html.link.Link#onClick()
 			 */
@@ -54,16 +61,15 @@ public class Index extends WebPage
 				setResponsePage(StatefulPage.class);
 			}
 		});
-		add(new StatelessLink("invalidatesession")
+		add(new StatelessLink<Void>("invalidatesession")
 		{
+			private static final long serialVersionUID = 1L;
 
 			@Override
 			public void onClick()
 			{
 				Session.get().invalidate();
 				setResponsePage(Index.class);
-				// TODO NG
-				// setRedirect(true);
 			}
 
 		});

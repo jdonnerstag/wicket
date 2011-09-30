@@ -17,11 +17,12 @@
 package org.apache.wicket.extensions.ajax.markup.html.autocomplete;
 
 
+import org.apache.wicket.Component;
 import org.apache.wicket.ajax.AbstractDefaultAjaxBehavior;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.markup.html.IHeaderResponse;
 import org.apache.wicket.request.cycle.RequestCycle;
-import org.apache.wicket.request.resource.JavascriptResourceReference;
+import org.apache.wicket.request.resource.JavaScriptResourceReference;
 import org.apache.wicket.request.resource.ResourceReference;
 import org.apache.wicket.util.string.Strings;
 
@@ -32,22 +33,40 @@ import org.apache.wicket.util.string.Strings;
  */
 public abstract class AbstractAutoCompleteBehavior extends AbstractDefaultAjaxBehavior
 {
-	private static final ResourceReference AUTOCOMPLETE_JS = new JavascriptResourceReference(
+	private static final ResourceReference AUTOCOMPLETE_JS = new JavaScriptResourceReference(
 		AutoCompleteBehavior.class, "wicket-autocomplete.js");
 
 	private static final long serialVersionUID = 1L;
 
-	protected boolean preselect = false;
-
-	protected AutoCompleteSettings settings = new AutoCompleteSettings();
+	protected AutoCompleteSettings settings;
 
 	/**
-	 * @see org.apache.wicket.ajax.AbstractDefaultAjaxBehavior#renderHead(org.apache.wicket.markup.html.IHeaderResponse)
+	 * Constructor that creates an default {@link AutoCompleteSettings}
 	 */
-	@Override
-	public void renderHead(IHeaderResponse response)
+	public AbstractAutoCompleteBehavior()
 	{
-		super.renderHead(response);
+		this(new AutoCompleteSettings());
+	}
+
+	/**
+	 * Constructor
+	 * 
+	 * @param settings
+	 *            settings for the autocomplete list
+	 */
+	public AbstractAutoCompleteBehavior(AutoCompleteSettings settings)
+	{
+		if (settings == null)
+		{
+			settings = new AutoCompleteSettings();
+		}
+		this.settings = settings;
+	}
+
+	@Override
+	public void renderHead(final Component component, final IHeaderResponse response)
+	{
+		super.renderHead(component, response);
 		renderAutocompleteHead(response);
 	}
 
@@ -56,9 +75,9 @@ public abstract class AbstractAutoCompleteBehavior extends AbstractDefaultAjaxBe
 	 * 
 	 * @param response
 	 */
-	private void renderAutocompleteHead(IHeaderResponse response)
+	private void renderAutocompleteHead(final IHeaderResponse response)
 	{
-		response.renderJavascriptReference(AUTOCOMPLETE_JS);
+		response.renderJavaScriptReference(AUTOCOMPLETE_JS);
 		final String id = getComponent().getMarkupId();
 
 		String indicatorId = findIndicatorId();
@@ -73,9 +92,13 @@ public abstract class AbstractAutoCompleteBehavior extends AbstractDefaultAjaxBe
 
 		String initJS = String.format("new Wicket.AutoComplete('%s','%s',%s,%s);", id,
 			getCallbackUrl(), constructSettingsJS(), indicatorId);
-		response.renderOnDomReadyJavascript(initJS);
+		response.renderOnDomReadyJavaScript(initJS);
 	}
 
+	/**
+	 * 
+	 * @return JS settings
+	 */
 	protected final String constructSettingsJS()
 	{
 		final StringBuilder sb = new StringBuilder();
@@ -90,14 +113,13 @@ public abstract class AbstractAutoCompleteBehavior extends AbstractDefaultAjaxBe
 		sb.append(",showCompleteListOnFocusGain: ").append(
 			settings.getShowCompleteListOnFocusGain());
 		if (settings.getCssClassName() != null)
+		{
 			sb.append(",className: '").append(settings.getCssClassName()).append('\'');
+		}
 		sb.append('}');
 		return sb.toString();
 	}
 
-	/**
-	 * @see org.apache.wicket.ajax.AbstractDefaultAjaxBehavior#onBind()
-	 */
 	@Override
 	protected void onBind()
 	{
@@ -109,7 +131,7 @@ public abstract class AbstractAutoCompleteBehavior extends AbstractDefaultAjaxBe
 			private static final long serialVersionUID = 1L;
 
 			@Override
-			protected void respond(AjaxRequestTarget target)
+			protected void respond(final AjaxRequestTarget target)
 			{
 			}
 		});
@@ -126,17 +148,15 @@ public abstract class AbstractAutoCompleteBehavior extends AbstractDefaultAjaxBe
 	 */
 	protected abstract void onRequest(String input, RequestCycle requestCycle);
 
-	/**
-	 * @see org.apache.wicket.ajax.AbstractDefaultAjaxBehavior#respond(org.apache.wicket.ajax.AjaxRequestTarget)
-	 */
 	@Override
-	protected void respond(AjaxRequestTarget target)
+	protected void respond(final AjaxRequestTarget target)
 	{
 		final RequestCycle requestCycle = RequestCycle.get();
 		final String val = requestCycle.getRequest()
 			.getRequestParameters()
 			.getParameterValue("q")
 			.toOptionalString();
+
 		onRequest(val, requestCycle);
 	}
 }

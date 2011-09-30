@@ -1,4 +1,4 @@
-<html xmlns:wicket="http://wicket.apache.org/">
+<html xmlns:wicket="http://wicket.apache.org">
 <head>
     <title>Wicket Examples - upload</title>
     <link rel="stylesheet" type="text/css" href="style.css"/>
@@ -17,21 +17,33 @@
 	  <legend>Upload form</legend>
     	<p>
 	    <label for="upload">File</label>
-	    <input wicket:id="fileInput" id="upload" type="file"/>
+	    <input wicket:id="fileInput" type="file" />
 	    </p>
 	    <input type="submit" value="Upload!"/>
 	 </fieldset>
     </form>
 
-    <form wicket:id="ajax-simpleUpload">
+    <form wicket:id="progressUpload">
 	 <fieldset>
-	  <legend>Upload form with ajax progress bar</legend>
+	  <legend>Upload form with progress bar</legend>
     	<p>
 	    <label for="upload">File</label>
-	    <input wicket:id="fileInput" id="upload" type="file"/>
+	    <input wicket:id="fileInput" type="file"/>
 	    </p>
 	    <input type="submit" value="Upload!"/>
-	    <span wicket:id="progress">[[ajax upload progressbar]]</span>
+	    <span wicket:id="progress">[[upload progressbar]]</span>
+	 </fieldset>
+    </form>
+
+	<form wicket:id="html5Upload">
+	 <fieldset>
+	  <legend>Upload form that uses HTML5 &lt;input type="file" <strong>multiple</strong> /&gt;, so it can upload
+		more than one file in browsers which support <em>multiple</em> attribute</legend>
+    	<p>
+	    <label>File</label>
+	    <input wicket:id="fileInput" type="file" multiple="multiple" />
+	    </p>
+	    <input type="submit" value="Upload!"/>
 	 </fieldset>
     </form>
 

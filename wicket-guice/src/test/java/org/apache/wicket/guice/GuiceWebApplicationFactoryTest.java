@@ -29,14 +29,21 @@ import org.junit.Test;
 
 import com.google.inject.AbstractModule;
 
+/**
+ */
 public class GuiceWebApplicationFactoryTest
 {
+	/**
+	 * testWebAppCreation()
+	 */
 	@Test
 	public void testWebAppCreation()
 	{
 		new GuiceWebApplicationFactory().createApplication(createFilter());
 	}
 
+	/**
+	 */
 	public static class TestModule extends AbstractModule
 	{
 
@@ -46,7 +53,7 @@ public class GuiceWebApplicationFactoryTest
 			bind(WebApplication.class).toInstance(new WebApplication()
 			{
 				@Override
-				public Class< ? extends Page> getHomePage()
+				public Class<? extends Page> getHomePage()
 				{
 					return null;
 				}
@@ -65,7 +72,7 @@ public class GuiceWebApplicationFactoryTest
 
 				return new FilterConfig()
 				{
-					public String getInitParameter(String param)
+					public String getInitParameter(final String param)
 					{
 						if ("module".equals(param))
 						{
@@ -79,7 +86,7 @@ public class GuiceWebApplicationFactoryTest
 						return new MockServletContext(null, null);
 					}
 
-					public Enumeration getInitParameterNames()
+					public Enumeration<?> getInitParameterNames()
 					{
 						return null;
 					}

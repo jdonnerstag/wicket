@@ -21,7 +21,6 @@ import java.io.InputStream;
 
 import javax.servlet.http.HttpServletRequest;
 
-
 /**
  * <p>
  * Provides access to the request information needed for a request made to an HTTP servlet.
@@ -48,13 +47,23 @@ public class ServletRequestContext implements RequestContext
 	 * @param request
 	 *            The request to which this context applies.
 	 */
-	public ServletRequestContext(HttpServletRequest request)
+	public ServletRequestContext(final HttpServletRequest request)
 	{
 		this.request = request;
 	}
 
 
 	// --------------------------------------------------------- Public Methods
+
+	/**
+	 * Retrieve the character encoding for the request.
+	 * 
+	 * @return The character encoding for the request.
+	 */
+	public String getCharacterEncoding()
+	{
+		return request.getCharacterEncoding();
+	}
 
 	/**
 	 * Retrieve the content type of the request.
@@ -95,7 +104,6 @@ public class ServletRequestContext implements RequestContext
 	@Override
 	public String toString()
 	{
-		return "ContentLength=" + this.getContentLength() + ", ContentType=" +
-			this.getContentType();
+		return "ContentLength=" + getContentLength() + ", ContentType=" + getContentType();
 	}
 }

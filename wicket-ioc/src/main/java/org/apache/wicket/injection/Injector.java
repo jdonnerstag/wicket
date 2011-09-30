@@ -48,7 +48,7 @@ public abstract class Injector
 	 * 
 	 * @param application
 	 */
-	public void bind(Application application)
+	public void bind(final Application application)
 	{
 		application.setMetaData(KEY, this);
 	}
@@ -78,7 +78,7 @@ public abstract class Injector
 	 * @param object
 	 * @param factory
 	 */
-	protected void inject(Object object, IFieldValueFactory factory)
+	protected void inject(final Object object, final IFieldValueFactory factory)
 	{
 		final Class<?> clazz = object.getClass();
 
@@ -96,10 +96,8 @@ public abstract class Injector
 			cache.put(clazz, fields);
 		}
 
-		for (int i = 0; i < fields.length; i++)
+		for (final Field field : fields)
 		{
-			final Field field = fields[i];
-
 			if (!field.isAccessible())
 			{
 				field.setAccessible(true);
@@ -138,17 +136,15 @@ public abstract class Injector
 	 * @param factory
 	 * @return an array of fields that can be injected using the given field value factory
 	 */
-	private Field[] findFields(Class<?> clazz, IFieldValueFactory factory)
+	private Field[] findFields(Class<?> clazz, final IFieldValueFactory factory)
 	{
 		List<Field> matched = new ArrayList<Field>();
 
 		while (clazz != null)
 		{
 			Field[] fields = clazz.getDeclaredFields();
-			for (int i = 0; i < fields.length; i++)
+			for (final Field field : fields)
 			{
-				final Field field = fields[i];
-
 				if (factory.supportsField(field))
 				{
 					matched.add(field);

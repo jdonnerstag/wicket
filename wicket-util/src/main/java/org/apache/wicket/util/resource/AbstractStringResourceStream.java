@@ -19,8 +19,14 @@ package org.apache.wicket.util.resource;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 
+import org.apache.wicket.util.io.IOUtils;
+import org.apache.wicket.util.io.Streams;
+import org.apache.wicket.util.lang.Bytes;
 import org.apache.wicket.util.string.Strings;
 import org.apache.wicket.util.time.Time;
 
@@ -31,11 +37,16 @@ import org.apache.wicket.util.time.Time;
  * @author Jonathan Locke
  */
 public abstract class AbstractStringResourceStream extends AbstractResourceStream
+	implements
+		IStringResourceStream
 {
 	private static final long serialVersionUID = 1L;
 
 	/** The content-type applied in case the resource stream's default constructor is used */
 	public static final String DEFAULT_CONTENT_TYPE = "text";
+
+	/** Charset name for resource */
+	private String charsetName;
 
 	/** MIME content type */
 	private final String contentType;
@@ -61,6 +72,62 @@ public abstract class AbstractStringResourceStream extends AbstractResourceStrea
 	{
 		// TODO null for contentType is allowed? or should the default be applied instead?
 		this.contentType = contentType;
+
+		lastModified = Time.now();
+	}
+
+	/**
+	 * @return This resource as a String.
+	 */
+	public String asString()
+	{
+		Reader reader = null;
+		try
+		{
+			if (charsetName == null)
+			{
+				reader = new InputStreamReader(getInputStream());
+			}
+			else
+			{
+				reader = new InputStreamReader(getInputStream(), getCharset());
+			}
+			return Streams.readString(reader);
+		}
+		catch (IOException e)
+		{
+			throw new RuntimeException("Unable to read resource as String", e);
+		}
+		catch (ResourceStreamNotFoundException e)
+		{
+			throw new RuntimeException("Unable to read resource as String", e);
+		}
+		finally
+		{
+			IOUtils.closeQuietly(reader);
+			IOUtils.closeQuietly(this);
+		}
+	}
+
+	/**
+	 * @return Charset for resource
+	 */
+	protected Charset getCharset()
+	{
+		// java.nio.Charset is not serializable so we can only store the name
+		return (charsetName != null) ? Charset.forName(charsetName) : null;
+	}
+
+	/**
+	 * Sets the character set used for reading this resource.
+	 * 
+	 * @param charset
+	 *            Charset for component
+	 */
+	public void setCharset(final Charset charset)
+	{
+		// java.nio.Charset itself is not serializable so we can only store the name
+		charsetName = (charset != null) ? charset.name() : null;
 	}
 
 	/**
@@ -116,7 +183,7 @@ public abstract class AbstractStringResourceStream extends AbstractResourceStrea
 	 * @param lastModified
 	 *            The lastModified to set.
 	 */
-	public void setLastModified(Time lastModified)
+	public void setLastModified(final Time lastModified)
 	{
 		this.lastModified = lastModified;
 	}
@@ -127,8 +194,9 @@ public abstract class AbstractStringResourceStream extends AbstractResourceStrea
 	protected abstract String getString();
 
 	@Override
-	public final long length()
+	public final Bytes length()
 	{
-		return Strings.lengthInBytes(getString(), getCharset());
+		int lengthInBytes = Strings.lengthInBytes(getString(), getCharset());
+		return Bytes.bytes(lengthInBytes);
 	}
 }

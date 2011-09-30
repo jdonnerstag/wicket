@@ -31,7 +31,7 @@ public class Initializer implements IInitializer
 	/**
 	 * @see org.apache.wicket.IInitializer#init(org.apache.wicket.Application)
 	 */
-	public void init(Application application)
+	public void init(final Application application)
 	{
 		new UploadProgressBar.ComponentInitializer().init(application);
 	}
@@ -39,8 +39,14 @@ public class Initializer implements IInitializer
 	/**
 	 * @see java.lang.Object#toString()
 	 */
+	@Override
 	public String toString()
 	{
 		return "Wicket extensions initializer";
+	}
+
+	/** {@inheritDoc} */
+	public void destroy(final Application application)
+	{
 	}
 }

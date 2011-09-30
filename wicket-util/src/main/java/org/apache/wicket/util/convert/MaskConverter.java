@@ -22,6 +22,8 @@ import java.util.Locale;
 
 import javax.swing.text.MaskFormatter;
 
+import org.apache.wicket.util.lang.Args;
+
 
 /**
  * A converter that takes a mask into account. It is specifically meant for overrides on individual
@@ -84,8 +86,9 @@ import javax.swing.text.MaskFormatter;
  * @see MaskFormatter
  * 
  * @author Eelco Hillenius
+ * @param <C>
  */
-public class MaskConverter implements IConverter
+public class MaskConverter<C> implements IConverter<C>
 {
 	private static final long serialVersionUID = 1L;
 
@@ -98,12 +101,9 @@ public class MaskConverter implements IConverter
 	 * @param maskFormatter
 	 *            The mask formatter to use for masking and unmasking values
 	 */
-	public MaskConverter(MaskFormatter maskFormatter)
+	public MaskConverter(final MaskFormatter maskFormatter)
 	{
-		if (maskFormatter == null)
-		{
-			throw new IllegalArgumentException("argument maskFormatter may not be null");
-		}
+		Args.notNull(maskFormatter, "maskFormatter");
 
 		this.maskFormatter = maskFormatter;
 	}
@@ -115,7 +115,7 @@ public class MaskConverter implements IConverter
 	 *            The mask to use for this converter instance
 	 * @see MaskFormatter
 	 */
-	public MaskConverter(String mask)
+	public MaskConverter(final String mask)
 	{
 		this(mask, String.class);
 	}
@@ -129,7 +129,7 @@ public class MaskConverter implements IConverter
 	 *            The type to convert string values to.
 	 * @see MaskFormatter
 	 */
-	public MaskConverter(String mask, Class<?> type)
+	public MaskConverter(final String mask, final Class<?> type)
 	{
 		try
 		{
@@ -146,14 +146,13 @@ public class MaskConverter implements IConverter
 
 	/**
 	 * Converts a string to an object using {@link MaskFormatter#stringToValue(String)}.
-	 * 
-	 * @see org.apache.wicket.util.convert.IConverter#convertToObject(java.lang.String, Locale)
 	 */
-	public Object convertToObject(String value, Locale locale)
+	@SuppressWarnings("unchecked")
+	public C convertToObject(final String value, final Locale locale)
 	{
 		try
 		{
-			return maskFormatter.stringToValue(value);
+			return (C)maskFormatter.stringToValue(value);
 		}
 		catch (ParseException e)
 		{
@@ -163,10 +162,8 @@ public class MaskConverter implements IConverter
 
 	/**
 	 * Converts the value to a string using {@link MaskFormatter#valueToString(Object)}.
-	 * 
-	 * @see org.apache.wicket.util.convert.IConverter#convertToString(java.lang.Object, Locale)
 	 */
-	public String convertToString(Object value, Locale locale)
+	public String convertToString(final C value, final Locale locale)
 	{
 		try
 		{
@@ -177,5 +174,4 @@ public class MaskConverter implements IConverter
 			throw new ConversionException(e);
 		}
 	}
-
 }

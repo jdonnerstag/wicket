@@ -35,8 +35,8 @@ import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.ResourceModel;
-import org.apache.wicket.request.resource.CompressedResourceReference;
-import org.apache.wicket.request.resource.JavascriptResourceReference;
+import org.apache.wicket.request.resource.JavaScriptResourceReference;
+import org.apache.wicket.request.resource.PackageResourceReference;
 import org.apache.wicket.request.resource.ResourceReference;
 
 
@@ -112,11 +112,11 @@ public class Palette<T> extends Panel
 	private Component selectionComponent;
 
 	/** reference to the palette's javascript resource */
-	private static final ResourceReference JAVASCRIPT = new JavascriptResourceReference(
+	private static final ResourceReference JAVASCRIPT = new JavaScriptResourceReference(
 		Palette.class, "palette.js");
 
 	/** reference to the palette's css resource */
-	private static final ResourceReference CSS = new CompressedResourceReference(Palette.class,
+	private static final ResourceReference CSS = new PackageResourceReference(Palette.class,
 		"palette.css");
 
 	/**
@@ -132,8 +132,8 @@ public class Palette<T> extends Panel
 	 * @param allowOrder
 	 *            Allow user to move selections up and down
 	 */
-	public Palette(String id, IModel<? extends Collection<? extends T>> choicesModel,
-		IChoiceRenderer<T> choiceRenderer, int rows, boolean allowOrder)
+	public Palette(final String id, final IModel<? extends Collection<? extends T>> choicesModel,
+		final IChoiceRenderer<T> choiceRenderer, final int rows, final boolean allowOrder)
 	{
 		this(id, null, choicesModel, choiceRenderer, rows, allowOrder);
 	}
@@ -153,9 +153,9 @@ public class Palette<T> extends Panel
 	 * @param allowOrder
 	 *            Allow user to move selections up and down
 	 */
-	public Palette(String id, IModel<List<T>> model,
-		IModel<? extends Collection<? extends T>> choicesModel, IChoiceRenderer<T> choiceRenderer,
-		int rows, boolean allowOrder)
+	public Palette(final String id, final IModel<? extends List<? extends T>> model,
+		final IModel<? extends Collection<? extends T>> choicesModel,
+		final IChoiceRenderer<T> choiceRenderer, final int rows, final boolean allowOrder)
 	{
 		super(id, model);
 
@@ -269,7 +269,7 @@ public class Palette<T> extends Panel
 	 * 
 	 * @return available items component
 	 */
-	protected Component newAvailableHeader(String componentId)
+	protected Component newAvailableHeader(final String componentId)
 	{
 		return new Label(componentId, new ResourceModel("palette.available", "Available"));
 	}
@@ -282,7 +282,7 @@ public class Palette<T> extends Panel
 	 * 
 	 * @return header component
 	 */
-	protected Component newSelectedHeader(String componentId)
+	protected Component newSelectedHeader(final String componentId)
 	{
 		return new Label(componentId, new ResourceModel("palette.selected", "Selected"));
 	}
@@ -300,7 +300,7 @@ public class Palette<T> extends Panel
 			private static final long serialVersionUID = 1L;
 
 			@Override
-			protected void onComponentTag(ComponentTag tag)
+			protected void onComponentTag(final ComponentTag tag)
 			{
 				super.onComponentTag(tag);
 				tag.getAttributes().put("onclick", Palette.this.getDownOnClickJS());
@@ -320,7 +320,7 @@ public class Palette<T> extends Panel
 			private static final long serialVersionUID = 1L;
 
 			@Override
-			protected void onComponentTag(ComponentTag tag)
+			protected void onComponentTag(final ComponentTag tag)
 			{
 				super.onComponentTag(tag);
 				tag.getAttributes().put("onclick", Palette.this.getUpOnClickJS());
@@ -340,7 +340,7 @@ public class Palette<T> extends Panel
 			private static final long serialVersionUID = 1L;
 
 			@Override
-			protected void onComponentTag(ComponentTag tag)
+			protected void onComponentTag(final ComponentTag tag)
 			{
 				super.onComponentTag(tag);
 				tag.getAttributes().put("onclick", Palette.this.getRemoveOnClickJS());
@@ -360,7 +360,7 @@ public class Palette<T> extends Panel
 			private static final long serialVersionUID = 1L;
 
 			@Override
-			protected void onComponentTag(ComponentTag tag)
+			protected void onComponentTag(final ComponentTag tag)
 			{
 				super.onComponentTag(tag);
 				tag.getAttributes().put("onclick", Palette.this.getAddOnClickJS());
@@ -380,7 +380,7 @@ public class Palette<T> extends Panel
 			private static final long serialVersionUID = 1L;
 
 			@Override
-			protected Map<String, String> getAdditionalAttributes(Object choice)
+			protected Map<String, String> getAdditionalAttributes(final Object choice)
 			{
 				return Palette.this.getAdditionalAttributesForSelection(choice);
 			}
@@ -388,9 +388,11 @@ public class Palette<T> extends Panel
 	}
 
 	/**
+	 * @param choice
+	 * @return null
 	 * @see org.apache.wicket.extensions.markup.html.form.palette.component.Selection#getAdditionalAttributes(Object)
 	 */
-	protected Map<String, String> getAdditionalAttributesForSelection(Object choice)
+	protected Map<String, String> getAdditionalAttributesForSelection(final Object choice)
 	{
 		return null;
 	}
@@ -407,7 +409,7 @@ public class Palette<T> extends Panel
 			private static final long serialVersionUID = 1L;
 
 			@Override
-			protected Map<String, String> getAdditionalAttributes(Object choice)
+			protected Map<String, String> getAdditionalAttributes(final Object choice)
 			{
 				return Palette.this.getAdditionalAttributesForChoices(choice);
 			}
@@ -415,9 +417,11 @@ public class Palette<T> extends Panel
 	}
 
 	/**
+	 * @param choice
+	 * @return null
 	 * @see org.apache.wicket.extensions.markup.html.form.palette.component.Selection#getAdditionalAttributes(Object)
 	 */
-	protected Map<String, String> getAdditionalAttributesForChoices(Object choice)
+	protected Map<String, String> getAdditionalAttributesForChoices(final Object choice)
 	{
 		return null;
 	}
@@ -504,7 +508,9 @@ public class Palette<T> extends Panel
 		modelChanged();
 
 		// call model.setObject()
-		((IModel<Object>)getDefaultModel()).setObject(model);
+		@SuppressWarnings("unchecked")
+		IModel<Object> defaultModel = (IModel<Object>)getDefaultModel();
+		defaultModel.setObject(model);
 	}
 
 	/**
@@ -514,9 +520,9 @@ public class Palette<T> extends Panel
 	 *            name of javascript function to call
 	 * @return string representing the call tho the function with palette params
 	 */
-	protected String buildJSCall(String funcName)
+	protected String buildJSCall(final String funcName)
 	{
-		return new StringBuffer(funcName).append("('")
+		return new StringBuilder(funcName).append("('")
 			.append(getChoicesComponent().getMarkupId())
 			.append("','")
 			.append(getSelectionComponent().getMarkupId())
@@ -596,14 +602,14 @@ public class Palette<T> extends Panel
 		 * 
 		 * @param id
 		 */
-		public PaletteButton(String id)
+		public PaletteButton(final String id)
 		{
 			super(id);
 		}
 
 
 		@Override
-		protected void onComponentTag(ComponentTag tag)
+		protected void onComponentTag(final ComponentTag tag)
 		{
 			if (!isPaletteEnabled())
 			{
@@ -618,9 +624,9 @@ public class Palette<T> extends Panel
 	 * @param response
 	 */
 	@Override
-	public void renderHead(IHeaderResponse response)
+	public void renderHead(final IHeaderResponse response)
 	{
-		response.renderJavascriptReference(JAVASCRIPT);
+		response.renderJavaScriptReference(JAVASCRIPT);
 		ResourceReference css = getCSS();
 		if (css != null)
 		{

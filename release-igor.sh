@@ -34,6 +34,8 @@ read passphrase
 stty $stty_orig
 
 echo "modifying poms with the new version: $version"
+mvn5 versions:set -DnewVersion=$version
+mvn5 versions:commit
 find . -name "pom.xml" | xargs sed -i -e "s/1.5-SNAPSHOT/$version/g"
 find . -name "pom.xml" | xargs sed -i -e "s/wicket\/trunk/wicket\/releases\/$version/g"
 
@@ -46,7 +48,7 @@ echo "Creating notice file."
 NOTICE=NOTICE
 > $NOTICE 
 echo "Apache Wicket" >> $NOTICE
-echo "Copyright 2008 The Apache Software Foundation" >> $NOTICE
+echo "Copyright 2006-$(date +%Y) The Apache Software Foundation" >> $NOTICE
 echo "" >> $NOTICE
 echo "This product includes software developed at" >> $NOTICE
 echo "The Apache Software Foundation (http://www.apache.org/)." >> $NOTICE
@@ -70,8 +72,8 @@ do
 done
 
 # prebuilding to work around javadoc generation problem
-mvn clean install -Dmaven.test.skip=true
-mvn javadoc:jar
+mvn5 clean install -DskipTests=true
+mvn5 javadoc:jar
 
 # clean all projects
 echo "Clean all projects"
@@ -94,5 +96,5 @@ echo "$passphrase" | gpg --passphrase-fd 0 --armor --output $filename.asc --deta
 echo "Uploading release"
 svn export http://svn.apache.org/repos/asf/wicket/common/KEYS target/dist/KEYS
 ssh people.apache.org mkdir public_html/wicket-$version
-scp -r target/dist target/m2-repo people.apache.org:public_html/wicket-$version
+scp -r target/dist people.apache.org:public_html/wicket-$version
 

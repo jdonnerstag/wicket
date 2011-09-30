@@ -19,6 +19,8 @@ package org.apache.wicket.util.visit;
 import java.util.Collections;
 import java.util.Iterator;
 
+import org.apache.wicket.util.lang.Args;
+
 /**
  * Utility class that contains visitor/traversal related code
  */
@@ -33,7 +35,7 @@ public class Visits
 	{
 		private final T singleton;
 
-		public SingletonIterable(T singleton)
+		public SingletonIterable(final T singleton)
 		{
 			this.singleton = singleton;
 		}
@@ -61,7 +63,9 @@ public class Visits
 	 *            the visitor
 	 * @return return value from the {@code visitor} or {@code null} if none
 	 */
-	public static final <S, R> R visit(Iterable<? super S> container, final IVisitor<S, R> visitor)
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public static final <S, R> R visit(final Iterable<? super S> container,
+		final IVisitor<S, R> visitor)
 	{
 		return (R)visitChildren(new SingletonIterable(container), visitor, IVisitFilter.ANY);
 	}
@@ -85,8 +89,9 @@ public class Visits
 	 *            filter used to limit the types of objects that will be visited
 	 * @return return value from the {@code visitor} or {@code null} if none
 	 */
-	public static final <S, R> R visit(Iterable<? super S> container, final IVisitor<S, R> visitor,
-		IVisitFilter filter)
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public static final <S, R> R visit(final Iterable<? super S> container,
+		final IVisitor<S, R> visitor, final IVisitFilter filter)
 	{
 		return (R)visitChildren(new SingletonIterable(container), visitor, filter);
 	}
@@ -110,35 +115,30 @@ public class Visits
 	 *            filter used to limit the types of objects that will be visited
 	 * @return return value from the {@code visitor} or {@code null} if none
 	 */
-	public static final <S, R> R visitChildren(Iterable<? super S> container,
-		final IVisitor<S, R> visitor, IVisitFilter filter)
+	public static final <S, R> R visitChildren(final Iterable<? super S> container,
+		final IVisitor<S, R> visitor, final IVisitFilter filter)
 	{
 		Visit<R> visit = new Visit<R>();
 		visitChildren(container, visitor, filter, visit);
 		return visit.getResult();
 	}
 
-	private static final <S, R> void visitChildren(Iterable<? super S> container,
-		final IVisitor<S, R> visitor, IVisitFilter filter, Visit<R> visit)
+	@SuppressWarnings("unchecked")
+	private static final <S, R> void visitChildren(final Iterable<? super S> container,
+		final IVisitor<S, R> visitor, final IVisitFilter filter, final Visit<R> visit)
 	{
-		if (visitor == null)
-		{
-			throw new IllegalArgumentException("argument visitor may not be null");
-		}
+		Args.notNull(visitor, "visitor");
 
 		// Iterate through children of this container
-		for (final Iterator<?> children = container.iterator(); children.hasNext();)
+		for (final Object child : container)
 		{
 			// Get next child component
-			final Object child = children.next();
-
 			// Is the child of the correct class (or was no class specified)?
 			if (filter.visitObject(child))
 			{
 				Visit<R> childTraversal = new Visit<R>();
 
 				// Call visitor
-				@SuppressWarnings("unchecked")
 				S s = (S)child;
 				visitor.component(s, childTraversal);
 
@@ -166,8 +166,6 @@ public class Visits
 				}
 			}
 		}
-
-		return;
 	}
 
 	/**
@@ -187,7 +185,7 @@ public class Visits
 	 *            the visitor
 	 * @return return value from the {@code visitor} or {@code null} if none
 	 */
-	public static final <S, R> R visitChildren(Iterable<? super S> container,
+	public static final <S, R> R visitChildren(final Iterable<? super S> container,
 		final IVisitor<S, R> visitor)
 	{
 		return visitChildren(container, visitor, IVisitFilter.ANY);
@@ -211,7 +209,7 @@ public class Visits
 	 *            the visitor
 	 * @return return value from the {@code visitor} or {@code null} if none
 	 */
-	public static final <S, R> R visitPostOrder(S root,
+	public static final <S, R> R visitPostOrder(final S root,
 		final org.apache.wicket.util.visit.IVisitor<S, R> visitor)
 	{
 		return visitPostOrder(root, visitor, IVisitFilter.ANY);
@@ -237,33 +235,29 @@ public class Visits
 	 *            filter used to limit the types of objects that will be visited
 	 * @return return value from the {@code visitor} or {@code null} if none
 	 */
-	public static final <S, R> R visitPostOrder(Object root,
-		final org.apache.wicket.util.visit.IVisitor<S, R> visitor, IVisitFilter filter)
+	public static final <S, R> R visitPostOrder(final Object root,
+		final org.apache.wicket.util.visit.IVisitor<S, R> visitor, final IVisitFilter filter)
 	{
-		if (visitor == null)
-		{
-			throw new IllegalArgumentException("Argument `visitor` cannot be null");
-		}
+		Args.notNull(visitor, "visitor");
 
 		Visit<R> visit = new Visit<R>();
 		visitPostOrderHelper(root, visitor, filter, visit);
 		return visit.getResult();
 	}
 
-	private static final <S, R> void visitPostOrderHelper(Object component,
-		final org.apache.wicket.util.visit.IVisitor<S, R> visitor, IVisitFilter filter,
-		Visit<R> visit)
+	@SuppressWarnings("unchecked")
+	private static final <S, R> void visitPostOrderHelper(final Object component,
+		final org.apache.wicket.util.visit.IVisitor<S, R> visitor, final IVisitFilter filter,
+		final Visit<R> visit)
 	{
-
 		if (component instanceof Iterable<?>)
 		{
 			final Iterable<?> container = (Iterable<?>)component;
 			if (filter.visitChildren(container))
 			{
 				Visit<R> childTraversal = new Visit<R>();
-				for (final Iterator<?> iterator = ((Iterable<?>)component).iterator(); iterator.hasNext();)
+				for (final Object child : ((Iterable<?>)component))
 				{
-					final Object child = iterator.next();
 					visitPostOrderHelper(child, visitor, filter, childTraversal);
 					if (childTraversal.isStopped())
 					{
@@ -273,6 +267,7 @@ public class Visits
 				}
 			}
 		}
+
 		if (filter.visitObject(component))
 		{
 			visitor.component((S)component, visit);

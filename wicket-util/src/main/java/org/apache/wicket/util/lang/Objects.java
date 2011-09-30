@@ -29,7 +29,6 @@ import java.util.HashMap;
  */
 public final class Objects
 {
-
 	/** Type tag meaning java.math.BigDecimal. */
 	private static final int BIGDEC = 9;
 
@@ -79,13 +78,13 @@ public final class Objects
 	static
 	{
 		primitiveDefaults.put(Boolean.TYPE, Boolean.FALSE);
-		primitiveDefaults.put(Byte.TYPE, new Byte((byte)0));
-		primitiveDefaults.put(Short.TYPE, new Short((short)0));
-		primitiveDefaults.put(Character.TYPE, new Character((char)0));
-		primitiveDefaults.put(Integer.TYPE, new Integer(0));
-		primitiveDefaults.put(Long.TYPE, new Long(0L));
-		primitiveDefaults.put(Float.TYPE, new Float(0.0f));
-		primitiveDefaults.put(Double.TYPE, new Double(0.0));
+		primitiveDefaults.put(Byte.TYPE, (byte)0);
+		primitiveDefaults.put(Short.TYPE, (short)0);
+		primitiveDefaults.put(Character.TYPE, (char)0);
+		primitiveDefaults.put(Integer.TYPE, 0);
+		primitiveDefaults.put(Long.TYPE, 0L);
+		primitiveDefaults.put(Float.TYPE, 0.0f);
+		primitiveDefaults.put(Double.TYPE, 0.0);
 		primitiveDefaults.put(BigInteger.class, new BigInteger("0"));
 		primitiveDefaults.put(BigDecimal.class, new BigDecimal(0.0));
 	}
@@ -99,7 +98,7 @@ public final class Objects
 	 * @throws NumberFormatException
 	 *             if the given object can't be understood as a BigDecimal
 	 */
-	public static BigDecimal bigDecValue(Object value) throws NumberFormatException
+	public static BigDecimal bigDecValue(final Object value) throws NumberFormatException
 	{
 		if (value == null)
 		{
@@ -120,7 +119,7 @@ public final class Objects
 		}
 		if (c == Boolean.class)
 		{
-			return BigDecimal.valueOf(((Boolean)value).booleanValue() ? 1 : 0);
+			return BigDecimal.valueOf((Boolean)value ? 1 : 0);
 		}
 		if (c == Character.class)
 		{
@@ -138,7 +137,7 @@ public final class Objects
 	 * @throws NumberFormatException
 	 *             if the given object can't be understood as a BigInteger
 	 */
-	public static BigInteger bigIntValue(Object value) throws NumberFormatException
+	public static BigInteger bigIntValue(final Object value) throws NumberFormatException
 	{
 		if (value == null)
 		{
@@ -159,11 +158,11 @@ public final class Objects
 		}
 		if (c == Boolean.class)
 		{
-			return BigInteger.valueOf(((Boolean)value).booleanValue() ? 1 : 0);
+			return BigInteger.valueOf((Boolean)value ? 1 : 0);
 		}
 		if (c == Character.class)
 		{
-			return BigInteger.valueOf(((Character)value).charValue());
+			return BigInteger.valueOf((Character)value);
 		}
 		return new BigInteger(stringValue(value, true));
 	}
@@ -177,7 +176,7 @@ public final class Objects
 	 *            an object to interpret as a boolean
 	 * @return the boolean value implied by the given object
 	 */
-	public static boolean booleanValue(Object value)
+	public static boolean booleanValue(final Object value)
 	{
 		if (value == null)
 		{
@@ -186,11 +185,11 @@ public final class Objects
 		Class<?> c = value.getClass();
 		if (c == Boolean.class)
 		{
-			return ((Boolean)value).booleanValue();
+			return (Boolean)value;
 		}
 		if (c == Character.class)
 		{
-			return ((Character)value).charValue() != 0;
+			return (Character)value != 0;
 		}
 		if (value instanceof Number)
 		{
@@ -221,8 +220,8 @@ public final class Objects
 	 *             if the objects are both non-numeric yet of incompatible types or do not implement
 	 *             Comparable.
 	 */
-	@SuppressWarnings("unchecked")
-	public static int compareWithConversion(Object v1, Object v2)
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public static int compareWithConversion(final Object v1, final Object v2)
 	{
 		int result;
 
@@ -284,14 +283,16 @@ public final class Objects
 	 * This method also detects when arrays are being converted and converts the components of one
 	 * array to the type of the other.
 	 * 
+	 * @param <T>
+	 *            target type
 	 * @param value
 	 *            an object to be converted to the given type
 	 * @param toType
 	 *            class type to be converted to
-	 * @return converted value of the type given, or value if the value cannot be converted to the
+	 * @return converted value of the type given, or null if the value cannot be converted to the
 	 *         given type.
 	 */
-	public static Object convertValue(final Object value, final Class<?> toType)
+	public static <T> T convertValue(final Object value, final Class<T> toType)
 	{
 		Object result = null;
 
@@ -312,11 +313,11 @@ public final class Objects
 			{
 				if ((toType == Integer.class) || (toType == Integer.TYPE))
 				{
-					result = new Integer((int)longValue(value));
+					result = (int)longValue(value);
 				}
 				if ((toType == Double.class) || (toType == Double.TYPE))
 				{
-					result = new Double(doubleValue(value));
+					result = doubleValue(value);
 				}
 				if ((toType == Boolean.class) || (toType == Boolean.TYPE))
 				{
@@ -324,19 +325,19 @@ public final class Objects
 				}
 				if ((toType == Byte.class) || (toType == Byte.TYPE))
 				{
-					result = new Byte((byte)longValue(value));
+					result = (byte)longValue(value);
 				}
 				if ((toType == Character.class) || (toType == Character.TYPE))
 				{
-					result = new Character((char)longValue(value));
+					result = (char)longValue(value);
 				}
 				if ((toType == Short.class) || (toType == Short.TYPE))
 				{
-					result = new Short((short)longValue(value));
+					result = (short)longValue(value);
 				}
 				if ((toType == Long.class) || (toType == Long.TYPE))
 				{
-					result = new Long(longValue(value));
+					result = longValue(value);
 				}
 				if ((toType == Float.class) || (toType == Float.TYPE))
 				{
@@ -363,7 +364,9 @@ public final class Objects
 				result = primitiveDefaults.get(toType);
 			}
 		}
-		return (result != null) ? result : value;
+		@SuppressWarnings("unchecked")
+		T finalResult = (T)result;
+		return finalResult;
 	}
 
 	/**
@@ -375,7 +378,7 @@ public final class Objects
 	 * @throws NumberFormatException
 	 *             if the given object can't be understood as a double
 	 */
-	public static double doubleValue(Object value) throws NumberFormatException
+	public static double doubleValue(final Object value) throws NumberFormatException
 	{
 		if (value == null)
 		{
@@ -388,11 +391,11 @@ public final class Objects
 		}
 		if (c == Boolean.class)
 		{
-			return ((Boolean)value).booleanValue() ? 1 : 0;
+			return (Boolean)value ? 1 : 0;
 		}
 		if (c == Character.class)
 		{
-			return ((Character)value).charValue();
+			return (Character)value;
 		}
 		String s = stringValue(value, true);
 
@@ -436,14 +439,15 @@ public final class Objects
 	 *            whether the operator can be interpreted as non-numeric
 	 * @return the appropriate constant from the NumericTypes interface
 	 */
-	public static int getNumericType(int t1, int t2, boolean canBeNonNumeric)
+	public static int getNumericType(int t1, int t2, final boolean canBeNonNumeric)
 	{
 		if (t1 == t2)
 		{
 			return t1;
 		}
 
-		if (canBeNonNumeric && (t1 == NONNUMERIC || t2 == NONNUMERIC || t1 == CHAR || t2 == CHAR))
+		if (canBeNonNumeric &&
+			((t1 == NONNUMERIC) || (t2 == NONNUMERIC) || (t1 == CHAR) || (t2 == CHAR)))
 		{
 			return NONNUMERIC;
 		}
@@ -499,7 +503,7 @@ public final class Objects
 	 *            an object that needs to be interpreted as a number
 	 * @return the appropriate constant from the NumericTypes interface
 	 */
-	public static int getNumericType(Object value)
+	public static int getNumericType(final Object value)
 	{
 		if (value != null)
 		{
@@ -558,7 +562,7 @@ public final class Objects
 	 *            the other argument
 	 * @return the appropriate constant from the NumericTypes interface
 	 */
-	public static int getNumericType(Object v1, Object v2)
+	public static int getNumericType(final Object v1, final Object v2)
 	{
 		return getNumericType(v1, v2, false);
 	}
@@ -575,7 +579,7 @@ public final class Objects
 	 *            whether the operator can be interpreted as non-numeric
 	 * @return the appropriate constant from the NumericTypes interface
 	 */
-	public static int getNumericType(Object v1, Object v2, boolean canBeNonNumeric)
+	public static int getNumericType(final Object v1, final Object v2, final boolean canBeNonNumeric)
 	{
 		return getNumericType(getNumericType(v1), getNumericType(v2), canBeNonNumeric);
 	}
@@ -591,7 +595,7 @@ public final class Objects
 	 * 
 	 * @return true if v1 == v2
 	 */
-	public static boolean isEqual(Object object1, Object object2)
+	public static boolean isEqual(final Object object1, final Object object2)
 	{
 		boolean result = false;
 
@@ -636,7 +640,7 @@ public final class Objects
 	 * @throws NumberFormatException
 	 *             if the given object can't be understood as a long integer
 	 */
-	public static long longValue(Object value) throws NumberFormatException
+	public static long longValue(final Object value) throws NumberFormatException
 	{
 		if (value == null)
 		{
@@ -649,11 +653,11 @@ public final class Objects
 		}
 		if (c == Boolean.class)
 		{
-			return ((Boolean)value).booleanValue() ? 1 : 0;
+			return (Boolean)value ? 1 : 0;
 		}
 		if (c == Character.class)
 		{
-			return ((Character)value).charValue();
+			return (Character)value;
 		}
 		return Long.parseLong(stringValue(value, true));
 	}
@@ -670,29 +674,29 @@ public final class Objects
 	 *            the integer value to convert to a Number object
 	 * @return a Number object with the given value, of type implied by the type argument
 	 */
-	public static Number newInteger(int type, long value)
+	public static Number newInteger(final int type, final long value)
 	{
 		switch (type)
 		{
 			case BOOL :
 			case CHAR :
 			case INT :
-				return new Integer((int)value);
+				return (int)value;
 
 			case FLOAT :
-				return new Float(value);
+				return (float)value;
 
 			case DOUBLE :
-				return new Double(value);
+				return (double)value;
 
 			case LONG :
-				return new Long(value);
+				return value;
 
 			case BYTE :
-				return new Byte((byte)value);
+				return (byte)value;
 
 			case SHORT :
-				return new Short((short)value);
+				return (short)value;
 
 			default :
 				return BigInteger.valueOf(value);
@@ -708,7 +712,7 @@ public final class Objects
 	 * @return the String value implied by the given object as returned by the toString() method, or
 	 *         "null" if the object is null.
 	 */
-	public static String stringValue(Object value)
+	public static String stringValue(final Object value)
 	{
 		return stringValue(value, false);
 	}
@@ -721,7 +725,7 @@ public final class Objects
 	 */
 	public static int hashCode(final Object... obj)
 	{
-		if (obj == null || obj.length == 0)
+		if ((obj == null) || (obj.length == 0))
 		{
 			return 0;
 		}
@@ -743,7 +747,7 @@ public final class Objects
 	 * @return the String value implied by the given object as returned by the toString() method, or
 	 *         "null" if the object is null.
 	 */
-	public static String stringValue(Object value, boolean trim)
+	public static String stringValue(final Object value, final boolean trim)
 	{
 		String result;
 

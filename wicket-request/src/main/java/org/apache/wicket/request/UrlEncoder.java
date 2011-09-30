@@ -23,6 +23,8 @@ import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.BitSet;
 
+import org.apache.wicket.util.lang.Args;
+
 /**
  * Adapted from java.net.URLEncoder, but defines instances for query string encoding versus URL path
  * component encoding.
@@ -32,7 +34,7 @@ import java.util.BitSet;
  * 
  * @author Doug Donohoe
  * @see java.net.URLEncoder
- * @see {@link "http://www.ietf.org/rfc/rfc2396.txt"}
+ * @see <a href="http://www.ietf.org/rfc/rfc2396.txt">RFC-2396</a>
  */
 public class UrlEncoder
 {
@@ -51,7 +53,7 @@ public class UrlEncoder
 		/**
 		 * full path type
 		 */
-		FULL_PATH;
+		FULL_PATH
 	}
 
 	// list of what not to decode
@@ -96,7 +98,7 @@ public class UrlEncoder
 	 * @param stopChar
 	 *            stop encoding when stopChar found
 	 */
-	protected UrlEncoder(Type type, char stopChar)
+	protected UrlEncoder(final Type type, final char stopChar)
 	{
 		this.stopChar = stopChar;
 
@@ -166,15 +168,13 @@ public class UrlEncoder
 		dontNeedEncoding.set('-');
 		dontNeedEncoding.set('.');
 		dontNeedEncoding.set('_');
-		dontNeedEncoding.set('~'); // tilde encoded by java.net.URLEncoder
-		// version, but RFC is
-		// clear on this
+		// tilde encoded by java.net.URLEncoder version, but RFC is clear on this
+		dontNeedEncoding.set('~');
 
 		// sub-delims
 		dontNeedEncoding.set('!');
 		dontNeedEncoding.set('$');
 		// "&" needs to be encoded for query stings
-		dontNeedEncoding.set('\'');
 		// "(" and ")" probably don't need encoding, but we'll be conservative
 		dontNeedEncoding.set('*');
 		// "+" needs to be encoded for query strings (since it means =
@@ -193,14 +193,12 @@ public class UrlEncoder
 		{
 			// this code consistent with java.net.URLEncoder version
 			case QUERY :
-				dontNeedEncoding.set(' '); /*
-											 * encoding a space to a + is done in the encode()
-											 * method
-											 */
-				dontNeedEncoding.set('/'); // to allow direct passing of URL in
-				// query
-				dontNeedEncoding.set('?'); // to allow direct passing of URL in
-				// query
+				// encoding a space to a + is done in the encode() method
+				dontNeedEncoding.set(' ');
+				// to allow direct passing of URL in query
+				dontNeedEncoding.set('/');
+				// to allow direct passing of URL in query
+				dontNeedEncoding.set('?');
 				break;
 
 			// this added to deal with encoding a PATH component
@@ -227,78 +225,47 @@ public class UrlEncoder
 		}
 	}
 
-	// /**
-	// * Calls encode with the application response request encoding as returned
-	// by
-	// *
-	// Application.get().getRequestCycleSettings().getResponseRequestEncoding()
-	// *
-	// * @param s
-	// * Value to encode
-	// * @return String encoded using default Application request/respose
-	// encoding
-	// */
-	// public String encode(String s)
-	// {
-	// Application app = null;
-	//
-	// try
-	// {
-	// app = Application.get();
-	// }
-	// catch (WicketRuntimeException ignored)
-	// {
-	// log.warn("No current Application found - defaulting encoding to UTF-8");
-	// }
-	// return encode(s, app == null ? "UTF-8" : app.getRequestCycleSettings()
-	// .getResponseRequestEncoding());
-	// }
-
 	/**
 	 * @param s
 	 *            string to encode
-	 * @param enc
-	 *            encoding to use
+	 * @param charset
+	 *            charset to use for encoding
 	 * @return encoded string
 	 * @see java.net.URLEncoder#encode(String, String)
 	 */
-	public String encode(String s, Charset enc)
+	public String encode(final String s, final Charset charset)
 	{
-		return encode(s, enc.name());
+		return encode(s, charset.name());
 	}
 
-
 	/**
 	 * @param s
 	 *            string to encode
-	 * @param enc
+	 * @param charsetName
 	 *            encoding to use
 	 * @return encoded string
 	 * @see java.net.URLEncoder#encode(String, String)
 	 */
-	public String encode(String s, String enc)
+	public String encode(final String s, final String charsetName)
 	{
 		boolean needToChange = false;
-		StringBuffer out = new StringBuffer(s.length());
+		StringBuilder out = new StringBuilder(s.length());
 		Charset charset;
 		CharArrayWriter charArrayWriter = new CharArrayWriter();
 
-		if (enc == null)
-		{
-			throw new NullPointerException("charsetName");
-		}
+		Args.notNull(charsetName, "charsetName");
 
 		try
 		{
-			charset = Charset.forName(enc);
+			charset = Charset.forName(charsetName);
 		}
 		catch (IllegalCharsetNameException e)
 		{
-			throw new RuntimeException(new UnsupportedEncodingException(enc));
+			throw new RuntimeException(new UnsupportedEncodingException(charsetName));
 		}
 		catch (UnsupportedCharsetException e)
 		{
-			throw new RuntimeException(new UnsupportedEncodingException(enc));
+			throw new RuntimeException(new UnsupportedEncodingException(charsetName));
 		}
 
 		boolean stopEncoding = false;
@@ -335,7 +302,7 @@ public class UrlEncoder
 					 * the surrogate pairs range occurs outside of a legal surrogate pair. For now,
 					 * just treat it as if it were any other character.
 					 */
-					if (c >= 0xD800 && c <= 0xDBFF)
+					if ((c >= 0xD800) && (c <= 0xDBFF))
 					{
 						/*
 						 * System.out.println(Integer.toHexString(c) + " is high surrogate");
@@ -346,7 +313,7 @@ public class UrlEncoder
 							/*
 							 * System.out.println("\tExamining " + Integer.toHexString(d));
 							 */
-							if (d >= 0xDC00 && d <= 0xDFFF)
+							if ((d >= 0xDC00) && (d <= 0xDFFF))
 							{
 								/*
 								 * System.out.println("\t" + Integer.toHexString(d) + " is low
@@ -359,11 +326,11 @@ public class UrlEncoder
 					}
 					i++;
 				}
-				while (i < s.length() && !dontNeedEncoding.get((c = s.charAt(i))));
+				while ((i < s.length()) && !dontNeedEncoding.get((c = s.charAt(i))));
 
 				charArrayWriter.flush();
 				String str = new String(charArrayWriter.toCharArray());
-				byte[] ba = new byte[0];
+				byte[] ba;
 				try
 				{
 					ba = str.getBytes(charset.name());
@@ -372,10 +339,10 @@ public class UrlEncoder
 				{
 					throw new RuntimeException(e);
 				}
-				for (int j = 0; j < ba.length; j++)
+				for (byte b : ba)
 				{
 					out.append('%');
-					char ch = Character.forDigit((ba[j] >> 4) & 0xF, 16);
+					char ch = Character.forDigit((b >> 4) & 0xF, 16);
 					// converting to use uppercase letter as part of
 					// the hex value if ch is a letter.
 					if (Character.isLetter(ch))
@@ -383,7 +350,7 @@ public class UrlEncoder
 						ch -= caseDiff;
 					}
 					out.append(ch);
-					ch = Character.forDigit(ba[j] & 0xF, 16);
+					ch = Character.forDigit(b & 0xF, 16);
 					if (Character.isLetter(ch))
 					{
 						ch -= caseDiff;

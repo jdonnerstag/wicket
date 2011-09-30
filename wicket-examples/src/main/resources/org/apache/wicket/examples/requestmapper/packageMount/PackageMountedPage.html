@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 <!DOCTYPE html>
-<html>
+<html xmlns:wicket="http://wicket.apache.org">
 	<head>
 		<title>Request Mappers demo</title>
 		<link rel="stylesheet" type="text/css" href="style.css"/>
@@ -37,9 +37,7 @@
 		{
 			super.init();
 	
-			getRootRequestMapperAsCompound().add(
-				new MountMapper("pMount", new PackageMapper(
-					PackageName.forClass(PackageMountedPage.class))));
+			mountPackage("pMount", PackageMountedPage.class);
 		}
 	}	    		
 	    	</pre>

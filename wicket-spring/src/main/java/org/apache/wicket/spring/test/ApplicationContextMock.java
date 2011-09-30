@@ -18,6 +18,7 @@ package org.apache.wicket.spring.test;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -48,12 +49,11 @@ import org.springframework.core.io.Resource;
  * @author Igor Vaynberg (ivaynberg)
  * 
  */
-@SuppressWarnings("unchecked")
 public class ApplicationContextMock implements ApplicationContext, Serializable
 {
 	private static final long serialVersionUID = 1L;
 
-	private final Map beans = new HashMap();
+	private final Map<String, Object> beans = new HashMap<String, Object>();
 
 	/**
 	 * puts bean with the given name into the context
@@ -61,12 +61,12 @@ public class ApplicationContextMock implements ApplicationContext, Serializable
 	 * @param name
 	 * @param bean
 	 */
-	public void putBean(String name, Object bean)
+	public void putBean(final String name, final Object bean)
 	{
 		if (beans.containsKey(name))
 		{
 			throw new IllegalArgumentException("a bean with name [" + name +
-					"] has already been added to the context");
+				"] has already been added to the context");
 		}
 		beans.put(name, bean);
 	}
@@ -76,7 +76,7 @@ public class ApplicationContextMock implements ApplicationContext, Serializable
 	 * 
 	 * @param bean
 	 */
-	public void putBean(Object bean)
+	public void putBean(final Object bean)
 	{
 		putBean(bean.getClass().getName(), bean);
 	}
@@ -84,7 +84,7 @@ public class ApplicationContextMock implements ApplicationContext, Serializable
 	/**
 	 * @see org.springframework.beans.factory.BeanFactory#getBean(java.lang.String)
 	 */
-	public Object getBean(String name) throws BeansException
+	public Object getBean(final String name) throws BeansException
 	{
 		Object bean = beans.get(name);
 		if (bean == null)
@@ -97,34 +97,101 @@ public class ApplicationContextMock implements ApplicationContext, Serializable
 	/**
 	 * @see org.springframework.beans.factory.BeanFactory#getBean(java.lang.String, java.lang.Class)
 	 */
-	public Object getBean(String name, Class requiredType) throws BeansException
+	@SuppressWarnings({ "unchecked" })
+	public <T> T getBean(String name, Class<T> requiredType) throws BeansException
 	{
 		Object bean = getBean(name);
 		if (!(requiredType.isAssignableFrom(bean.getClass())))
 		{
 			throw new BeanNotOfRequiredTypeException(name, requiredType, bean.getClass());
 		}
-		return bean;
+		return (T)bean;
 	}
 
 	/**
 	 * @see org.springframework.beans.factory.ListableBeanFactory#getBeansOfType(java.lang.Class)
 	 */
-	public Map getBeansOfType(Class type) throws BeansException
+	@SuppressWarnings({ "unchecked" })
+	public <T> Map<String, T> getBeansOfType(Class<T> type) throws BeansException
 	{
-		Map found = new HashMap();
+		final Map<String, T> found = new HashMap<String, T>();
 
-		Iterator it = beans.entrySet().iterator();
-		while (it.hasNext())
+		for (Entry<String, Object> entry : beans.entrySet())
 		{
-			final Map.Entry entry = (Entry)it.next();
 			if (type.isAssignableFrom(entry.getValue().getClass()))
 			{
-				found.put(entry.getKey(), entry.getValue());
+				found.put(entry.getKey(), (T)entry.getValue());
 			}
 		}
 
 		return found;
+	}
+
+	public <T> T getBean(Class<T> requiredType) throws BeansException
+	{
+		Iterator<T> beans = getBeansOfType(requiredType).values().iterator();
+
+		if (beans.hasNext() == false)
+		{
+			throw new NoSuchBeanDefinitionException("bean of required type " + requiredType +
+				" not found");
+		}
+		final T bean = beans.next();
+
+		if (beans.hasNext() != false)
+		{
+			throw new NoSuchBeanDefinitionException("more than one bean of required type " +
+				requiredType + " found");
+		}
+		return bean;
+	}
+
+	public Map<String, Object> getBeansWithAnnotation(Class<? extends Annotation> annotationType)
+		throws BeansException
+	{
+		final Map<String, Object> found = new HashMap<String, Object>();
+
+		for (Entry<String, Object> entry : beans.entrySet())
+		{
+			if (entry.getValue().getClass().isAnnotationPresent(annotationType))
+			{
+				found.put(entry.getKey(), entry.getValue());
+			}
+		}
+		return found;
+	}
+
+	public <A extends Annotation> A findAnnotationOnBean(String beanName, Class<A> annotationType)
+	{
+		return findAnnotationOnClass(getBean(beanName).getClass(), annotationType);
+	}
+
+	private <A extends Annotation> A findAnnotationOnClass(Class<?> cls, Class<A> annotationType)
+	{
+		// lookup annotation type on class
+		A annotation = cls.getAnnotation(annotationType);
+
+		// lookup annotation type on superclass
+		if (annotation == null && cls.getSuperclass() != null)
+		{
+			annotation = findAnnotationOnClass(cls.getSuperclass(), annotationType);
+		}
+
+		// lookup annotation type on interfaces
+		if (annotation == null)
+		{
+			for (Class<?> intfClass : cls.getInterfaces())
+			{
+				annotation = findAnnotationOnClass(intfClass, annotationType);
+
+				if (annotation != null)
+				{
+					break;
+				}
+			}
+		}
+
+		return annotation;
 	}
 
 	/**
@@ -152,10 +219,9 @@ public class ApplicationContextMock implements ApplicationContext, Serializable
 	}
 
 	/**
-	 * @see org.springframework.context.ApplicationContext#publishEvent(org.
-	 *      springframework.context.ApplicationEvent)
+	 * @see org.springframework.context.ApplicationContext#publishEvent(org.springframework.context.ApplicationEvent)
 	 */
-	public void publishEvent(ApplicationEvent event)
+	public void publishEvent(final ApplicationEvent event)
 	{
 		throw new UnsupportedOperationException();
 	}
@@ -164,7 +230,7 @@ public class ApplicationContextMock implements ApplicationContext, Serializable
 	 * @see org.springframework.beans.factory.ListableBeanFactory#
 	 *      containsBeanDefinition(java.lang.String)
 	 */
-	public boolean containsBeanDefinition(String beanName)
+	public boolean containsBeanDefinition(final String beanName)
 	{
 		throw new UnsupportedOperationException();
 	}
@@ -189,30 +255,29 @@ public class ApplicationContextMock implements ApplicationContext, Serializable
 	 * @see org.springframework.beans.factory.ListableBeanFactory#
 	 *      getBeanNamesForType(java.lang.Class)
 	 */
-	public String[] getBeanNamesForType(Class type)
+	@SuppressWarnings({ "unchecked" })
+	public String[] getBeanNamesForType(final Class type)
 	{
-		ArrayList names = new ArrayList();
-		Iterator entries = beans.entrySet().iterator();
-		while (entries.hasNext())
+		ArrayList<String> names = new ArrayList<String>();
+		for (Entry<String, Object> entry : beans.entrySet())
 		{
-			Entry entry = (Entry)entries.next();
 			Object bean = entry.getValue();
 
 			if (type.isAssignableFrom(bean.getClass()))
 			{
-				String name = (String)entry.getKey();
-				names.add(name);
+				names.add(entry.getKey());
 			}
 		}
-		return (String[])names.toArray(new String[names.size()]);
+		return names.toArray(new String[names.size()]);
 	}
 
 	/**
 	 * @see org.springframework.beans.factory.ListableBeanFactory#
 	 *      getBeanNamesForType(java.lang.Class, boolean, boolean)
 	 */
-	public String[] getBeanNamesForType(Class type, boolean includePrototypes,
-			boolean includeFactoryBeans)
+	@SuppressWarnings({ "unchecked" })
+	public String[] getBeanNamesForType(Class type, boolean includeNonSingletons,
+		boolean allowEagerInit)
 	{
 		throw new UnsupportedOperationException();
 	}
@@ -221,24 +286,24 @@ public class ApplicationContextMock implements ApplicationContext, Serializable
 	 * @see org.springframework.beans.factory.ListableBeanFactory#getBeansOfType(java.lang.Class,
 	 *      boolean, boolean)
 	 */
-	public Map getBeansOfType(Class type, boolean includePrototypes, boolean includeFactoryBeans)
-			throws BeansException
+	public <T> Map<String, T> getBeansOfType(Class<T> type, boolean includeNonSingletons,
+		boolean allowEagerInit) throws BeansException
 	{
 		throw new UnsupportedOperationException();
 	}
 
 	/**
-	 * @see org.springframework.beans.factory.BeanFactory#containsBean(java.lang. String)
+	 * @see org.springframework.beans.factory.BeanFactory#containsBean(java.lang.String)
 	 */
-	public boolean containsBean(String name)
+	public boolean containsBean(final String name)
 	{
 		return beans.containsKey(name);
 	}
 
 	/**
-	 * @see org.springframework.beans.factory.BeanFactory#isSingleton(java.lang. String)
+	 * @see org.springframework.beans.factory.BeanFactory#isSingleton(java.lang.String)
 	 */
-	public boolean isSingleton(String name) throws NoSuchBeanDefinitionException
+	public boolean isSingleton(final String name) throws NoSuchBeanDefinitionException
 	{
 		return true;
 	}
@@ -246,15 +311,15 @@ public class ApplicationContextMock implements ApplicationContext, Serializable
 	/**
 	 * @see org.springframework.beans.factory.BeanFactory#getType(java.lang.String)
 	 */
-	public Class getType(String name) throws NoSuchBeanDefinitionException
+	public Class<?> getType(final String name) throws NoSuchBeanDefinitionException
 	{
 		throw new UnsupportedOperationException();
 	}
 
 	/**
-	 * @see org.springframework.beans.factory.BeanFactory#getAliases(java.lang. String)
+	 * @see org.springframework.beans.factory.BeanFactory#getAliases(java.lang.String)
 	 */
-	public String[] getAliases(String name) throws NoSuchBeanDefinitionException
+	public String[] getAliases(final String name) throws NoSuchBeanDefinitionException
 	{
 		throw new UnsupportedOperationException();
 	}
@@ -271,7 +336,8 @@ public class ApplicationContextMock implements ApplicationContext, Serializable
 	 * @see org.springframework.context.MessageSource#getMessage(java.lang.String,
 	 *      java.lang.Object[], java.lang.String, java.util.Locale)
 	 */
-	public String getMessage(String code, Object[] args, String defaultMessage, Locale locale)
+	public String getMessage(final String code, final Object[] args, final String defaultMessage,
+		final Locale locale)
 	{
 		throw new UnsupportedOperationException();
 	}
@@ -280,18 +346,19 @@ public class ApplicationContextMock implements ApplicationContext, Serializable
 	 * @see org.springframework.context.MessageSource#getMessage(java.lang.String,
 	 *      java.lang.Object[], java.util.Locale)
 	 */
-	public String getMessage(String code, Object[] args, Locale locale)
-			throws NoSuchMessageException
+	public String getMessage(final String code, final Object[] args, final Locale locale)
+		throws NoSuchMessageException
 	{
 		throw new UnsupportedOperationException();
 	}
+
 
 	/**
 	 * @see org.springframework.context.MessageSource#getMessage(org.springframework
 	 *      .context.MessageSourceResolvable, java.util.Locale)
 	 */
-	public String getMessage(MessageSourceResolvable resolvable, Locale locale)
-			throws NoSuchMessageException
+	public String getMessage(final MessageSourceResolvable resolvable, final Locale locale)
+		throws NoSuchMessageException
 	{
 		throw new UnsupportedOperationException();
 	}
@@ -300,7 +367,7 @@ public class ApplicationContextMock implements ApplicationContext, Serializable
 	 * @see org.springframework.core.io.support.ResourcePatternResolver#getResources
 	 *      (java.lang.String)
 	 */
-	public Resource[] getResources(String locationPattern) throws IOException
+	public Resource[] getResources(final String locationPattern) throws IOException
 	{
 		throw new UnsupportedOperationException();
 	}
@@ -308,7 +375,7 @@ public class ApplicationContextMock implements ApplicationContext, Serializable
 	/**
 	 * @see org.springframework.core.io.ResourceLoader#getResource(java.lang.String)
 	 */
-	public Resource getResource(String location)
+	public Resource getResource(final String location)
 	{
 		throw new UnsupportedOperationException();
 	}
@@ -325,7 +392,7 @@ public class ApplicationContextMock implements ApplicationContext, Serializable
 	 * @see org.springframework.beans.factory.HierarchicalBeanFactory#
 	 *      containsLocalBean(java.lang.String)
 	 */
-	public boolean containsLocalBean(String arg0)
+	public boolean containsLocalBean(final String arg0)
 	{
 		throw new UnsupportedOperationException();
 	}
@@ -351,7 +418,7 @@ public class ApplicationContextMock implements ApplicationContext, Serializable
 	 * @see org.springframework.beans.factory.BeanFactory#getBean(java.lang.String,
 	 *      java.lang.Object[])
 	 */
-	public Object getBean(String name, Object[] args) throws BeansException
+	public Object getBean(final String name, final Object... args) throws BeansException
 	{
 		throw new UnsupportedOperationException();
 
@@ -360,7 +427,7 @@ public class ApplicationContextMock implements ApplicationContext, Serializable
 	/**
 	 * @see org.springframework.beans.factory.BeanFactory#isPrototype(java.lang.String)
 	 */
-	public boolean isPrototype(String name) throws NoSuchBeanDefinitionException
+	public boolean isPrototype(final String name) throws NoSuchBeanDefinitionException
 	{
 		throw new UnsupportedOperationException();
 	}
@@ -369,7 +436,9 @@ public class ApplicationContextMock implements ApplicationContext, Serializable
 	 * @see org.springframework.beans.factory.BeanFactory#isTypeMatch(java.lang.String,
 	 *      java.lang.Class)
 	 */
-	public boolean isTypeMatch(String name, Class targetType) throws NoSuchBeanDefinitionException
+	@SuppressWarnings({ "unchecked" })
+	public boolean isTypeMatch(final String name, final Class targetType)
+		throws NoSuchBeanDefinitionException
 	{
 		throw new UnsupportedOperationException();
 	}

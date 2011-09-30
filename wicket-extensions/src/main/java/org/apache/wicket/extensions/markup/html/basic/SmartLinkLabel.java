@@ -43,15 +43,17 @@ public class SmartLinkLabel extends Label
 	/**
 	 * @see Label#Label(String, String)
 	 */
-	public SmartLinkLabel(String name, String label)
+	public SmartLinkLabel(final String name, final String label)
 	{
 		this(name, new Model<String>(label));
 	}
 
 	/**
+	 * @param name
+	 * @param model
 	 * @see Label#Label(String, IModel)
 	 */
-	public SmartLinkLabel(String name, IModel<String> model)
+	public SmartLinkLabel(final String name, final IModel<String> model)
 	{
 		super(name, model);
 	}
@@ -59,22 +61,25 @@ public class SmartLinkLabel extends Label
 	/**
 	 * @see Label#Label(String)
 	 */
-	public SmartLinkLabel(String name)
+	public SmartLinkLabel(final String name)
 	{
 		super(name);
 	}
 
 	/**
-	 * @see org.apache.wicket.Component#onComponentTagBody(org.apache.wicket.markup.MarkupStream,
-	 *      org.apache.wicket.markup.ComponentTag)
+	 * {@inheritDoc}
 	 */
 	@Override
-	protected void onComponentTagBody(final MarkupStream markupStream, final ComponentTag openTag)
+	public void onComponentTagBody(final MarkupStream markupStream, final ComponentTag openTag)
 	{
 		replaceComponentTagBody(markupStream, openTag,
 			getSmartLink(getDefaultModelObjectAsString()));
 	}
 
+	/**
+	 * 
+	 * @return link parser
+	 */
 	protected ILinkParser getLinkParser()
 	{
 		return new DefaultLinkParser();

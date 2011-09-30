@@ -145,6 +145,8 @@ div.wicket-modal h3.w_captionText {
 	height: 1.4em; 
 	position: absolute;
 	margin-left: 3px;
+	margin-bottom: 0px;
+	margin-top: 0px;
 	font-weight: bold;
 	left: 0em;
 }
@@ -166,7 +168,9 @@ div.wicket-modal div.w_content {
 	background-color: white;
 }
 
-
+div.wicket-modal div.w_content_container {
+	position: relative;
+}
 
 div.wicket-modal iframe.wicket_modal {
 	width: 100%; 

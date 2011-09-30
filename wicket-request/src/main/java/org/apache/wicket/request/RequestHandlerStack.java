@@ -25,7 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Manages stack of {@link IRequestHandler}s.
+ * Manages stack of executions of {@link IRequestHandler}s.
  * 
  * @author Matej Knopp
  * @author igor.vaynberg
@@ -41,47 +41,26 @@ public abstract class RequestHandlerStack
 
 	private IRequestHandler scheduledAfterCurrent = null;
 
-	private Response response;
-
 	/**
-	 * Construct.
-	 * 
-	 * @param response
+	 * @return active handler
 	 */
-	public RequestHandlerStack(Response response)
-	{
-		this.response = response;
-	}
-
-	protected abstract IRequestCycle getRequestCycle();
-
-	/**
-	 * Returns currently active {@link IRequestHandler}.
-	 * 
-	 * @return Active RequestHandler or <code>null</code> if no handler is active.
-	 */
-	public IRequestHandler getActiveRequestHandler()
+	public IRequestHandler getActive()
 	{
 		return requestHandlers.peek();
 	}
 
 	/**
-	 * Executes the specified {@link IRequestHandler}. When the specified {@link IRequestHandler}
-	 * finishes, the {@link IRequestHandler} that invoked this method continues (unless the new
-	 * {@link IRequestHandler} called {@link #replaceAllRequestHandlers(IRequestHandler)}.
-	 * 
 	 * @param handler
 	 */
-	public void executeRequestHandler(IRequestHandler handler)
+	public void execute(final IRequestHandler handler)
 	{
 		final boolean first = requestHandlers.isEmpty();
 		requestHandlers.add(handler);
 
 		IRequestHandler replacementHandler = null;
-		Response originalResponse = response;
 		try
 		{
-			handler.respond(getRequestCycle());
+			respond(handler);
 		}
 		catch (RuntimeException exception)
 		{
@@ -101,7 +80,6 @@ public abstract class RequestHandlerStack
 		}
 		finally
 		{
-			response = originalResponse;
 			requestHandlers.poll();
 			inactiveRequestHandlers.add(handler);
 		}
@@ -111,79 +89,47 @@ public abstract class RequestHandlerStack
 
 		if (replacementHandler != null)
 		{
-			executeRequestHandler(replacementHandler);
+			execute(replacementHandler);
 		}
 		else if (scheduled != null)
 		{
-			executeRequestHandler(scheduled);
+			execute(scheduled);
 		}
 	}
 
 	/**
-	 * Schedules the request handler to be executed after current request handler finishes. If there
-	 * is already another request handler scheduled it will be discarded and overwritten by the new
-	 * one. If {@link #replaceCurrentRequestHandler(IRequestHandler)} or
-	 * {@link #replaceAllRequestHandlers(IRequestHandler)} is invoked during current request handler
-	 * execution the scheduled handler will be also discarded.
+	 * Allows the request handler to respond to the request
 	 * 
 	 * @param handler
-	 *            handler to be executed after current request handler finishes
 	 */
-	public void scheduleRequestHandlerAfterCurrent(IRequestHandler handler)
+	protected abstract void respond(IRequestHandler handler);
+
+	/**
+	 * Schedules the handler after the current one
+	 * 
+	 * @param handler
+	 */
+	public void schedule(final IRequestHandler handler)
 	{
 		scheduledAfterCurrent = handler;
 	}
 
 	/**
-	 * Returns the request handler scheduled after current request handler.
-	 * 
-	 * @see #scheduleRequestHandlerAfterCurrent(IRequestHandler)
-	 * @return handler or <code>null</code>
+	 * @return scheduled request handler after the current one
 	 */
-	public IRequestHandler getRequestHandlerScheduledAfterCurrent()
+	public IRequestHandler next()
 	{
 		return scheduledAfterCurrent;
 	}
-	
-	/**
-	 * Replaces the currently executed {@link IRequestHandler} with new {@link IRequestHandler}. The
-	 * currently executed {@link IRequestHandler} is terminated and the new {@link IRequestHandler}
-	 * is executed.
-	 * 
-	 * @param handler
-	 */
-	// FIXME
-	// Is this method really useful for anything? To execute request handler
-	// after current
-	// #scheduleRequestHandlerAfterCurrent is better alternative because it
-	// doesn't terminate
-	// current request handler.
-	// To restart request processing #replaceAllRequestHandlers is better
-	// alternative because it
-	// unrolls entire stack and cancels all request handlers in stack
-	public void replaceCurrentRequestHandler(IRequestHandler handler)
-	{
-		if (requestHandlers.isEmpty())
-		{
-			executeRequestHandler(handler);
-		}
-		else
-		{
-			throw new ReplaceHandlerException(handler, false);
-		}
-	}
 
 	/**
-	 * Removes the whole {@link IRequestHandler} stack, terminates currently running
-	 * {@link IRequestHandler} and executes the new {@link IRequestHandler}.
-	 * 
 	 * @param handler
 	 */
-	public void replaceAllRequestHandlers(IRequestHandler handler)
+	public void replaceAll(final IRequestHandler handler)
 	{
 		if (requestHandlers.isEmpty())
 		{
-			executeRequestHandler(handler);
+			execute(handler);
 		}
 		else
 		{
@@ -192,32 +138,7 @@ public abstract class RequestHandlerStack
 	}
 
 	/**
-	 * Returns the active {@link Response}.
-	 * 
-	 * @return response object.
-	 */
-	public Response getResponse()
-	{
-		return response;
-	}
-
-	/**
-	 * Replaces current {@link Response} with new {@link Response} instance. The original response
-	 * is always restored after the {@link IRequestHandler#respond(IRequestCycle)} method is
-	 * finished.
-	 * 
-	 * @param response
-	 * @return Response being replaced.
-	 */
-	public Response setResponse(Response response)
-	{
-		Response current = this.response;
-		this.response = response;
-		return current;
-	}
-
-	/**
-	 * Detaches all {@link IRequestHandler}s.
+	 * Detaches all request handlers
 	 */
 	public void detach()
 	{
@@ -234,7 +155,7 @@ public abstract class RequestHandlerStack
 		{
 			try
 			{
-				handler.detach(getRequestCycle());
+				detach(handler);
 			}
 			catch (Throwable exception)
 			{
@@ -242,6 +163,13 @@ public abstract class RequestHandlerStack
 			}
 		}
 	}
+
+	/**
+	 * Allows the request handler to detach
+	 * 
+	 * @param handler
+	 */
+	protected abstract void detach(IRequestHandler handler);
 
 	/**
 	 * Exception to stop current request handler and execute a new one.
@@ -262,7 +190,8 @@ public abstract class RequestHandlerStack
 		 * @param replacementRequestHandler
 		 * @param removeAll
 		 */
-		public ReplaceHandlerException(IRequestHandler replacementRequestHandler, boolean removeAll)
+		public ReplaceHandlerException(final IRequestHandler replacementRequestHandler,
+			final boolean removeAll)
 		{
 			this.replacementRequestHandler = replacementRequestHandler;
 			this.removeAll = removeAll;

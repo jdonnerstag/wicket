@@ -63,39 +63,19 @@ public class AjaxFallbackDefaultDataTable<T> extends DataTable<T>
 	 * @param rowsPerPage
 	 *            number of rows per page
 	 */
-	@SuppressWarnings("unchecked")
-	public AjaxFallbackDefaultDataTable(String id, final List<IColumn<T>> columns,
-		ISortableDataProvider<T> dataProvider, int rowsPerPage)
-	{
-		this(id, columns.toArray((IColumn<T>[])new IColumn[columns.size()]), dataProvider,
-			rowsPerPage);
-	}
-
-	/**
-	 * Constructor
-	 * 
-	 * @param id
-	 *            component id
-	 * @param columns
-	 *            array of columns
-	 * @param dataProvider
-	 *            data provider
-	 * @param rowsPerPage
-	 *            number of rows per page
-	 */
-	public AjaxFallbackDefaultDataTable(String id, final IColumn<T>[] columns,
-		ISortableDataProvider<T> dataProvider, int rowsPerPage)
+	public AjaxFallbackDefaultDataTable(final String id, final List<IColumn<T>> columns,
+		final ISortableDataProvider<T> dataProvider, final int rowsPerPage)
 	{
 		super(id, columns, dataProvider, rowsPerPage);
 		setOutputMarkupId(true);
 		setVersioned(false);
-		addTopToolbar(new AjaxNavigationToolbar("navigationToolbar", this));
-		addTopToolbar(new AjaxFallbackHeadersToolbar("headerToolbar", this, dataProvider));
-		addBottomToolbar(new NoRecordsToolbar("noRecordsToolbar", this));
+		addTopToolbar(new AjaxNavigationToolbar(this));
+		addTopToolbar(new AjaxFallbackHeadersToolbar(this, dataProvider));
+		addBottomToolbar(new NoRecordsToolbar(this));
 	}
 
 	@Override
-	protected Item<T> newRowItem(String id, int index, IModel<T> model)
+	protected Item<T> newRowItem(final String id, final int index, final IModel<T> model)
 	{
 		return new OddEvenItem<T>(id, index, model);
 	}

@@ -75,25 +75,26 @@ public abstract class AjaxLazyLoadPanel extends Panel
 			private static final long serialVersionUID = 1L;
 
 			@Override
-			protected void respond(AjaxRequestTarget target)
+			protected void respond(final AjaxRequestTarget target)
 			{
-				Component component = getLazyLoadComponent(LAZY_LOAD_COMPONENT_ID);
-				AjaxLazyLoadPanel.this.replace(component);
+				if (state < 2)
+				{
+					Component component = getLazyLoadComponent(LAZY_LOAD_COMPONENT_ID);
+					AjaxLazyLoadPanel.this.replace(component);
+					setState((byte)2);
+				}
 				target.add(AjaxLazyLoadPanel.this);
-				setState((byte)2);
+
 			}
 
 			@Override
-			public void renderHead(IHeaderResponse response)
+			public void renderHead(final Component component, final IHeaderResponse response)
 			{
-				super.renderHead(response);
-				handleCallbackScript(response, getCallbackScript().toString());
-			}
-
-			@Override
-			public boolean isEnabled(Component component)
-			{
-				return state < 2;
+				super.renderHead(component, response);
+				if (state < 2)
+				{
+					handleCallbackScript(response, getCallbackScript().toString());
+				}
 			}
 		});
 	}
@@ -106,7 +107,7 @@ public abstract class AjaxLazyLoadPanel extends Panel
 	 */
 	protected void handleCallbackScript(final IHeaderResponse response, final String callbackScript)
 	{
-		response.renderOnDomReadyJavascript(callbackScript);
+		response.renderOnDomReadyJavaScript(callbackScript);
 	}
 
 	/**
@@ -127,9 +128,10 @@ public abstract class AjaxLazyLoadPanel extends Panel
 	 * 
 	 * @param state
 	 */
-	private void setState(byte state)
+	private void setState(final byte state)
 	{
 		this.state = state;
+		getPage().dirty();
 	}
 
 	/**
@@ -150,8 +152,8 @@ public abstract class AjaxLazyLoadPanel extends Panel
 	{
 		IRequestHandler handler = new ResourceReferenceRequestHandler(
 			AbstractDefaultAjaxBehavior.INDICATOR);
-		return new Label(markupId, "<img alt=\"Loading...\" src=\"" + RequestCycle.get().urlFor(handler) +
-			"\"/>").setEscapeModelStrings(false);
+		return new Label(markupId, "<img alt=\"Loading...\" src=\"" +
+			RequestCycle.get().urlFor(handler) + "\"/>").setEscapeModelStrings(false);
 	}
 
 }

@@ -16,7 +16,7 @@
  */
 package org.apache.wicket.extensions.markup.html.tabs;
 
-import org.apache.wicket.markup.html.WebMarkupContainerWithAssociatedMarkup;
+import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.model.IModel;
 
 /**
@@ -26,13 +26,14 @@ import org.apache.wicket.model.IModel;
  * @see org.apache.wicket.extensions.markup.html.tabs.TabbedPanel
  * 
  * @author Igor Vaynberg (ivaynberg)
- * 
  */
 public class PanelCachingTab implements ITab
 {
 	private static final long serialVersionUID = 1L;
 
-	private WebMarkupContainerWithAssociatedMarkup panel;
+	// Might Panel or Fragment or ...
+	private WebMarkupContainer panel;
+
 	private final ITab delegate;
 
 	/**
@@ -41,13 +42,13 @@ public class PanelCachingTab implements ITab
 	 * @param delegate
 	 *            ITab implementation to decorate
 	 */
-	public PanelCachingTab(ITab delegate)
+	public PanelCachingTab(final ITab delegate)
 	{
 		this.delegate = delegate;
 	}
 
 	/**
-	 * @see org.apache.wicket.extensions.markup.html.tabs.ITab#getTitle()
+	 * {@inheritDoc}
 	 */
 	public IModel<String> getTitle()
 	{
@@ -55,9 +56,9 @@ public class PanelCachingTab implements ITab
 	}
 
 	/**
-	 * @see org.apache.wicket.extensions.markup.html.tabs.ITab#getPanel(java.lang.String)
+	 * {@inheritDoc}
 	 */
-	public WebMarkupContainerWithAssociatedMarkup getPanel(final String panelId)
+	public WebMarkupContainer getPanel(final String panelId)
 	{
 		if (panel == null)
 		{
@@ -67,7 +68,7 @@ public class PanelCachingTab implements ITab
 	}
 
 	/**
-	 * @see org.apache.wicket.extensions.markup.html.tabs.ITab#isVisible()
+	 * {@inheritDoc}
 	 */
 	public boolean isVisible()
 	{

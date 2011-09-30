@@ -23,25 +23,30 @@ import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.markup.html.AjaxLink;
 import org.apache.wicket.markup.html.WebPage;
 
+/**
+ */
 public class MoveChildToParentNodeMarkedForRecreationTestPage extends WebPage
 {
 	private static final long serialVersionUID = 1L;
 
 	private final Tree treeTable;
-	private DefaultMutableTreeNode c2;
-	private DefaultMutableTreeNode c3;
+	DefaultMutableTreeNode c2;
+	DefaultMutableTreeNode c3;
 
+	/**
+	 * Construct.
+	 */
 	public MoveChildToParentNodeMarkedForRecreationTestPage()
 	{
 		treeTable = new Tree("tree", getTreeModel());
 		treeTable.getTreeState().expandAll();
 		add(treeTable);
-		add(new AjaxLink("moveC3ToC2")
+		add(new AjaxLink<Void>("moveC3ToC2")
 		{
 			private static final long serialVersionUID = 1L;
 
 			@Override
-			public void onClick(AjaxRequestTarget target)
+			public void onClick(final AjaxRequestTarget target)
 			{
 				treeTable.modelChanging();
 				DefaultTreeModel model = (DefaultTreeModel)treeTable.getDefaultModelObject();

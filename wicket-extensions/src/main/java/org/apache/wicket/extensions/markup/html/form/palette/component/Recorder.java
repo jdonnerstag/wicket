@@ -68,7 +68,7 @@ public class Recorder<T> extends HiddenField<Object>
 	 * @param palette
 	 *            parent palette object
 	 */
-	public Recorder(String id, Palette<T> palette)
+	public Recorder(final String id, final Palette<T> palette)
 	{
 		super(id);
 		this.palette = palette;
@@ -103,7 +103,7 @@ public class Recorder<T> extends HiddenField<Object>
 	{
 		// construct the model string based on selection collection
 		IChoiceRenderer<T> renderer = getPalette().getChoiceRenderer();
-		StringBuffer modelStringBuffer = new StringBuffer();
+		StringBuilder modelStringBuffer = new StringBuilder();
 		Collection<T> modelCollection = getPalette().getModelCollection();
 		if (modelCollection == null)
 		{
@@ -135,7 +135,9 @@ public class Recorder<T> extends HiddenField<Object>
 	{
 		super.onValid();
 		if (attached)
+		{
 			updateIds();
+		}
 	}
 
 	/**
@@ -151,13 +153,11 @@ public class Recorder<T> extends HiddenField<Object>
 		}
 
 		List<T> selected = new ArrayList<T>(ids.length);
-		for (int i = 0; i < ids.length; i++)
+		for (String id : ids)
 		{
-			Iterator<? extends T> it = getPalette().getChoices().iterator();
-			while (it.hasNext())
+			for (T choice : getPalette().getChoices())
 			{
-				final T choice = it.next();
-				if (renderer.getIdValue(choice, 0).equals(ids[i]))
+				if (renderer.getIdValue(choice, 0).equals(id))
 				{
 					selected.add(choice);
 					break;
@@ -181,15 +181,13 @@ public class Recorder<T> extends HiddenField<Object>
 		}
 
 		List<T> unselected = new ArrayList<T>(Math.max(1, choices.size() - ids.length));
-		Iterator<? extends T> it = choices.iterator();
-		while (it.hasNext())
+		for (T choice : choices)
 		{
-			final T choice = it.next();
 			final String choiceId = renderer.getIdValue(choice, 0);
 			boolean selected = false;
-			for (int i = 0; i < ids.length; i++)
+			for (String id : ids)
 			{
-				if (ids[i].equals(choiceId))
+				if (id.equals(choiceId))
 				{
 					selected = true;
 					break;
@@ -209,7 +207,9 @@ public class Recorder<T> extends HiddenField<Object>
 	{
 		super.onInvalid();
 		if (attached)
+		{
 			updateIds();
+		}
 	}
 
 	private void updateIds()
@@ -217,7 +217,7 @@ public class Recorder<T> extends HiddenField<Object>
 		updateIds(getValue());
 	}
 
-	private void updateIds(String value)
+	private void updateIds(final String value)
 	{
 		if (Strings.isEmpty(value))
 		{

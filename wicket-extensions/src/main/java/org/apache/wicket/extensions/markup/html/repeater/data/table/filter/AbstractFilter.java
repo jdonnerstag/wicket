@@ -29,7 +29,7 @@ public class AbstractFilter extends Panel
 {
 	private static final long serialVersionUID = 1L;
 
-	private final FilterForm form;
+	private final FilterForm<?> form;
 
 	/**
 	 * @param id
@@ -37,7 +37,7 @@ public class AbstractFilter extends Panel
 	 * @param form
 	 *            filter form of the filter toolbar
 	 */
-	public AbstractFilter(String id, FilterForm form)
+	public AbstractFilter(final String id, final FilterForm<?> form)
 	{
 		super(id);
 		this.form = form;
@@ -51,12 +51,12 @@ public class AbstractFilter extends Panel
 	 * @param fc
 	 *            form component for which focus tracking will be enabled
 	 */
-	protected void enableFocusTracking(FormComponent<?> fc)
+	protected void enableFocusTracking(final FormComponent<?> fc)
 	{
 		form.enableFocusTracking(fc);
 	}
 
-	protected IFilterStateLocator getStateLocator()
+	protected IFilterStateLocator<?> getStateLocator()
 	{
 		return form.getStateLocator();
 	}

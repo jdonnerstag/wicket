@@ -18,7 +18,7 @@ package org.apache.wicket.extensions.markup.html.repeater.data.table;
 
 import java.util.Iterator;
 
-import org.apache.wicket.extensions.markup.html.repeater.util.SortParam;
+import org.apache.wicket.extensions.markup.html.repeater.data.sort.SortOrder;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
 import org.apache.wicket.model.IModel;
 
@@ -39,7 +39,7 @@ public class SortableContactDataProvider extends SortableDataProvider<Contact>
 	public SortableContactDataProvider()
 	{
 		// set default sort
-		setSort("firstName", true);
+		setSort("firstName", SortOrder.ASCENDING);
 	}
 
 	protected ContactsDatabase getContactsDB()
@@ -50,10 +50,9 @@ public class SortableContactDataProvider extends SortableDataProvider<Contact>
 	/**
 	 * @see org.apache.wicket.markup.repeater.data.IDataProvider#iterator(int, int)
 	 */
-	public Iterator<Contact> iterator(int first, int count)
+	public Iterator<Contact> iterator(final int first, final int count)
 	{
-		SortParam sp = getSort();
-		return getContactsDB().find(first, count, sp.getProperty(), sp.isAscending()).iterator();
+		return getContactsDB().find(first, count, getSort()).iterator();
 	}
 
 	/**
@@ -67,7 +66,7 @@ public class SortableContactDataProvider extends SortableDataProvider<Contact>
 	/**
 	 * @see org.apache.wicket.markup.repeater.data.IDataProvider#model(java.lang.Object)
 	 */
-	public IModel<Contact> model(Contact object)
+	public IModel<Contact> model(final Contact object)
 	{
 		return new DetachableContactModel(object);
 	}

@@ -29,8 +29,11 @@ import org.apache.wicket.markup.html.tree.LinkTree;
  */
 public class SimpleTreePage extends BaseTreePage
 {
-	private BaseTree tree;
+	private static final long serialVersionUID = 1L;
 
+	private final BaseTree tree;
+
+	@Override
 	protected AbstractTree getTree()
 	{
 		return tree;

@@ -16,111 +16,62 @@
  */
 package org.apache.wicket.extensions.markup.html.tree.table;
 
-import java.util.Locale;
-
 import javax.swing.tree.TreeNode;
 
-import org.apache.wicket.Session;
-import org.apache.wicket.util.convert.IConverter;
-import org.apache.wicket.util.lang.PropertyResolver;
+import org.apache.wicket.Component;
+import org.apache.wicket.MarkupContainer;
 
 
 /**
- * TreeColumn class that uses a property expression to get the value from the node.
+ * Convenience class for building tree columns, i.e. columns that contain the actual tree.
  * 
  * @author Matej Knopp
+ * @param <T>
+ *            the type of the property that is rendered in this column
  */
-public class PropertyTreeColumn extends AbstractTreeColumn
+public class PropertyTreeColumn<T> extends AbstractPropertyColumn<T>
 {
 	private static final long serialVersionUID = 1L;
 
-	private IConverter converter;
-
-	private Locale locale;
-
-	private final String propertyExpression;
-
 	/**
-	 * Creates the columns.
+	 * Creates new column. Checks if the column is not aligned in middle. In case it is, throws an
+	 * exception.
 	 * 
 	 * @param location
 	 *            Specifies how the column should be aligned and what his size should be
-	 * 
 	 * @param header
 	 *            Header caption
-	 * 
 	 * @param propertyExpression
 	 *            Expression for property access
 	 */
-	public PropertyTreeColumn(ColumnLocation location, String header, String propertyExpression)
+	public PropertyTreeColumn(final ColumnLocation location, final String header,
+		final String propertyExpression)
 	{
-		super(location, header);
-		this.propertyExpression = propertyExpression;
+		super(location, header, propertyExpression);
 	}
 
 	/**
-	 * Returns the converter or null if no converter is specified.
-	 * 
-	 * @return Any converter
+	 * @see IColumn#newCell(MarkupContainer, String, TreeNode, int)
 	 */
-	public IConverter getConverter()
+	public Component newCell(final MarkupContainer parent, final String id, final TreeNode node,
+		final int level)
 	{
-		return converter;
-	}
-
-	/**
-	 * Returns the locale or null if no locale is specified.
-	 * 
-	 * @return Any locale
-	 */
-	public Locale getLocale()
-	{
-		return locale;
-	}
-
-	/**
-	 * @see AbstractTreeColumn#renderNode(TreeNode)
-	 */
-	@Override
-	public String renderNode(TreeNode node)
-	{
-		Object result = PropertyResolver.getValue(propertyExpression, node);
-		if (converter != null)
+		return TreeTable.newTreeCell(parent, id, node, level, new TreeTable.IRenderNodeCallback()
 		{
-			Locale locale = this.locale;
-			if (locale == null)
+			private static final long serialVersionUID = 1L;
+
+			public String renderNode(final TreeNode node)
 			{
-				locale = Session.get().getLocale();
+				return PropertyTreeColumn.this.getNodeValue(node);
 			}
-			return converter.convertToString(result, locale);
-		}
-		else
-		{
-			return result != null ? result.toString() : null;
-		}
+		}, getTreeTable());
 	}
 
 	/**
-	 * By default the property is converted to string using <code>toString</code> method. If you
-	 * want to alter this behavior, you can specify a custom converter.
-	 * 
-	 * @param converter
-	 *            Any converter
+	 * @see IColumn#newCell(TreeNode, int)
 	 */
-	public void setConverter(IConverter converter)
+	public IRenderable newCell(final TreeNode node, final int level)
 	{
-		this.converter = converter;
-	}
-
-	/**
-	 * Sets the locale to be used as parameter for custom converter (if one is specified). If no
-	 * locale is set, session locale is used.
-	 * 
-	 * @param locale
-	 *            The locale
-	 */
-	public void setLocale(Locale locale)
-	{
-		this.locale = locale;
+		return null;
 	}
 }

@@ -19,42 +19,32 @@ package org.apache.wicket.util.convert.converter;
 import java.math.BigDecimal;
 import java.util.Locale;
 
+import org.apache.wicket.util.string.Strings;
+
 /**
  * BigDecimal converter
  * 
  * see IConverter
  */
-public class BigDecimalConverter extends AbstractDecimalConverter
+public class BigDecimalConverter extends AbstractDecimalConverter<BigDecimal>
 {
 	private static final long serialVersionUID = 1L;
 
-	/**
-	 * @see org.apache.wicket.util.convert.converters.AbstractConverter#getTargetType()
-	 */
 	@Override
-	protected Class<?> getTargetType()
+	protected Class<BigDecimal> getTargetType()
 	{
 		return BigDecimal.class;
 	}
 
-	/**
-	 * @see org.apache.wicket.util.convert.IConverter#convertToObject(java.lang.String,
-	 *      java.util.Locale)
-	 */
-	public BigDecimal convertToObject(String value, final Locale locale)
+	public BigDecimal convertToObject(final String value, final Locale locale)
 	{
-		if (value == null)
-		{
-			return null;
-		}
-
-		value = value.trim();
-		if (value.trim().equals(""))
+		if (Strings.isEmpty(value))
 		{
 			return null;
 		}
 
 		final Number number = parse(value, -Double.MAX_VALUE, Double.MAX_VALUE, locale);
+
 		if (number instanceof BigDecimal)
 		{
 			return (BigDecimal)number;

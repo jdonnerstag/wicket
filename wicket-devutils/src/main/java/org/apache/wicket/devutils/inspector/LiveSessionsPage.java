@@ -32,12 +32,11 @@ import org.apache.wicket.markup.html.navigation.paging.PagingNavigator;
 import org.apache.wicket.model.AbstractReadOnlyModel;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
-import org.apache.wicket.protocol.http.DummyRequestLogger;
 import org.apache.wicket.protocol.http.IRequestLogger;
 import org.apache.wicket.protocol.http.IRequestLogger.SessionData;
+import org.apache.wicket.protocol.http.RequestLogger;
 import org.apache.wicket.protocol.http.WebApplication;
 import org.apache.wicket.util.lang.Bytes;
-
 
 /**
  * @author jcompagner
@@ -139,7 +138,7 @@ public class LiveSessionsPage extends DevUtilsPage
 			private final SimpleDateFormat sdf = new SimpleDateFormat("dd MMM hh:mm:ss.SSS");
 
 			@Override
-			protected void populateItem(ListItem<SessionData> item)
+			protected void populateItem(final ListItem<SessionData> item)
 			{
 				final SessionData sd = item.getModelObject();
 				Link<Void> link = new Link<Void>("id")
@@ -161,8 +160,8 @@ public class LiveSessionsPage extends DevUtilsPage
 					sdf.format(sd.getLastActive()))));
 				item.add(new Label("requestCount", new Model<Long>(sd.getNumberOfRequests())));
 				item.add(new Label("requestsTime", new Model<Long>(sd.getTotalTimeTaken())));
-				item.add(new Label("sessionSize", new Model<Bytes>(
-					Bytes.bytes(sd.getSessionSize()))));
+				item.add(new Label("sessionSize",
+					new Model<Bytes>(Bytes.bytes(sd.getSessionSize()))));
 			}
 		};
 		add(listView);
@@ -174,16 +173,10 @@ public class LiveSessionsPage extends DevUtilsPage
 	IRequestLogger getRequestLogger()
 	{
 		WebApplication webApplication = (WebApplication)Application.get();
-		final IRequestLogger requestLogger;
-		if (webApplication.getRequestLogger() == null)
-		{
-			// make default one.
-			requestLogger = new DummyRequestLogger();
-		}
-		else
-		{
-			requestLogger = webApplication.getRequestLogger();
-		}
+		IRequestLogger requestLogger = webApplication.getRequestLogger();
+
+		if (requestLogger == null)
+			requestLogger = new RequestLogger();
 		return requestLogger;
 	}
 }

@@ -29,16 +29,24 @@ public interface ICompoundRequestMapper extends IRequestMapper, Iterable<IReques
 	/**
 	 * Registers a {@link IRequestMapper}
 	 * 
-	 * @param encoder
+	 * @param mapper
 	 * @return {@code this} for chaining
 	 */
-	ICompoundRequestMapper add(IRequestMapper encoder);
+	ICompoundRequestMapper add(IRequestMapper mapper);
 
 	/**
-	 * Unregisters {@link IRequestMapper}
+	 * Unregisters a {@link IRequestMapper}
 	 * 
-	 * @param encoder
+	 * @param mapper
 	 * @return {@code this} for chaining
 	 */
-	ICompoundRequestMapper remove(IRequestMapper encoder);
+	ICompoundRequestMapper remove(IRequestMapper mapper);
+
+	/**
+	 * Unregisters all {@link IRequestMapper}s which would match on a this path
+	 * 
+	 * @param path
+	 *            the path to unmount
+	 */
+	void unmount(String path);
 }

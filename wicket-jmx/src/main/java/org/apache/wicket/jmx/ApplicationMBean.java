@@ -19,6 +19,7 @@ package org.apache.wicket.jmx;
 import java.io.IOException;
 
 import org.apache.wicket.Application;
+import org.apache.wicket.RuntimeConfigurationType;
 
 
 /**
@@ -45,8 +46,8 @@ public interface ApplicationMBean
 	String getApplicationClass() throws IOException;
 
 	/**
-	 * The configuration type, either {@link org.apache.wicket.Application#DEVELOPMENT} or
-	 * {@link Application#DEPLOYMENT}.
+	 * The configuration type, either {@link RuntimeConfigurationType#DEVELOPMENT} or
+	 * {@link RuntimeConfigurationType#DEPLOYMENT}.
 	 * 
 	 * @return The configuration type
 	 */

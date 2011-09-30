@@ -21,7 +21,12 @@ import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.link.ILinkListener;
 import org.apache.wicket.markup.html.link.Link;
 import org.apache.wicket.model.PropertyModel;
+import org.apache.wicket.request.IRequestHandler;
+import org.apache.wicket.request.Url;
+import org.apache.wicket.request.cycle.RequestCycle;
 import org.apache.wicket.request.handler.ComponentRenderingRequestHandler;
+import org.apache.wicket.request.handler.ListenerInterfaceRequestHandler;
+import org.apache.wicket.request.handler.PageAndComponentProvider;
 import org.apache.wicket.util.string.AppendingStringBuffer;
 
 
@@ -35,6 +40,8 @@ import org.apache.wicket.util.string.AppendingStringBuffer;
  */
 public class Index extends WicketExamplePage
 {
+	private static final long serialVersionUID = 1L;
+
 	/** Click count. */
 	private int count = 0;
 
@@ -47,8 +54,10 @@ public class Index extends WicketExamplePage
 	public Index()
 	{
 		// Add the Ajaxian link to the page...
-		add(new Link("link")
+		add(new Link<Void>("link")
 		{
+			private static final long serialVersionUID = 1L;
+
 			/**
 			 * Handles a click on the link. This method is accessed normally using a standard http
 			 * request, but in this example, we use Ajax to perform the call.
@@ -71,15 +80,19 @@ public class Index extends WicketExamplePage
 			@Override
 			protected String getOnClickScript(CharSequence url)
 			{
+				IRequestHandler handler = new ListenerInterfaceRequestHandler(
+					new PageAndComponentProvider(getPage(), this), ILinkListener.INTERFACE);
+				Url componentUrl = RequestCycle.get().mapUrlFor(handler);
+				componentUrl.addQueryParameter("anticache", Math.random());
 				return new AppendingStringBuffer("new Ajax.Updater('counter', '").append(
-					urlFor(ILinkListener.INTERFACE))
+					componentUrl)
 					.append("', {method:'get'}); return false;")
 					.toString();
 			}
 		});
 
 		// Add the label
-		add(counter = new Label("counter", new PropertyModel(this, "count")));
+		add(counter = new Label("counter", new PropertyModel<Integer>(this, "count")));
 	}
 
 	/**

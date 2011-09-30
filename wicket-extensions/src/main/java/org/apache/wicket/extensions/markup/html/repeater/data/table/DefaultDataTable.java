@@ -55,37 +55,18 @@ public class DefaultDataTable<T> extends DataTable<T>
 	 * @param rowsPerPage
 	 *            number of rows per page
 	 */
-	@SuppressWarnings("unchecked")
-	public DefaultDataTable(String id, final List<IColumn<T>> columns,
-		ISortableDataProvider<T> dataProvider, int rowsPerPage)
-	{
-		this(id, columns.toArray(new IColumn[columns.size()]), dataProvider, rowsPerPage);
-	}
-
-	/**
-	 * Constructor
-	 * 
-	 * @param id
-	 *            component id
-	 * @param columns
-	 *            array of columns
-	 * @param dataProvider
-	 *            data provider
-	 * @param rowsPerPage
-	 *            number of rows per page
-	 */
-	public DefaultDataTable(String id, final IColumn<T>[] columns,
-		ISortableDataProvider<T> dataProvider, int rowsPerPage)
+	public DefaultDataTable(final String id, final List<IColumn<T>> columns,
+		final ISortableDataProvider<T> dataProvider, final int rowsPerPage)
 	{
 		super(id, columns, dataProvider, rowsPerPage);
 
-		addTopToolbar(new NavigationToolbar("navigationToolbar", this));
-		addTopToolbar(new HeadersToolbar("headersToolbar", this, dataProvider));
-		addBottomToolbar(new NoRecordsToolbar("noRecordsToolbar", this));
+		addTopToolbar(new NavigationToolbar(this));
+		addTopToolbar(new HeadersToolbar(this, dataProvider));
+		addBottomToolbar(new NoRecordsToolbar(this));
 	}
 
 	@Override
-	protected Item<T> newRowItem(String id, int index, IModel<T> model)
+	protected Item<T> newRowItem(final String id, final int index, final IModel<T> model)
 	{
 		return new OddEvenItem<T>(id, index, model);
 	}

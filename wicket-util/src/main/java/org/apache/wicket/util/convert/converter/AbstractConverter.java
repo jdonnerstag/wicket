@@ -28,9 +28,9 @@ import org.apache.wicket.util.convert.IConverter;
  * Base class for locale aware type converters.
  * 
  * @author Eelco Hillenius
- * 
+ * @param <C>
  */
-public abstract class AbstractConverter implements IConverter
+public abstract class AbstractConverter<C> implements IConverter<C>
 {
 	/** */
 	private static final long serialVersionUID = 1L;
@@ -48,11 +48,13 @@ public abstract class AbstractConverter implements IConverter
 	 * @throws ConversionException
 	 *             Thrown if parsing fails
 	 */
-	protected Object parse(final Format format, final Object value, Locale locale)
+	@SuppressWarnings("unchecked")
+	protected C parse(final Format format, final Object value, final Locale locale)
 	{
 		final ParsePosition position = new ParsePosition(0);
 		final String stringValue = value.toString();
-		final Object result = format.parseObject(stringValue, position);
+		final C result = (C)format.parseObject(stringValue, position);
+
 		if (position.getIndex() != stringValue.length())
 		{
 			throw newConversionException("Cannot parse '" + value + "' using format " + format,
@@ -73,7 +75,7 @@ public abstract class AbstractConverter implements IConverter
 	 * @return The ConversionException
 	 */
 	protected ConversionException newConversionException(final String message, final Object value,
-		Locale locale)
+		final Locale locale)
 	{
 		return new ConversionException(message).setSourceValue(value)
 			.setTargetType(getTargetType())
@@ -84,12 +86,12 @@ public abstract class AbstractConverter implements IConverter
 	/**
 	 * @return The target type of this type converter
 	 */
-	protected abstract Class<?> getTargetType();
+	protected abstract Class<C> getTargetType();
 
 	/**
 	 * @see org.apache.wicket.util.convert.IConverter#convertToString(java.lang.Object, Locale)
 	 */
-	public String convertToString(final Object value, final Locale locale)
+	public String convertToString(final C value, final Locale locale)
 	{
 		if (value == null)
 		{

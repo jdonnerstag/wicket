@@ -22,6 +22,8 @@ import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
+import java.util.Locale;
+
 
 /**
  * Date converter that uses Joda Time and can be configured to take the time zone difference between
@@ -50,15 +52,13 @@ public class StyleDateConverter extends DateConverter
 
 	/**
 	 * Construct. The dateStyle 'S-' (which is the same as {@link DateTimeFormat#shortDate()}) will
-	 * be used for constructing the date format for the current locale.
-	 * </p>
-	 * When applyTimeZoneDifference is true, the current time is applied on the parsed date, and the
-	 * date will be corrected for the time zone difference between the server and the client. For
+	 * be used for constructing the date format for the current locale. </p> When
+	 * applyTimeZoneDifference is true, the current time is applied on the parsed date, and the date
+	 * will be corrected for the time zone difference between the server and the client. For
 	 * instance, if I'm in Seattle and the server I'm working on is in Amsterdam, the server is 9
 	 * hours ahead. So, if I'm inputting say 12/24 at a couple of hours before midnight, at the
 	 * server it is already 12/25. If this boolean is true, it will be transformed to 12/25, while
-	 * the client sees 12/24.
-	 * </p>
+	 * the client sees 12/24. </p>
 	 * 
 	 * @param applyTimeZoneDifference
 	 *            whether to apply the difference in time zones between client and server
@@ -70,15 +70,13 @@ public class StyleDateConverter extends DateConverter
 
 	/**
 	 * Construct. The provided pattern will be used as the base format (but they will be localized
-	 * for the current locale) and if null, {@link DateTimeFormat#shortDate()} will be used.
-	 * </p>
+	 * for the current locale) and if null, {@link DateTimeFormat#shortDate()} will be used. </p>
 	 * When applyTimeZoneDifference is true, the current time is applied on the parsed date, and the
 	 * date will be corrected for the time zone difference between the server and the client. For
 	 * instance, if I'm in Seattle and the server I'm working on is in Amsterdam, the server is 9
 	 * hours ahead. So, if I'm inputting say 12/24 at a couple of hours before midnight, at the
 	 * server it is already 12/25. If this boolean is true, it will be transformed to 12/25, while
-	 * the client sees 12/24.
-	 * </p>
+	 * the client sees 12/24. </p>
 	 * 
 	 * @param dateStyle
 	 *            Date style to use. The first character is the date style, and the second character
@@ -105,18 +103,20 @@ public class StyleDateConverter extends DateConverter
 	 * 
 	 * @return datePattern
 	 */
-	public final String getDatePattern()
+	@Override
+	public final String getDatePattern(Locale locale)
 	{
-		return DateTimeFormat.patternForStyle(dateStyle, getLocale());
+		return DateTimeFormat.patternForStyle(dateStyle, locale);
 	}
 
 	/**
 	 * @return formatter The formatter for the current conversion
 	 */
-	protected DateTimeFormatter getFormat()
+	@Override
+	protected DateTimeFormatter getFormat(Locale locale)
 	{
-		DateTimeFormatter dtf = DateTimeFormat.forPattern(getDatePattern()).withLocale(getLocale())
-				.withPivotYear(2000);
-		return dtf;
+		return DateTimeFormat.forPattern(getDatePattern(locale))
+			.withLocale(locale)
+			.withPivotYear(2000);
 	}
 }

@@ -20,11 +20,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.wicket.Application;
 import org.apache.wicket.examples.WicketExamplePage;
 import org.apache.wicket.markup.html.basic.Label;
@@ -77,8 +74,10 @@ public class MultiUploadPage extends WicketExamplePage
 		{
 			final File file = listItem.getModelObject();
 			listItem.add(new Label("file", file.getName()));
-			listItem.add(new Link("delete")
+			listItem.add(new Link<Void>("delete")
 			{
+				private static final long serialVersionUID = 1L;
+
 				@Override
 				public void onClick()
 				{
@@ -117,7 +116,7 @@ public class MultiUploadPage extends WicketExamplePage
 		{
 			super(name);
 
-			// set this form to multipart mode (allways needed for uploads!)
+			// set this form to multipart mode (always needed for uploads!)
 			setMultiPart(true);
 
 			// Add one multi-file upload field
@@ -134,10 +133,8 @@ public class MultiUploadPage extends WicketExamplePage
 		@Override
 		protected void onSubmit()
 		{
-			Iterator<FileUpload> it = uploads.iterator();
-			while (it.hasNext())
+			for (FileUpload upload : uploads)
 			{
-				final FileUpload upload = it.next();
 				// Create a new file
 				File newFile = new File(getUploadFolder(), upload.getClientFileName());
 
@@ -158,9 +155,6 @@ public class MultiUploadPage extends WicketExamplePage
 			}
 		}
 	}
-
-	/** Log. */
-	private static final Log log = LogFactory.getLog(MultiUploadPage.class);
 
 	/** Reference to listview for easy access. */
 	private final FileListView fileListView;

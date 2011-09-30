@@ -30,7 +30,7 @@ public class SessionSettings implements SessionSettingsMBean
 	 * 
 	 * @param application
 	 */
-	public SessionSettings(org.apache.wicket.Application application)
+	public SessionSettings(final org.apache.wicket.Application application)
 	{
 		this.application = application;
 	}
@@ -50,13 +50,4 @@ public class SessionSettings implements SessionSettingsMBean
 	{
 		return Stringz.className(application.getSessionStore());
 	}
-
-	/**
-	 * @see org.apache.wicket.jmx.SessionSettingsMBean#setMaxPageMaps(int)
-	 */
-	public void setMaxPageMaps(int maxPageMaps)
-	{
-		application.getSessionSettings().setMaxPageMaps(maxPageMaps);
-	}
-
 }

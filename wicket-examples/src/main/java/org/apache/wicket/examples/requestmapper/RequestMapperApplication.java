@@ -16,16 +16,16 @@
  */
 package org.apache.wicket.examples.requestmapper;
 
-import org.apache.wicket.Application;
+import javax.servlet.http.HttpServletRequest;
+
 import org.apache.wicket.Page;
+import org.apache.wicket.RuntimeConfigurationType;
 import org.apache.wicket.examples.WicketExampleApplication;
 import org.apache.wicket.examples.requestmapper.packageMount.PackageMountedPage;
 import org.apache.wicket.protocol.https.HttpsConfig;
 import org.apache.wicket.protocol.https.HttpsMapper;
+import org.apache.wicket.request.cycle.RequestCycle;
 import org.apache.wicket.request.mapper.MountedMapper;
-import org.apache.wicket.request.mapper.PackageMapper;
-import org.apache.wicket.request.mapper.mount.MountMapper;
-import org.apache.wicket.util.lang.PackageName;
 
 /**
  * @author mgrigorov
@@ -56,23 +56,50 @@ public class RequestMapperApplication extends WicketExampleApplication
 		getRootRequestMapperAsCompound().add(
 			new LocaleFirstMapper(new MountedMapper("/localized", LocalizedPage.class)));
 
-		getRootRequestMapperAsCompound().add(new MountedMapper("secured", HttpsPage.class));
+		mountPage("secured", HttpsPage.class);
 
-		getRootRequestMapperAsCompound().add(
-			new MountMapper("pMount", new PackageMapper(
-				PackageName.forClass(PackageMountedPage.class))));
+		mountPackage("pMount", PackageMountedPage.class);
 
-		setRootRequestMapper(new HttpsMapper(getRootRequestMapper(), new HttpsConfig()));
+		mountResource("/print/${sheet}/${format}", new MapperDemoResourceReference());
+
+		setRootRequestMapper(new HttpsMapper(getRootRequestMapper(), new LazyHttpsConfig()));
 	}
 
 	/**
-	 * @see org.apache.wicket.protocol.http.WebApplication#getConfigurationType()
+	 * HttpsConfig that extracts the <i>http</i> port out of the current servlet request's local
+	 * port. This way the demo can be used both with Jetty (port 8080) and at production (behind
+	 * Apache proxy)
 	 */
-	@Override
-	public String getConfigurationType()
+	private static class LazyHttpsConfig extends HttpsConfig
 	{
-		return Application.DEVELOPMENT;
+		@Override
+		public int getHttpPort()
+		{
+			int port = -1;
+
+			RequestCycle requestCycle = RequestCycle.get();
+			if (requestCycle != null)
+			{
+				HttpServletRequest containerRequest = (HttpServletRequest)requestCycle.getRequest()
+					.getContainerRequest();
+				if (containerRequest != null)
+				{
+					port = containerRequest.getLocalPort();
+				}
+			}
+
+			if (port == -1)
+			{
+				port = super.getHttpPort();
+			}
+
+			return port;
+		}
+
+		@Override
+		public int getHttpsPort()
+		{
+			return 443;
+		}
 	}
-
-
 }

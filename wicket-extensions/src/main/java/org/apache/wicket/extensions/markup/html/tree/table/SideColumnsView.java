@@ -16,15 +16,11 @@
  */
 package org.apache.wicket.extensions.markup.html.tree.table;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import javax.swing.tree.TreeNode;
 
 import org.apache.wicket.Component;
 import org.apache.wicket.extensions.markup.html.tree.table.ColumnLocation.Alignment;
 import org.apache.wicket.extensions.markup.html.tree.table.ColumnLocation.Unit;
-import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.request.Response;
 import org.apache.wicket.request.cycle.RequestCycle;
 
@@ -34,17 +30,9 @@ import org.apache.wicket.request.cycle.RequestCycle;
  * 
  * @author Matej Knopp
  */
-final class SideColumnsView extends WebMarkupContainer
+final class SideColumnsView extends AbstractColumnsView
 {
 	private static final long serialVersionUID = 1L;
-
-	private final List<IColumn> columns = new ArrayList<IColumn>();
-
-	private final List<Component> components = new ArrayList<Component>();
-
-	private final TreeNode node;
-
-	private final List<IRenderable> renderables = new ArrayList<IRenderable>();
 
 	/**
 	 * Constructor.
@@ -54,11 +42,10 @@ final class SideColumnsView extends WebMarkupContainer
 	 * @param node
 	 *            The tree node
 	 */
-	public SideColumnsView(String id, TreeNode node)
+	public SideColumnsView(final String id, final TreeNode node)
 	{
-		super(id);
+		super(id, node);
 		setRenderBodyOnly(true);
-		this.node = node;
 	}
 
 	/**
@@ -71,40 +58,27 @@ final class SideColumnsView extends WebMarkupContainer
 	 * @param renderable
 	 *            The renderer
 	 */
-	public void addColumn(IColumn column, Component component, IRenderable renderable)
+	@Override
+	public void addColumn(final IColumn column, final Component component,
+		final IRenderable renderable)
 	{
-		if (column.isVisible())
-		{
-			// if the column is aligned to the left, just append it.
-			// Otherwise we prepend it, because we want columns aligned to right
-			// to be rendered reverse order (because they will have set
-			// float:right
-			// in css, so they will be displayed in reverse order too).
-			if (column.getLocation().getAlignment() == Alignment.LEFT)
-			{
-				columns.add(column);
-				components.add(component);
-				renderables.add(renderable);
-			}
-			else
-			{
-				columns.add(0, column);
-				components.add(0, component);
-				renderables.add(0, renderable);
-			}
-		}
+		// if the column is aligned to the left, just append it.
+		// Otherwise we prepend it, because we want columns aligned to right
+		// to be rendered reverse order (because they will have set
+		// float:right
+		// in css, so they will be displayed in reverse order too).
+		Position position = (column.getLocation().getAlignment() == Alignment.LEFT)
+			? Position.APPEND : Position.PREPEND;
+		super.addColumn(column, component, renderable, position);
 	}
 
-	/**
-	 * @see org.apache.wicket.MarkupContainer#onRender()
-	 */
 	@Override
 	protected void onRender()
 	{
 		Response response = RequestCycle.get().getResponse();
 
-		boolean firstLeft = true; // whether there was no left column rendered
-		// yet
+		// whether there was no left column rendered yet
+		boolean firstLeft = true;
 
 		for (int i = 0; i < columns.size(); ++i)
 		{
@@ -114,7 +88,7 @@ final class SideColumnsView extends WebMarkupContainer
 
 			// write wrapping markup
 			response.write("<span class=\"b_\" style=\"" + renderColumnStyle(column) + "\">");
-			if (column.getLocation().getAlignment() == Alignment.LEFT && firstLeft == true)
+			if ((column.getLocation().getAlignment() == Alignment.LEFT) && (firstLeft == true))
 			{
 				// for the first left column we have different style class
 				// (without the left border)
@@ -151,7 +125,7 @@ final class SideColumnsView extends WebMarkupContainer
 	 *            The
 	 * @return The column as a string
 	 */
-	private String renderColumnFloat(IColumn column)
+	private String renderColumnFloat(final IColumn column)
 	{
 		ColumnLocation location = column.getLocation();
 		if (location.getAlignment() == Alignment.LEFT)
@@ -175,7 +149,7 @@ final class SideColumnsView extends WebMarkupContainer
 	 *            The column to render the style attribute from
 	 * @return The style as a string
 	 */
-	private String renderColumnStyle(IColumn column)
+	private String renderColumnStyle(final IColumn column)
 	{
 		return "width:" + renderColumnWidth(column) + ";float:" + renderColumnFloat(column);
 	}
@@ -187,7 +161,7 @@ final class SideColumnsView extends WebMarkupContainer
 	 *            The column to render as a string
 	 * @return The column as a string
 	 */
-	private String renderColumnWidth(IColumn column)
+	private String renderColumnWidth(final IColumn column)
 	{
 		ColumnLocation location = column.getLocation();
 		return "" + location.getSize() + renderUnit(location.getUnit());
@@ -200,7 +174,7 @@ final class SideColumnsView extends WebMarkupContainer
 	 *            The unit to render to a string
 	 * @return The unit as a string
 	 */
-	private String renderUnit(Unit unit)
+	private String renderUnit(final Unit unit)
 	{
 		if (unit == Unit.EM)
 		{

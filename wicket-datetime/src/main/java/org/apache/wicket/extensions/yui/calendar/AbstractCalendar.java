@@ -16,8 +16,6 @@
  */
 package org.apache.wicket.extensions.yui.calendar;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -27,7 +25,7 @@ import org.apache.wicket.extensions.yui.YuiLib;
 import org.apache.wicket.markup.html.IHeaderResponse;
 import org.apache.wicket.markup.html.WebComponent;
 import org.apache.wicket.request.resource.PackageResourceReference;
-import org.apache.wicket.util.string.JavascriptUtils;
+import org.apache.wicket.util.string.JavaScriptUtils;
 
 
 /**
@@ -52,17 +50,6 @@ import org.apache.wicket.util.string.JavascriptUtils;
 // JsDatePicker?)
 public abstract class AbstractCalendar extends WebComponent
 {
-	/**
-	 * Format to be used when configuring YUI calendar. Can be used when using the
-	 * &quot;selected&quot; property.
-	 */
-	public static final DateFormat FORMAT_DATE = new SimpleDateFormat("MM/dd/yyyy");
-
-	/**
-	 * For specifying which page (month/year) to show in the calendar, use this format for the date.
-	 * This is to be used together with the property &quot;pagedate&quot;
-	 */
-	public static final DateFormat FORMAT_PAGEDATE = new SimpleDateFormat("MM/yyyy");
 	private static final long serialVersionUID = 1L;
 
 	private final boolean contributeDependencies;
@@ -108,12 +95,12 @@ public abstract class AbstractCalendar extends WebComponent
 	/**
 	 * Gets the id of the javascript widget. Note that this is the non-namespaced id, so depending
 	 * on what you want to do with it, you may need to prepend 'YAHOO.wicket.' to it. Or you can
-	 * call {@link #getJavascriptWidgetId()}.
+	 * call {@link #getJavaScriptWidgetId()}.
 	 * 
 	 * @return The javascript id
-	 * @see #getJavascriptWidgetId()
+	 * @see #getJavaScriptWidgetId()
 	 */
-	public final String getJavascriptId()
+	public final String getJavaScriptId()
 	{
 		return getMarkupId() + "Js";
 	}
@@ -122,24 +109,27 @@ public abstract class AbstractCalendar extends WebComponent
 	 * The name spaced id of the widget.
 	 * 
 	 * @return The widget id
-	 * @see #getJavascriptId()
+	 * @see #getJavaScriptId()
 	 */
-	public final String getJavascriptWidgetId()
+	public final String getJavaScriptWidgetId()
 	{
-		return "YAHOO.wicket." + getJavascriptId();
+		return "YAHOO.wicket." + getJavaScriptId();
 	}
 
 	/**
 	 * add header contributions for packaged resources.
+	 * 
+	 * @param response
+	 *            the header response to contribute to
 	 */
 	private void contributeDependencies(IHeaderResponse response)
 	{
-		response.renderJavascriptReference(new PackageResourceReference(YuiLib.class,
-				"yahoodomevent/yahoo-dom-event.js"));
-		response.renderJavascriptReference(new PackageResourceReference(AbstractCalendar.class,
-				"calendar-min.js"));
+		response.renderJavaScriptReference(new PackageResourceReference(YuiLib.class,
+			"yahoodomevent/yahoo-dom-event.js"));
+		response.renderJavaScriptReference(new PackageResourceReference(AbstractCalendar.class,
+			"calendar-min.js"));
 		response.renderCSSReference(new PackageResourceReference(AbstractCalendar.class,
-				"assets/skins/sam/calendar.css"));
+			"assets/skins/sam/calendar.css"));
 	}
 
 	/**
@@ -157,7 +147,7 @@ public abstract class AbstractCalendar extends WebComponent
 	 *            the buffer to append the script to
 	 */
 	protected void appendToInit(String markupId, String javascriptId, String javascriptWidgetId,
-			StringBuffer b)
+		StringBuilder b)
 	{
 	}
 
@@ -186,10 +176,10 @@ public abstract class AbstractCalendar extends WebComponent
 
 		// not pretty to look at, but cheaper than using a template
 		String markupId = AbstractCalendar.this.getMarkupId();
-		String javascriptId = getJavascriptId();
-		String javascriptWidgetId = getJavascriptWidgetId();
-		StringBuffer b = new StringBuffer();
-		b.append(JavascriptUtils.SCRIPT_OPEN_TAG);
+		String javascriptId = getJavaScriptId();
+		String javascriptWidgetId = getJavaScriptWidgetId();
+		StringBuilder b = new StringBuilder();
+		b.append(JavaScriptUtils.SCRIPT_OPEN_TAG);
 		// initialize wicket namespace and register the init function
 		// for the YUI widget
 		b.append("YAHOO.namespace(\"wicket\");\nfunction init");
@@ -264,7 +254,7 @@ public abstract class AbstractCalendar extends WebComponent
 		b.append("YAHOO.util.Event.addListener(window, \"load\", init");
 		b.append(javascriptId);
 		b.append(");");
-		b.append(JavascriptUtils.SCRIPT_CLOSE_TAG);
+		b.append(JavaScriptUtils.SCRIPT_CLOSE_TAG);
 
 		response.renderString(b);
 	}

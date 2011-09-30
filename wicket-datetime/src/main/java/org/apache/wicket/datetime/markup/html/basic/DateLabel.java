@@ -33,8 +33,8 @@ import org.joda.time.format.DateTimeFormat;
 
 
 /**
- * A label that is mapped to a <code>java.util.Date</code> object and that uses Joda time to
- * format values.
+ * A label that is mapped to a <code>java.util.Date</code> object and that uses Joda time to format
+ * values.
  * <p>
  * You can provide a date pattern in two of the constructors. When not provided,
  * {@link DateTimeFormat#shortDate()} will be used.
@@ -64,6 +64,7 @@ public class DateLabel extends Label
 	 * @param datePattern
 	 *            The pattern to use. Must be not null. See {@link SimpleDateFormat} for available
 	 *            patterns.
+	 * @return new instance
 	 * 
 	 * @see org.apache.wicket.markup.html.form.TextField
 	 */
@@ -80,6 +81,7 @@ public class DateLabel extends Label
 	 * @param datePattern
 	 *            The pattern to use. Must be not null. See {@link SimpleDateFormat} for available
 	 *            patterns.
+	 * @return new instance
 	 * 
 	 * @see org.apache.wicket.markup.html.form.TextField
 	 */
@@ -99,6 +101,7 @@ public class DateLabel extends Label
 	 *            style to use in case no pattern is provided. Must be two characters from the set
 	 *            {"S", "M", "L", "F", "-"}. Must be not null. See
 	 *            {@link DateTimeFormat#forStyle(String)} for options.
+	 * @return new instance
 	 * 
 	 * @see org.apache.wicket.markup.html.form.TextField
 	 */
@@ -116,6 +119,7 @@ public class DateLabel extends Label
 	 *            style to use in case no pattern is provided. Must be two characters from the set
 	 *            {"S", "M", "L", "F", "-"}. Must be not null. See
 	 *            {@link DateTimeFormat#forStyle(String)} for options.
+	 * @return new instance
 	 * 
 	 * @see org.apache.wicket.markup.html.form.TextField
 	 */
@@ -129,6 +133,7 @@ public class DateLabel extends Label
 	 * 
 	 * @param id
 	 *            The id of the text field
+	 * @return new instance
 	 * 
 	 * @see org.apache.wicket.markup.html.form.TextField
 	 */
@@ -144,6 +149,7 @@ public class DateLabel extends Label
 	 *            The id of the text field
 	 * @param model
 	 *            The model
+	 * @return new instance
 	 * 
 	 * @see org.apache.wicket.markup.html.form.TextField
 	 */
@@ -159,6 +165,7 @@ public class DateLabel extends Label
 	 *            The id of the text field
 	 * @param converter
 	 *            the date converter
+	 * @return new instance
 	 * 
 	 * @see org.apache.wicket.markup.html.form.TextField
 	 */
@@ -176,6 +183,7 @@ public class DateLabel extends Label
 	 *            The model
 	 * @param converter
 	 *            the date converter
+	 * @return new instance
 	 * 
 	 * @see org.apache.wicket.markup.html.form.TextField
 	 */
@@ -248,11 +256,19 @@ public class DateLabel extends Label
 	/**
 	 * Returns the specialized converter.
 	 */
-	@SuppressWarnings("unchecked")
 	@Override
-	public IConverter getConverter(Class clazz)
+	public <C> IConverter<C> getConverter(Class<C> clazz)
 	{
-		return converter;
+		if (Date.class.isAssignableFrom(clazz))
+		{
+			@SuppressWarnings("unchecked")
+			IConverter<C> result = (IConverter<C>)converter;
+			return result;
+		}
+		else
+		{
+			return super.getConverter(clazz);
+		}
 	}
 
 	/**
@@ -273,8 +289,11 @@ public class DateLabel extends Label
 		this.before = before;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
-	protected void onComponentTagBody(MarkupStream markupStream, ComponentTag openTag)
+	public void onComponentTagBody(MarkupStream markupStream, ComponentTag openTag)
 	{
 		String s = getDefaultModelObjectAsString();
 		if (before != null)

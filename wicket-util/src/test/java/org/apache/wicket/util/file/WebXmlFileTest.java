@@ -60,27 +60,27 @@ public class WebXmlFileTest extends TestCase
 	 * @throws SAXException
 	 * @throws IOException
 	 */
-	public void filterOrServlet(boolean servlet) throws ParserConfigurationException, SAXException,
-		IOException
+	public void filterOrServlet(final boolean servlet) throws ParserConfigurationException,
+		SAXException, IOException
 	{
 		String tag = servlet ? "servlet" : "filter";
 
 		String webxml = getWebXml(tag, "/*");
-		String path = new WebXmlFile().getFilterPath(servlet, "HelloWorldApplication",
-			new ByteArrayInputStream(webxml.toString().getBytes()));
+		String path = new WebXmlFile().getUniqueFilterPath(servlet, "HelloWorldApplication",
+			new ByteArrayInputStream(webxml.getBytes()));
 		assertEquals("", path);
 
 		webxml = getWebXml(tag, "/test/*");
-		path = new WebXmlFile().getFilterPath(servlet, "HelloWorldApplication",
-			new ByteArrayInputStream(webxml.toString().getBytes()));
+		path = new WebXmlFile().getUniqueFilterPath(servlet, "HelloWorldApplication",
+			new ByteArrayInputStream(webxml.getBytes()));
 		assertEquals("test/", path);
 
-		path = new WebXmlFile().getFilterPath(servlet, "xxx", new ByteArrayInputStream(
-			webxml.toString().getBytes()));
+		path = new WebXmlFile().getUniqueFilterPath(servlet, "xxx",
+			new ByteArrayInputStream(webxml.getBytes()));
 		assertNull(path);
 
-		path = new WebXmlFile().getFilterPath(!servlet, "HelloWorldApplication",
-			new ByteArrayInputStream(webxml.toString().getBytes()));
+		path = new WebXmlFile().getUniqueFilterPath(!servlet, "HelloWorldApplication",
+			new ByteArrayInputStream(webxml.getBytes()));
 		assertNull(path);
 	}
 
@@ -90,9 +90,9 @@ public class WebXmlFileTest extends TestCase
 	 * @param url
 	 * @return webxml
 	 */
-	private String getWebXml(String filter, String url)
+	private String getWebXml(final String filter, final String url)
 	{
-		StringBuffer webxml = new StringBuffer();
+		StringBuilder webxml = new StringBuilder();
 		webxml.append("<web-app>");
 		webxml.append("<" + filter + ">");
 		webxml.append(" <" + filter + "-name>HelloWorldApplication</" + filter + "-name>");

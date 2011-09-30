@@ -23,6 +23,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.wicket.extensions.markup.html.repeater.util.SortParam;
+
 /**
  * simple database for contacts
  * 
@@ -43,7 +45,7 @@ public class ContactsDatabase
 	 * @param count
 	 *            number of contacts to generate at startup
 	 */
-	public ContactsDatabase(int count)
+	public ContactsDatabase(final int count)
 	{
 		for (int i = 0; i < count; i++)
 		{
@@ -58,7 +60,7 @@ public class ContactsDatabase
 	 * @param id
 	 * @return contact
 	 */
-	public Contact get(long id)
+	public Contact get(final long id)
 	{
 		Contact c = map.get(id);
 		if (c == null)
@@ -82,32 +84,32 @@ public class ContactsDatabase
 	 * 
 	 * @param first
 	 * @param count
-	 * @param sortProperty
-	 * @param sortAsc
+	 * @param sort
 	 * @return list of contacts
 	 */
-	public List<Contact> find(int first, int count, String sortProperty, boolean sortAsc)
+	public List<Contact> find(final int first, final int count, final SortParam sort)
 	{
-		List<Contact> sublist = getIndex(sortProperty, sortAsc).subList(first, first + count);
-		return sublist;
+		return getIndex(sort).subList(first, first + count);
 	}
 
-	protected List<Contact> getIndex(String prop, boolean asc)
+	protected List<Contact> getIndex(final SortParam sort)
 	{
-		if (prop == null)
+		if (sort == null)
 		{
 			return fnameIdx;
 		}
-		if (prop.equals("firstName"))
+		final String field = sort.getProperty();
+
+		if (field.equals("firstName"))
 		{
-			return (asc) ? fnameIdx : fnameDescIdx;
+			return sort.isAscending() ? fnameIdx : fnameDescIdx;
 		}
-		else if (prop.equals("lastName"))
+		else if (field.equals("lastName"))
 		{
-			return (asc) ? lnameIdx : lnameDescIdx;
+			return sort.isAscending() ? lnameIdx : lnameDescIdx;
 		}
-		throw new RuntimeException("uknown sort option [" + prop +
-			"]. valid options: [firstName] , [lastName]");
+		throw new RuntimeException("unknown sort option [" + sort +
+			"]. valid fields: [firstName], [lastName]");
 	}
 
 	/**
@@ -145,7 +147,7 @@ public class ContactsDatabase
 	 */
 	public void delete(final Contact contact)
 	{
-		Contact c = map.remove(contact.getId());
+		map.remove(contact.getId());
 
 		fnameIdx.remove(contact);
 		lnameIdx.remove(contact);
@@ -159,7 +161,7 @@ public class ContactsDatabase
 	{
 		Collections.sort(fnameIdx, new Comparator<Contact>()
 		{
-			public int compare(Contact arg0, Contact arg1)
+			public int compare(final Contact arg0, final Contact arg1)
 			{
 				return (arg0).getFirstName().compareTo((arg1).getFirstName());
 			}
@@ -167,7 +169,7 @@ public class ContactsDatabase
 
 		Collections.sort(lnameIdx, new Comparator<Contact>()
 		{
-			public int compare(Contact arg0, Contact arg1)
+			public int compare(final Contact arg0, final Contact arg1)
 			{
 				return (arg0).getLastName().compareTo((arg1).getLastName());
 			}
@@ -175,7 +177,7 @@ public class ContactsDatabase
 
 		Collections.sort(fnameDescIdx, new Comparator<Contact>()
 		{
-			public int compare(Contact arg0, Contact arg1)
+			public int compare(final Contact arg0, final Contact arg1)
 			{
 				return (arg1).getFirstName().compareTo((arg0).getFirstName());
 			}
@@ -183,7 +185,7 @@ public class ContactsDatabase
 
 		Collections.sort(lnameDescIdx, new Comparator<Contact>()
 		{
-			public int compare(Contact arg0, Contact arg1)
+			public int compare(final Contact arg0, final Contact arg1)
 			{
 				return (arg1).getLastName().compareTo((arg0).getLastName());
 			}

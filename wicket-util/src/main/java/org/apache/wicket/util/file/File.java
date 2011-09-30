@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.io.Serializable;
 import java.net.URI;
 
 import org.apache.wicket.util.io.Streams;
@@ -161,12 +162,19 @@ public class File extends java.io.File implements IModifiable
 
 	/**
 	 * Returns a Time object representing the most recent time this file was modified.
-	 * 
-	 * @return This file's lastModified() value as a Time object
+	 *
+	 * @return This file's lastModified() value as a Time object or <code>null</code> if
+	 * that information is not available
 	 */
 	public Time lastModifiedTime()
 	{
-		return Time.milliseconds(lastModified());
+		final long time = lastModified();
+		
+		if(time == 0)
+		{
+			return null;
+		}
+		return Time.millis(time);
 	}
 
 	/**
@@ -220,10 +228,9 @@ public class File extends java.io.File implements IModifiable
 	/**
 	 * @param object
 	 *            Object to write to this file
-	 * @throws FileNotFoundException
 	 * @throws IOException
 	 */
-	public void writeObject(final Object object) throws FileNotFoundException, IOException
+	public void writeObject(final Serializable object) throws IOException
 	{
 		new ObjectOutputStream(outputStream()).writeObject(object);
 	}
@@ -269,14 +276,15 @@ public class File extends java.io.File implements IModifiable
 	 * 
 	 * @param file
 	 *            The file to copy
+	 * @return number of bytes written
 	 * @throws IOException
 	 */
-	public void write(final File file) throws IOException
+	public int write(final File file) throws IOException
 	{
 		final InputStream in = new BufferedInputStream(new FileInputStream(file));
 		try
 		{
-			write(in);
+			return write(in);
 		}
 		finally
 		{

@@ -27,7 +27,7 @@ import java.util.Locale;
  * 
  * @author eelcohillenius
  */
-public class SqlTimestampConverter extends AbstractConverter
+public class SqlTimestampConverter extends AbstractConverter<Timestamp>
 {
 	private static final long serialVersionUID = 1L;
 
@@ -49,7 +49,7 @@ public class SqlTimestampConverter extends AbstractConverter
 	 * @param dateFormat
 	 *            See java.text.DateFormat for details. Defaults to DateFormat.SHORT
 	 */
-	public SqlTimestampConverter(int dateFormat)
+	public SqlTimestampConverter(final int dateFormat)
 	{
 		this.dateFormat = dateFormat;
 		timeFormat = DateFormat.SHORT;
@@ -61,8 +61,9 @@ public class SqlTimestampConverter extends AbstractConverter
 	 * @param dateFormat
 	 *            See java.text.DateFormat for details. Defaults to DateFormat.SHORT * @param
 	 *            timeFormat See java.text.DateFormat for details. Defaults to DateFormat.SHORT
+	 * @param timeFormat
 	 */
-	public SqlTimestampConverter(int dateFormat, int timeFormat)
+	public SqlTimestampConverter(final int dateFormat, final int timeFormat)
 	{
 		this.dateFormat = dateFormat;
 		this.timeFormat = timeFormat;
@@ -105,9 +106,9 @@ public class SqlTimestampConverter extends AbstractConverter
 	 *      java.util.Locale)
 	 */
 	@Override
-	public String convertToString(final Object value, Locale locale)
+	public String convertToString(final Timestamp timestamp, Locale locale)
 	{
-		if (value == null)
+		if (timestamp == null)
 		{
 			return null;
 		}
@@ -117,7 +118,6 @@ public class SqlTimestampConverter extends AbstractConverter
 			locale = Locale.getDefault();
 		}
 
-		Timestamp timestamp = (Timestamp)value;
 		DateFormat format = DateFormat.getDateTimeInstance(dateFormat, timeFormat, locale);
 		return format.format(timestamp);
 	}

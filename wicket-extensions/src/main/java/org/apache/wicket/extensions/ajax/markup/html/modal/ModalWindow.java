@@ -24,7 +24,6 @@ import org.apache.wicket.ajax.AbstractDefaultAjaxBehavior;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.IAjaxCallDecorator;
 import org.apache.wicket.ajax.calldecorator.CancelEventIfNoAjaxDecorator;
-import org.apache.wicket.extensions.ajax.markup.html.modal.ModalWindow.PageCreator;
 import org.apache.wicket.markup.ComponentTag;
 import org.apache.wicket.markup.html.IHeaderResponse;
 import org.apache.wicket.markup.html.WebMarkupContainer;
@@ -36,10 +35,9 @@ import org.apache.wicket.request.IRequestHandler;
 import org.apache.wicket.request.cycle.RequestCycle;
 import org.apache.wicket.request.handler.PageProvider;
 import org.apache.wicket.request.handler.RenderPageRequestHandler;
-import org.apache.wicket.request.resource.CompressedResourceReference;
-import org.apache.wicket.request.resource.JavascriptResourceReference;
+import org.apache.wicket.request.resource.JavaScriptResourceReference;
+import org.apache.wicket.request.resource.PackageResourceReference;
 import org.apache.wicket.request.resource.ResourceReference;
-import org.apache.wicket.settings.IPageSettings;
 import org.apache.wicket.util.lang.EnumeratedType;
 import org.apache.wicket.util.string.AppendingStringBuffer;
 import org.apache.wicket.util.string.Strings;
@@ -96,6 +94,9 @@ import org.apache.wicket.util.string.Strings;
  * stored).
  * <li><code>{@link #setMinimalWidth(int)}</code> and <code>{@link #setMinimalHeight(int)}</code>
  * set the minimal dimensions of resizable window.
+ * <li><code>{@link #setAutoSize(boolean)}</code> sets whether window size will be automatically
+ * adjusted on opening to fit content's width and height. Default is false.<span
+ * style="text-decoration: underline"> Doesn't work on IE 6.</span></li>
  * <li>Modal window can chose between two colors of frame.
  * <code>{@link #setCssClassName(String)}</code> sets the dialog css class, possible values are
  * <code>{@link #CSS_CLASS_BLUE}</code> for blue frame and <code>{@link #CSS_CLASS_GRAY}</code> for
@@ -111,7 +112,6 @@ import org.apache.wicket.util.string.Strings;
  * in another form (nesting forms is legal in Wicket) and that the form on modal window is submitted
  * before the window get closed.
  * 
- * @see IPageSettings#setAutomaticMultiWindowSupport(boolean)
  * @author Matej Knopp
  */
 public class ModalWindow extends Panel
@@ -124,16 +124,17 @@ public class ModalWindow extends Panel
 	/** CSS class for window with gray border. */
 	public final static String CSS_CLASS_GRAY = "w_silver";
 
-	private static ResourceReference JAVASCRIPT = new JavascriptResourceReference(
+	private static final ResourceReference JAVASCRIPT = new JavaScriptResourceReference(
 		ModalWindow.class, "res/modal.js");
 
-	private static ResourceReference CSS = new CompressedResourceReference(ModalWindow.class,
+	private static final ResourceReference CSS = new PackageResourceReference(ModalWindow.class,
 		"res/modal.css");
+
+	/** the default id of the content component */
+	public static final String CONTENT_ID = "content";
 
 	/** True while the ModalWindows is showing */
 	private boolean shown = false;
-
-	private final boolean renderScript = false;
 
 	/** empty container - used when no component is added */
 	private WebMarkupContainer empty;
@@ -150,7 +151,7 @@ public class ModalWindow extends Panel
 	private String cookieName;
 	private IModel<String> title = null;
 	private MaskType maskType = MaskType.SEMI_TRANSPARENT;
-	private boolean autoSize = false;	
+	private boolean autoSize = false;
 
 	private PageCreator pageCreator = null;
 	private CloseButtonCallback closeButtonCallback = null;
@@ -250,16 +251,32 @@ public class ModalWindow extends Panel
 
 		add(empty = new WebMarkupContainer(getContentId()));
 
-		add(new CloseButtonBehavior());
+		add(newCloseButtonBehavior());
 		add(new WindowClosedBehavior());
 	}
 
 	@Override
-	public void renderHead(IHeaderResponse response)
+	public void renderHead(final IHeaderResponse response)
 	{
 		super.renderHead(response);
-		response.renderJavascriptReference(JAVASCRIPT);
-		response.renderCSSReference(CSS);
+		response.renderJavaScriptReference(JAVASCRIPT);
+
+		ResourceReference cssResource = newCssResource();
+		if (cssResource != null)
+		{
+			response.renderCSSReference(cssResource);
+		}
+	}
+
+	/**
+	 * Allows to override CSS contribution. Returning null means the CSS will be contributed via
+	 * other sources, e.g. a global CSS resource.
+	 * 
+	 * @return The CSS resource reference or null if CSS is contributed via other means.
+	 */
+	protected ResourceReference newCssResource()
+	{
+		return CSS;
 	}
 
 	/**
@@ -326,7 +343,7 @@ public class ModalWindow extends Panel
 		{
 			getContent().setVisible(true);
 			target.add(this);
-			target.appendJavascript(getWindowOpenJavascript());
+			target.appendJavaScript(getWindowOpenJavaScript());
 			shown = true;
 		}
 	}
@@ -339,9 +356,9 @@ public class ModalWindow extends Panel
 	 * @param target
 	 *            Request target associated with current ajax request.
 	 */
-	public static final void closeCurrent(AjaxRequestTarget target)
+	public static final void closeCurrent(final AjaxRequestTarget target)
 	{
-		target.appendJavascript(getCloseJavacriptInternal());
+		target.appendJavaScript(getCloseJavacriptInternal());
 	}
 
 	/**
@@ -355,9 +372,9 @@ public class ModalWindow extends Panel
 		getContent().setVisible(false);
 		if (isCustomComponent())
 		{
-			target.addComponent(getContent());
+			target.add(getContent());
 		}
-		target.appendJavascript(getCloseJavacript());
+		target.appendJavaScript(getCloseJavacript());
 		shown = false;
 	}
 
@@ -366,7 +383,7 @@ public class ModalWindow extends Panel
 	 * 
 	 * @return the script that actually shows the window.
 	 */
-	protected CharSequence getShowJavascript()
+	protected CharSequence getShowJavaScript()
 	{
 		return "Wicket.Window.create(settings).show();\n";
 	}
@@ -413,7 +430,7 @@ public class ModalWindow extends Panel
 	 */
 	public String getContentId()
 	{
-		return "content";
+		return CONTENT_ID;
 	}
 
 	/**
@@ -424,7 +441,7 @@ public class ModalWindow extends Panel
 	 *            Minimal window width.
 	 * @return this
 	 */
-	public ModalWindow setMinimalWidth(int minimalWidth)
+	public ModalWindow setMinimalWidth(final int minimalWidth)
 	{
 		this.minimalWidth = minimalWidth;
 		return this;
@@ -448,7 +465,7 @@ public class ModalWindow extends Panel
 	 *            Minimal height
 	 * @return this
 	 */
-	public ModalWindow setMinimalHeight(int minimalHeight)
+	public ModalWindow setMinimalHeight(final int minimalHeight)
 	{
 		this.minimalHeight = minimalHeight;
 		return this;
@@ -472,7 +489,7 @@ public class ModalWindow extends Panel
 	 * @param cssClassName
 	 * @return this
 	 */
-	public ModalWindow setCssClassName(String cssClassName)
+	public ModalWindow setCssClassName(final String cssClassName)
 	{
 		this.cssClassName = cssClassName;
 		return this;
@@ -499,7 +516,7 @@ public class ModalWindow extends Panel
 	 *            Initial width of the window
 	 * @return this
 	 */
-	public ModalWindow setInitialWidth(int initialWidth)
+	public ModalWindow setInitialWidth(final int initialWidth)
 	{
 		this.initialWidth = initialWidth;
 		return this;
@@ -526,7 +543,7 @@ public class ModalWindow extends Panel
 	 *            Initial height of the window
 	 * @return this
 	 */
-	public ModalWindow setInitialHeight(int initialHeight)
+	public ModalWindow setInitialHeight(final int initialHeight)
 	{
 		this.initialHeight = initialHeight;
 		return this;
@@ -551,7 +568,7 @@ public class ModalWindow extends Panel
 	 *            using initial height
 	 * @return this
 	 */
-	public ModalWindow setUseInitialHeight(boolean useInitialHeight)
+	public ModalWindow setUseInitialHeight(final boolean useInitialHeight)
 	{
 		this.useInitialHeight = useInitialHeight;
 		return this;
@@ -577,7 +594,7 @@ public class ModalWindow extends Panel
 	 *            Whether the window is resizable
 	 * @return this
 	 */
-	public ModalWindow setResizable(boolean resizable)
+	public ModalWindow setResizable(final boolean resizable)
 	{
 		this.resizable = resizable;
 		return this;
@@ -601,7 +618,7 @@ public class ModalWindow extends Panel
 	 *            CSS unit for initial window width.
 	 * @return this
 	 */
-	public ModalWindow setWidthUnit(String widthUnit)
+	public ModalWindow setWidthUnit(final String widthUnit)
 	{
 		this.widthUnit = widthUnit;
 		return this;
@@ -625,7 +642,7 @@ public class ModalWindow extends Panel
 	 *            CSS unit for initial window height.
 	 * @return this
 	 */
-	public ModalWindow setHeightUnit(String heightUnit)
+	public ModalWindow setHeightUnit(final String heightUnit)
 	{
 		this.heightUnit = heightUnit;
 		return this;
@@ -649,9 +666,9 @@ public class ModalWindow extends Panel
 	 *            Name of the cookie
 	 * @return this
 	 */
-	public ModalWindow setCookieName(String cookieName)
+	public ModalWindow setCookieName(final String cookieName)
 	{
-		if (cookieName != null && cookieName.indexOf(",") != -1 && cookieName.indexOf("|") != -1)
+		if ((cookieName != null) && cookieName.contains(",") && cookieName.contains("|"))
 		{
 			throw new IllegalArgumentException("Cookie name may not contain ',' or '|' characters.");
 		}
@@ -678,7 +695,7 @@ public class ModalWindow extends Panel
 	 *            Title of the window
 	 * @return this
 	 */
-	public ModalWindow setTitle(String title)
+	public ModalWindow setTitle(final String title)
 	{
 		this.title = new Model<String>(title);
 		return this;
@@ -734,11 +751,11 @@ public class ModalWindow extends Panel
 		 * 
 		 * @param name
 		 */
-		public MaskType(String name)
+		public MaskType(final String name)
 		{
 			super(name);
 		}
-	};
+	}
 
 	/**
 	 * Sets the mask type of the window.
@@ -747,7 +764,7 @@ public class ModalWindow extends Panel
 	 *            The mask type
 	 * @return this
 	 */
-	public ModalWindow setMaskType(MaskType mask)
+	public ModalWindow setMaskType(final MaskType mask)
 	{
 		maskType = mask;
 		return this;
@@ -848,13 +865,15 @@ public class ModalWindow extends Panel
 	 * @see org.apache.wicket.MarkupContainer#remove(org.apache.wicket.Component)
 	 */
 	@Override
-	public void remove(Component component)
+	public ModalWindow remove(final Component component)
 	{
 		super.remove(component);
 		if (component.getId().equals(getContentId()))
 		{
 			add(empty = new WebMarkupContainer(getContentId()));
 		}
+
+		return this;
 	}
 
 	/**
@@ -892,7 +911,7 @@ public class ModalWindow extends Panel
 		private static final long serialVersionUID = 1L;
 
 		@Override
-		protected void respond(AjaxRequestTarget target)
+		protected void respond(final AjaxRequestTarget target)
 		{
 			shown = false;
 
@@ -907,20 +926,24 @@ public class ModalWindow extends Panel
 		{
 			return super.getCallbackScript();
 		}
-	};
+	}
 
 	/**
 	 * @author Matej Knopp
 	 */
-	private class CloseButtonBehavior extends AbstractDefaultAjaxBehavior
+	protected class CloseButtonBehavior extends AbstractDefaultAjaxBehavior
 	{
 		private static final long serialVersionUID = 1L;
 
-		@Override
-		protected void respond(AjaxRequestTarget target)
+		public CloseButtonBehavior()
 		{
-			if (closeButtonCallback == null ||
-				closeButtonCallback.onCloseButtonClicked(target) == true)
+		}
+
+		@Override
+		protected final void respond(final AjaxRequestTarget target)
+		{
+			if ((closeButtonCallback == null) ||
+				(closeButtonCallback.onCloseButtonClicked(target) == true))
 			{
 				close(target);
 			}
@@ -939,7 +962,7 @@ public class ModalWindow extends Panel
 		 * @see org.apache.wicket.ajax.AbstractDefaultAjaxBehavior#getCallbackScript()
 		 */
 		@Override
-		protected CharSequence getCallbackScript()
+		protected final CharSequence getCallbackScript()
 		{
 			return super.getCallbackScript();
 		}
@@ -980,7 +1003,7 @@ public class ModalWindow extends Panel
 	 * 
 	 * @return javascript that opens the window
 	 */
-	protected final String getWindowOpenJavascript()
+	protected final String getWindowOpenJavaScript()
 	{
 		AppendingStringBuffer buffer = new AppendingStringBuffer(500);
 
@@ -998,7 +1021,7 @@ public class ModalWindow extends Panel
 		appendAssignment(buffer, "settings.className", getCssClassName());
 		appendAssignment(buffer, "settings.width", getInitialWidth());
 
-		if (isUseInitialHeight() == true || isCustomComponent() == false)
+		if ((isUseInitialHeight() == true) || (isCustomComponent() == false))
 		{
 			appendAssignment(buffer, "settings.height", getInitialHeight());
 		}
@@ -1022,11 +1045,19 @@ public class ModalWindow extends Panel
 			{
 				throw new WicketRuntimeException("Error creating page for modal dialog.");
 			}
-			// TODO (NG)
-// RequestCycle.get().setUrlForNewWindowEncoding();
-
-			IRequestHandler handler = new RenderPageRequestHandler(new PageProvider(page));
-			appendAssignment(buffer, "settings.src", RequestCycle.get().urlFor(handler));
+			CharSequence pageUrl = null;
+			if (page.isPageStateless())
+			{
+				pageUrl = RequestCycle.get().urlFor(page.getClass(), page.getPageParameters());
+			}
+			else
+			{
+				IRequestHandler handler = new RenderPageRequestHandler(new PageProvider(page));
+				pageUrl = RequestCycle.get().urlFor(handler);
+				String ie8_pageUrl = RequestCycle.get().mapUrlFor(handler).toString();
+				appendAssignment(buffer, "settings.ie8_src", ie8_pageUrl);
+			}
+			appendAssignment(buffer, "settings.src", pageUrl);
 		}
 		else
 		{
@@ -1052,7 +1083,7 @@ public class ModalWindow extends Panel
 		{
 			buffer.append("settings.mask=\"semi-transparent\";\n");
 		}
-		
+
 		appendAssignment(buffer, "settings.autoSize", autoSize);
 
 
@@ -1073,7 +1104,7 @@ public class ModalWindow extends Panel
 
 		// in case we didn't set windowclosecallback, we need at least callback on close button, to
 		// close window property (thus cleaning the shown flag)
-		if (closeButtonCallback != null || haveCloseCallback == false)
+		if ((closeButtonCallback != null) || (haveCloseCallback == false))
 		{
 			CloseButtonBehavior behavior = getBehaviors(CloseButtonBehavior.class).get(0);
 			buffer.append("settings.onCloseButton = function() { ");
@@ -1083,7 +1114,7 @@ public class ModalWindow extends Panel
 
 		postProcessSettings(buffer);
 
-		buffer.append(getShowJavascript());
+		buffer.append(getShowJavaScript());
 		return buffer.toString();
 	}
 
@@ -1135,7 +1166,7 @@ public class ModalWindow extends Panel
 	 * @param settings
 	 * @return settings javascript
 	 */
-	protected AppendingStringBuffer postProcessSettings(AppendingStringBuffer settings)
+	protected AppendingStringBuffer postProcessSettings(final AppendingStringBuffer settings)
 	{
 		return settings;
 	}
@@ -1156,20 +1187,37 @@ public class ModalWindow extends Panel
 		}
 	}
 
-	public ModalWindow setAutoSize(boolean autoSize)
+	/**
+	 * Sets whether window size will be automatically adjusted on opening to fit content's width and
+	 * height. <span style="text-decoration: underline">Doesn't work on IE 6.</span>
+	 * 
+	 * @param autoSize
+	 *            Whether window size will be automatically adjusted
+	 * @return this
+	 */
+	public ModalWindow setAutoSize(final boolean autoSize)
 	{
 		this.autoSize = autoSize;
 		return this;
 	}
 
 	/**
-	 * Returns whether the window is resizable.
+	 * Returns whether window will be opened in autosize mode.
 	 * 
-	 * @return True if the window is resizable, false otherwise
+	 * @return True if the window will be opened open in autosize mode, false otherwise
 	 */
 	public boolean isAutoSize()
 	{
 		return autoSize;
 	}
 
+	/**
+	 * Gives the possibility to provide custom {@link IAjaxCallDecorator}
+	 * 
+	 * @return the behavior that should be used for the window close button
+	 */
+	protected CloseButtonBehavior newCloseButtonBehavior()
+	{
+		return new CloseButtonBehavior();
+	}
 }

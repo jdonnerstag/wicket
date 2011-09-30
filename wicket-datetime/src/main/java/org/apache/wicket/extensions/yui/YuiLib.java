@@ -17,9 +17,8 @@
 package org.apache.wicket.extensions.yui;
 
 import org.apache.wicket.Application;
-import org.apache.wicket.IClusterable;
 import org.apache.wicket.markup.html.IHeaderResponse;
-import org.apache.wicket.request.resource.CompressedResourceReference;
+import org.apache.wicket.request.resource.PackageResourceReference;
 import org.apache.wicket.request.resource.ResourceReference;
 
 /**
@@ -31,10 +30,8 @@ import org.apache.wicket.request.resource.ResourceReference;
  * 
  * @author eelcohillenius
  */
-public final class YuiLib implements IClusterable
+public final class YuiLib
 {
-	private static final long serialVersionUID = 1L;
-
 	private static ResourceReference YUILOADER;
 
 	/**
@@ -46,21 +43,20 @@ public final class YuiLib implements IClusterable
 	 */
 	public static void load(IHeaderResponse response)
 	{
-		response.renderJavascriptReference(getYuiLoader());
+		response.renderJavaScriptReference(getYuiLoader());
 	}
 
 	private static ResourceReference getYuiLoader()
 	{
 		if (YUILOADER == null)
 		{
-			StringBuffer sb = new StringBuffer();
-			sb.append("yuiloader");
-			if (Application.DEPLOYMENT.equals(Application.get().getConfigurationType()))
+			StringBuilder sb = new StringBuilder("yuiloader/yuiloader");
+			if (Application.get().usesDeploymentConfig())
 			{
 				sb.append("-min");
 			}
 			sb.append(".js");
-			YUILOADER = new CompressedResourceReference(YuiLib.class, sb.toString());
+			YUILOADER = new PackageResourceReference(YuiLib.class, sb.toString());
 		}
 		return YUILOADER;
 	}

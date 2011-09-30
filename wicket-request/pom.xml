@@ -26,7 +26,7 @@
   <groupId>org.apache.wicket</groupId>
   <artifactId>wicket-request</artifactId>
   <version>1.5-SNAPSHOT</version>
-  <name>wicket-request</name>
+  <name>Wicket Request</name>
   <url>http://maven.apache.org</url>
   <dependencies>
     <dependency>
@@ -34,9 +34,11 @@
       <artifactId>wicket-util</artifactId>
     </dependency>
     <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <scope>test</scope>
-    </dependency>
+	  <groupId>org.apache.wicket</groupId>
+	  <artifactId>wicket-util</artifactId>
+	  <classifier>tests</classifier>
+	  <scope>test</scope>
+	  <version>${project.version}</version>
+	</dependency>
   </dependencies>
 </project>

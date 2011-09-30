@@ -28,13 +28,15 @@ import junit.framework.TestCase;
  */
 public class NoopFieldValueFactoryTest extends TestCase
 {
-	private Integer testField;
-
 	private Field field;
 
+	// Not used, but needed for the test. Do not delete.
+	private Integer testField;
+
+	@Override
 	protected void setUp() throws Exception
 	{
-		Field field = NoopFieldValueFactoryTest.class.getDeclaredField("testField");
+		NoopFieldValueFactoryTest.class.getDeclaredField("testField");
 	}
 
 	/**
@@ -45,5 +47,4 @@ public class NoopFieldValueFactoryTest extends TestCase
 		NoopFieldValueFactory fact = new NoopFieldValueFactory();
 		assertNull(fact.getFieldValue(field, this));
 	}
-
 }

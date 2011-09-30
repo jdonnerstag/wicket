@@ -18,22 +18,16 @@ package org.apache.wicket.examples.guestbook;
 
 import java.util.ArrayList;
 
-import junit.framework.TestCase;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.wicket.examples.WicketTestCase;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.util.tester.FormTester;
-import org.apache.wicket.util.tester.WicketTester;
 
 
 /**
  * jWebUnit test for Hello World.
  */
-public class GuestbookTest extends TestCase
+public class GuestbookTest extends WicketTestCase
 {
-	private static final Log log = LogFactory.getLog(GuestbookTest.class);
-
 	/**
 	 * Sets up the test.
 	 * 
@@ -42,6 +36,7 @@ public class GuestbookTest extends TestCase
 	@Override
 	public void setUp() throws Exception
 	{
+		super.setUp();
 		GuestBook.clear();
 	}
 
@@ -52,8 +47,6 @@ public class GuestbookTest extends TestCase
 	 */
 	public void test_1() throws Exception
 	{
-		WicketTester tester = new WicketTester();
-
 		tester.startPage(GuestBook.class);
 		tester.assertContains("Wicket Examples - guestbook");
 
@@ -78,6 +71,6 @@ public class GuestbookTest extends TestCase
 		formTester.submit();
 		tester.assertModelValue("comments:0:text", "test-2");
 		tester.assertModelValue("comments:1:text", "test-1");
-		tester.assertErrorMessages(new String[] { "Caught a spammer!!!" });
+		tester.assertErrorMessages("Caught a spammer!!!");
 	}
 }

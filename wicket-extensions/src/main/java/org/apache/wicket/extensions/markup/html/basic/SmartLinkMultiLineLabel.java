@@ -43,7 +43,7 @@ public class SmartLinkMultiLineLabel extends MultiLineLabel
 	/**
 	 * @see MultiLineLabel#MultiLineLabel(String, String)
 	 */
-	public SmartLinkMultiLineLabel(String id, String label)
+	public SmartLinkMultiLineLabel(final String id, final String label)
 	{
 		this(id, new Model<String>(label));
 	}
@@ -56,17 +56,16 @@ public class SmartLinkMultiLineLabel extends MultiLineLabel
 	 * @param model
 	 *            The component's model
 	 */
-	public SmartLinkMultiLineLabel(String id, IModel<String> model)
+	public SmartLinkMultiLineLabel(final String id, final IModel<String> model)
 	{
 		super(id, model);
 	}
 
 	/**
-	 * @see org.apache.wicket.Component#onComponentTagBody(org.apache.wicket.markup.MarkupStream,
-	 *      org.apache.wicket.markup.ComponentTag)
+	 * {@inheritDoc}
 	 */
 	@Override
-	protected void onComponentTagBody(final MarkupStream markupStream, final ComponentTag openTag)
+	public void onComponentTagBody(final MarkupStream markupStream, final ComponentTag openTag)
 	{
 		final CharSequence body = Strings.toMultilineMarkup(getDefaultModelObjectAsString());
 		replaceComponentTagBody(markupStream, openTag, getSmartLink(body));

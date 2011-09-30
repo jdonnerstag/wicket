@@ -22,24 +22,25 @@ import javax.swing.tree.TreeNode;
 import org.apache.wicket.Component;
 import org.apache.wicket.IClusterable;
 import org.apache.wicket.MarkupContainer;
-import org.apache.wicket.behavior.AbstractBehavior;
+import org.apache.wicket.behavior.Behavior;
 import org.apache.wicket.extensions.markup.html.tree.DefaultAbstractTree;
 import org.apache.wicket.extensions.markup.html.tree.table.ColumnLocation.Alignment;
 import org.apache.wicket.markup.ComponentTag;
+import org.apache.wicket.markup.html.IHeaderResponse;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.panel.Fragment;
 import org.apache.wicket.markup.html.tree.AbstractTree;
+import org.apache.wicket.markup.html.tree.WicketTreeModel;
 import org.apache.wicket.model.AbstractReadOnlyModel;
 import org.apache.wicket.model.IModel;
-import org.apache.wicket.model.Model;
-import org.apache.wicket.request.resource.CompressedResourceReference;
+import org.apache.wicket.request.resource.PackageResourceReference;
 import org.apache.wicket.request.resource.ResourceReference;
 
 
 /**
  * TreeTable is a component that represents a grid with a tree. It's divided into columns. One of
- * the columns has to be column derived from {@link AbstractTreeColumn}.
+ * the columns has to be column derived from {@link PropertyTreeColumn}.
  * 
  * @author Matej Knopp
  */
@@ -72,14 +73,13 @@ public class TreeTable extends DefaultAbstractTree
 		/**
 		 * Constructor.
 		 * 
-		 * 
 		 * @param id
 		 * @param node
 		 * @param level
 		 * @param renderNodeCallback
 		 *            The call back for rendering nodes
 		 */
-		public TreeFragment(String id, final TreeNode node, int level,
+		public TreeFragment(final String id, final TreeNode node, final int level,
 			final IRenderNodeCallback renderNodeCallback)
 		{
 			super(id, "fragment", TreeTable.this);
@@ -110,7 +110,7 @@ public class TreeTable extends DefaultAbstractTree
 	}
 
 	/** Reference to the css file. */
-	private static final ResourceReference CSS = new CompressedResourceReference(
+	private static final ResourceReference CSS = new PackageResourceReference(
 		DefaultAbstractTree.class, "res/tree-table.css");
 
 	private static final long serialVersionUID = 1L;
@@ -139,14 +139,15 @@ public class TreeTable extends DefaultAbstractTree
 	 * 
 	 * @return The tree cell
 	 */
-	public static Component newTreeCell(MarkupContainer parent, String id, TreeNode node,
-		int level, IRenderNodeCallback callback, TreeTable table)
+	public static Component newTreeCell(final MarkupContainer parent, final String id,
+		final TreeNode node, final int level, final IRenderNodeCallback callback,
+		final TreeTable table)
 	{
 		return table.newTreePanel(parent, id, node, level, callback);
 	}
 
 	// columns of the TreeTable
-	private IColumn columns[];
+	private final IColumn columns[];
 
 	/**
 	 * Creates the TreeTable for the given array of columns.
@@ -154,10 +155,24 @@ public class TreeTable extends DefaultAbstractTree
 	 * @param id
 	 * @param columns
 	 */
-	public TreeTable(String id, IColumn columns[])
+	public TreeTable(final String id, final IColumn columns[])
 	{
-		super(id);
-		init(columns);
+		this(id, (TreeModel)null, columns);
+	}
+
+	/**
+	 * Creates the TreeTable for the given TreeModel and array of columns.
+	 * 
+	 * @param id
+	 *            The component id
+	 * @param model
+	 *            The tree model
+	 * @param columns
+	 *            The columns
+	 */
+	public TreeTable(final String id, final TreeModel model, final IColumn columns[])
+	{
+		this(id, new WicketTreeModel(model), columns);
 	}
 
 	/**
@@ -170,34 +185,41 @@ public class TreeTable extends DefaultAbstractTree
 	 * @param columns
 	 *            The columns
 	 */
-	public TreeTable(String id, IModel<? extends TreeModel> model, IColumn columns[])
+	public TreeTable(final String id, final IModel<? extends TreeModel> model,
+		final IColumn columns[])
 	{
 		super(id, model);
-		init(columns);
-	}
 
+		this.columns = columns;
 
-	/**
-	 * Creates the TreeTable for the given TreeModel and array of columns.
-	 * 
-	 * @param id
-	 *            The component id
-	 * @param model
-	 *            The tree model
-	 * @param columns
-	 *            The columns
-	 */
-	public TreeTable(String id, TreeModel model, IColumn columns[])
-	{
-		super(id, model);
-		init(columns);
+		// Attach the javascript that resizes the header according to the body
+		// This is necessary to support fixed position header. The header does
+		// not
+		// scroll together with body. The body contains vertical scrollbar. The
+		// header width must be same as body content width, so that the columns
+		// are properly aligned.
+		add(new Behavior()
+		{
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public void renderHead(final Component component, final IHeaderResponse response)
+			{
+				response.renderOnDomReadyJavaScript("Wicket.TreeTable.attachUpdate(\"" +
+					getMarkupId() + "\")");
+			}
+		});
 	}
 
 	private boolean hasLeftColumn()
 	{
 		for (IColumn column : columns)
+		{
 			if (column.getLocation().getAlignment().equals(Alignment.LEFT))
+			{
 				return true;
+			}
+		}
 
 		return false;
 	}
@@ -211,33 +233,39 @@ public class TreeTable extends DefaultAbstractTree
 		SideColumnsView sideColumns = new SideColumnsView("sideColumns", null);
 		add(sideColumns);
 		if (columns != null)
+		{
 			for (int i = 0; i < columns.length; i++)
 			{
 				IColumn column = columns[i];
-				if (column.getLocation().getAlignment() == Alignment.LEFT ||
-					column.getLocation().getAlignment() == Alignment.RIGHT)
+				if ((column.getLocation().getAlignment() == Alignment.LEFT) ||
+					(column.getLocation().getAlignment() == Alignment.RIGHT))
 				{
-					Component component = column.newHeader(sideColumns, "" + i);
-					sideColumns.add(component);
+					TreeTableItem component = new TreeTableItem(i);
+					Component cell = column.newHeader(sideColumns, TreeTableItem.ID);
+					component.add(cell);
 					sideColumns.addColumn(column, component, null);
 				}
 			}
+		}
 
 		// create the view for middle columns
 		MiddleColumnsView middleColumns = new MiddleColumnsView("middleColumns", null,
 			hasLeftColumn());
 		add(middleColumns);
 		if (columns != null)
+		{
 			for (int i = 0; i < columns.length; i++)
 			{
 				IColumn column = columns[i];
 				if (column.getLocation().getAlignment() == Alignment.MIDDLE)
 				{
-					Component component = column.newHeader(middleColumns, "" + i);
-					middleColumns.add(component);
+					TreeTableItem component = new TreeTableItem(i);
+					Component cell = column.newHeader(middleColumns, TreeTableItem.ID);
+					component.add(cell);
 					middleColumns.addColumn(column, component, null);
 				}
 			}
+		}
 	}
 
 	/**
@@ -264,8 +292,8 @@ public class TreeTable extends DefaultAbstractTree
 	 *            The node call back
 	 * @return The tree panel
 	 */
-	protected Component newTreePanel(MarkupContainer parent, String id, final TreeNode node,
-		int level, IRenderNodeCallback renderNodeCallback)
+	protected Component newTreePanel(final MarkupContainer parent, final String id,
+		final TreeNode node, final int level, final IRenderNodeCallback renderNodeCallback)
 	{
 		return new TreeFragment(id, node, level, renderNodeCallback);
 	}
@@ -281,8 +309,12 @@ public class TreeTable extends DefaultAbstractTree
 		{
 			// no. initialize columns first
 			if (columns != null)
+			{
 				for (IColumn column : columns)
+				{
 					column.setTreeTable(this);
+				}
+			}
 
 			// add the tree table header
 			addHeader();
@@ -298,7 +330,7 @@ public class TreeTable extends DefaultAbstractTree
 	 *            the current level
 	 */
 	@Override
-	protected void populateTreeItem(WebMarkupContainer item, int level)
+	protected void populateTreeItem(final WebMarkupContainer item, final int level)
 	{
 		final TreeNode node = (TreeNode)item.getDefaultModelObject();
 
@@ -306,22 +338,23 @@ public class TreeTable extends DefaultAbstractTree
 		SideColumnsView sideColumns = new SideColumnsView("sideColumns", node);
 		item.add(sideColumns);
 		if (columns != null)
+		{
 			for (int i = 0; i < columns.length; i++)
 			{
 				IColumn column = columns[i];
-				if (column.getLocation().getAlignment() == Alignment.LEFT ||
-					column.getLocation().getAlignment() == Alignment.RIGHT)
+				if ((column.getLocation().getAlignment() == Alignment.LEFT) ||
+					(column.getLocation().getAlignment() == Alignment.RIGHT))
 				{
-					Component component;
+					TreeTableItem component;
 					// first try to create a renderable
 					IRenderable renderable = column.newCell(node, level);
 
 					if (renderable == null)
 					{
-						// if renderable failed, try to create a regular
-						// component
-						component = column.newCell(sideColumns, "" + i, node, level);
-						sideColumns.add(component);
+						// if renderable failed, try to create a regular component.
+						component = new TreeTableItem(i);
+						Component cell = column.newCell(sideColumns, TreeTableItem.ID, node, level);
+						component.add(cell);
 					}
 					else
 					{
@@ -331,26 +364,29 @@ public class TreeTable extends DefaultAbstractTree
 					sideColumns.addColumn(column, component, renderable);
 				}
 			}
+		}
 
 		// add middle columns
 		MiddleColumnsView middleColumns = new MiddleColumnsView("middleColumns", node,
 			hasLeftColumn());
 		if (columns != null)
+		{
 			for (int i = 0; i < columns.length; i++)
 			{
 				IColumn column = columns[i];
 				if (column.getLocation().getAlignment() == Alignment.MIDDLE)
 				{
-					Component component;
+					TreeTableItem component;
 					// first try to create a renderable
 					IRenderable renderable = column.newCell(node, level);
 
 					if (renderable == null)
 					{
-						// if renderable failed, try to create a regular
-						// component
-						component = column.newCell(middleColumns, "" + i, node, level);
-						middleColumns.add(component);
+						// if renderable failed, try to create a regular component
+						component = new TreeTableItem(i);
+						Component cell = column.newCell(middleColumns, TreeTableItem.ID, node,
+							level);
+						component.add(cell);
 					}
 					else
 					{
@@ -360,17 +396,17 @@ public class TreeTable extends DefaultAbstractTree
 					middleColumns.addColumn(column, component, renderable);
 				}
 			}
+		}
 		item.add(middleColumns);
 
 		// do distinguish between selected and unselected rows we add an
-		// behavior
-		// that modifies row css class.
-		item.add(new AbstractBehavior()
+		// behavior that modifies row css class.
+		item.add(new Behavior()
 		{
 			private static final long serialVersionUID = 1L;
 
 			@Override
-			public void onComponentTag(Component component, ComponentTag tag)
+			public void onComponentTag(final Component component, final ComponentTag tag)
 			{
 				super.onComponentTag(component, tag);
 				if (getTreeState().isNodeSelected(node))
@@ -383,52 +419,5 @@ public class TreeTable extends DefaultAbstractTree
 				}
 			}
 		});
-	}
-
-	/**
-	 * Internal initialization. Also checks if at least one of the columns is derived from
-	 * AbstractTreeColumn.
-	 * 
-	 * @param columns
-	 *            The columns
-	 */
-	private void init(IColumn columns[])
-	{
-		boolean found = false;
-		if (columns != null)
-		{
-			for (IColumn column : columns)
-			{
-				if (column instanceof AbstractTreeColumn)
-				{
-					found = true;
-					break;
-				}
-			}
-		}
-		if (found == false)
-		{
-			throw new IllegalArgumentException(
-				"At least one column in TreeTable must be derived from AbstractTreeColumn.");
-		}
-
-		this.columns = columns;
-
-		// Attach the javascript that resizes the header according to the body
-		// This is necessary to support fixed position header. The header does
-		// not
-		// scroll together with body. The body contains vertical scrollbar. The
-		// header width must be same as body content width, so that the columns
-		// are properly aligned.
-		add(new Label("attachJavascript", new Model<String>()
-		{
-			private static final long serialVersionUID = 1L;
-
-			@Override
-			public String getObject()
-			{
-				return "Wicket.TreeTable.attachUpdate(\"" + getMarkupId() + "\");";
-			}
-		}).setEscapeModelStrings(false));
 	}
 }

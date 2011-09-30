@@ -56,7 +56,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * This class delegates handling of the to a StringBuffer based version.
+ * This class delegates handling of the to a StringBuilder based version.
  * 
  * @version $Revision: 1.1 $ $Date: 2006/03/12 00:24:21 $
  * @author <a href="mailto:juanco@suigeneris.org">Juanco Anez</a>
@@ -79,7 +79,7 @@ public class ToString
 	@Override
 	public String toString()
 	{
-		StringBuffer s = new StringBuffer();
+		StringBuilder s = new StringBuilder();
 		toString(s);
 		return s.toString();
 	}
@@ -90,7 +90,7 @@ public class ToString
 	 * @param s
 	 *            the string buffer.
 	 */
-	public void toString(StringBuffer s)
+	public void toString(final StringBuilder s)
 	{
 		s.append(super.toString());
 	}
@@ -103,7 +103,7 @@ public class ToString
 	 *            the string to convert.
 	 * @return String[]
 	 */
-	public static String[] stringToArray(String value)
+	public static String[] stringToArray(final String value)
 	{
 		BufferedReader reader = new BufferedReader(new StringReader(value));
 		List<String> l = new LinkedList<String>();
@@ -115,7 +115,7 @@ public class ToString
 				l.add(s);
 			}
 		}
-		catch (java.io.IOException e)
+		catch (java.io.IOException ignored)
 		{
 		}
 		return l.toArray(new String[l.size()]);
@@ -129,7 +129,7 @@ public class ToString
 	 *            the array of objects.
 	 * @return String
 	 */
-	public static String arrayToString(Object[] o)
+	public static String arrayToString(final Object[] o)
 	{
 		return arrayToString(o, System.getProperty("line.separator"));
 	}
@@ -143,9 +143,9 @@ public class ToString
 	 *            the string to use as line separator.
 	 * @return String
 	 */
-	public static String arrayToString(Object[] o, String EOL)
+	public static String arrayToString(final Object[] o, final String EOL)
 	{
-		StringBuffer buf = new StringBuffer();
+		StringBuilder buf = new StringBuilder();
 		for (int i = 0; i < o.length - 1; i++)
 		{
 			buf.append(o[i]);

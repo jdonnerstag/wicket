@@ -48,7 +48,7 @@ public final class Task
 	private boolean isStarted = false;
 
 	/** the <code>log</code> to give to the user's code */
-	private transient Logger log = null;
+	private Logger log = null;
 
 	/** the name of this <code>Task</code> */
 	private final String name;
@@ -106,7 +106,7 @@ public final class Task
 
 							if (log.isTraceEnabled())
 							{
-								log.trace("Run the job: " + code.toString());
+								log.trace("Run the job: '{}'", code.toString());
 							}
 
 							try
@@ -122,7 +122,7 @@ public final class Task
 
 							if (log.isTraceEnabled())
 							{
-								log.trace("Finished with job: " + code.toString());
+								log.trace("Finished with job: '{}'", code.toString());
 							}
 
 							// Sleep until the period is over (or not at all if it's
@@ -132,7 +132,7 @@ public final class Task
 					}
 					catch (Throwable t)
 					{
-						log.error("Task " + name + " terminated", t);
+						log.error("Task '{}' terminated", name, t);
 					}
 					finally
 					{

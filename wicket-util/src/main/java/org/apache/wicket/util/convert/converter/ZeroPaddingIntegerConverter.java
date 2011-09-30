@@ -25,7 +25,7 @@ import java.util.Locale;
  * @author Jonathan Locke
  * @author Al Maw
  */
-public class ZeroPaddingIntegerConverter extends AbstractIntegerConverter
+public class ZeroPaddingIntegerConverter extends AbstractIntegerConverter<Integer>
 {
 	private static final long serialVersionUID = 1L;
 
@@ -37,7 +37,7 @@ public class ZeroPaddingIntegerConverter extends AbstractIntegerConverter
 	 * @param zeroPadLength
 	 *            Minimum length of String to be outputted (will be zero-padded).
 	 */
-	public ZeroPaddingIntegerConverter(int zeroPadLength)
+	public ZeroPaddingIntegerConverter(final int zeroPadLength)
 	{
 		this.zeroPadLength = zeroPadLength;
 	}
@@ -47,7 +47,7 @@ public class ZeroPaddingIntegerConverter extends AbstractIntegerConverter
 	 *      java.util.Locale)
 	 */
 	@Override
-	public String convertToString(Object value, Locale locale)
+	public String convertToString(final Integer value, final Locale locale)
 	{
 		String result = super.convertToString(value, locale);
 
@@ -62,7 +62,7 @@ public class ZeroPaddingIntegerConverter extends AbstractIntegerConverter
 	/**
 	 * @see org.apache.wicket.util.convert.IConverter#convertToObject(java.lang.String,Locale)
 	 */
-	public Integer convertToObject(final String value, Locale locale)
+	public Integer convertToObject(final String value, final Locale locale)
 	{
 		final Number number = parse(value, Integer.MIN_VALUE, Integer.MAX_VALUE, locale);
 
@@ -71,7 +71,7 @@ public class ZeroPaddingIntegerConverter extends AbstractIntegerConverter
 			return null;
 		}
 
-		return new Integer(number.intValue());
+		return number.intValue();
 	}
 
 	/**

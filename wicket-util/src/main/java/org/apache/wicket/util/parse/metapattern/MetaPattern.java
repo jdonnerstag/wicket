@@ -325,10 +325,10 @@ public class MetaPattern implements IClusterable
 		}
 		else
 		{
-			final StringBuffer buffer = new StringBuffer();
-			for (int i = 0; i < patterns.size(); i++)
+			final StringBuilder buffer = new StringBuilder();
+			for (MetaPattern metaPattern : patterns)
 			{
-				buffer.append(patterns.get(i));
+				buffer.append(metaPattern);
 			}
 			return buffer.toString();
 		}
@@ -367,9 +367,9 @@ public class MetaPattern implements IClusterable
 
 		if (patterns != null)
 		{
-			for (int i = 0; i < patterns.size(); i++)
+			for (MetaPattern metaPattern : patterns)
 			{
-				group = (patterns.get(i)).bind(group);
+				group = metaPattern.bind(group);
 			}
 		}
 

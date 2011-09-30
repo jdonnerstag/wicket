@@ -37,16 +37,14 @@ public final class EmptyRequestHandler implements IRequestHandler
 	/**
 	 * Does nothing at all.
 	 * 
-	 * @see org.apache.wicket.request.IRequestHandler#respond(org.apache.wicket.request.cycle.RequestCycle)
+	 * @see org.apache.wicket.request.IRequestHandler#respond(org.apache.wicket.request.IRequestCycle)
 	 */
-	public void respond(IRequestCycle requestCycle)
+	public void respond(final IRequestCycle requestCycle)
 	{
 	}
 
-	/**
-	 * @see org.apache.wicket.request.IRequestHandler#detach(org.apache.wicket.request.cycle.RequestCycle)
-	 */
-	public void detach(IRequestCycle requestCycle)
+	/** {@inheritDoc} */
+	public void detach(final IRequestCycle requestCycle)
 	{
 	}
 

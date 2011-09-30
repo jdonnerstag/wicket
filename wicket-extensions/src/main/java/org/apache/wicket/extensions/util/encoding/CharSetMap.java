@@ -135,14 +135,14 @@ public final class CharSetMap
 		return createMap(input);
 	}
 
-	private static Map<String, String> createMap(InputStream input) throws IOException
+	private static Map<String, String> createMap(final InputStream input) throws IOException
 	{
 		final Properties props = new Properties();
 		props.load(input);
 		return createMap(props);
 	}
 
-	private static Map<String, String> createMap(Properties props)
+	private static Map<String, String> createMap(final Properties props)
 	{
 		HashMap<String, String> map = new HashMap<String, String>();
 		for (Object key : props.keySet())
@@ -475,7 +475,7 @@ public final class CharSetMap
 	private final String searchCharSet(final String[] items)
 	{
 		String charset;
-		final StringBuffer sb = new StringBuffer();
+		final StringBuilder sb = new StringBuilder();
 		for (int i = items.length; i > 0; i--)
 		{
 			charset = searchCharSet(items, sb, i);
@@ -501,7 +501,7 @@ public final class CharSetMap
 	 *            the number of items to go through.
 	 * @return the found charset or an empty string.
 	 */
-	private final String searchCharSet(final String[] items, final StringBuffer base, int count)
+	private final String searchCharSet(final String[] items, final StringBuilder base, int count)
 	{
 		if ((--count >= 0) && (items[count] != null) && (items[count].length() > 0))
 		{

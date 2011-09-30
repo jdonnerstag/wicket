@@ -18,14 +18,21 @@ package org.apache.wicket.extensions.ajax.markup.html.form.upload;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.apache.wicket.protocol.http.servlet.ServletWebRequest;
+import org.apache.wicket.Application;
+import org.apache.wicket.Component;
+import org.apache.wicket.model.Model;
+import org.apache.wicket.model.StringResourceModel;
+import org.apache.wicket.protocol.http.servlet.MultipartServletWebRequestImpl;
+import org.apache.wicket.protocol.http.servlet.UploadInfo;
+import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.apache.wicket.request.resource.AbstractResource;
-
 
 /**
  * A resource that prints out basic statistics about the current upload. This resource is used to
  * feed the progress bar information by the progress bar javascript which requests this resource
  * through ajax.
+ * 
+ * For customizing status text see {@link #RESOURCE_STATUS}.
  * 
  * @author Andrew Lombardi
  * @author Igor Vaynberg (ivaynberg)
@@ -35,52 +42,83 @@ class UploadStatusResource extends AbstractResource
 
 	private static final long serialVersionUID = 1L;
 
-	@Override
-	protected ResourceResponse newResourceResponse(Attributes attributes)
-	{
-		ResourceResponse response = new ResourceResponse();
-		response.setContentType("text/plain");
+	private static final String UPLOAD_PARAMETER = "upload";
 
-		final String content = getStatus(attributes);
+	/**
+	 * Resource key used to retrieve status message for.
+	 * 
+	 * Example: UploadStatusResource.status=${percentageComplete}% finished, ${bytesUploadedString}
+	 * of ${totalBytesString} at ${transferRateString}; ${remainingTimeString}
+	 */
+	public static final String RESOURCE_STATUS = "UploadStatusResource.status";
+
+	@Override
+	protected ResourceResponse newResourceResponse(final Attributes attributes)
+	{
+		// Determine encoding
+		final String encoding = Application.get()
+			.getRequestCycleSettings()
+			.getResponseRequestEncoding();
+
+		ResourceResponse response = new ResourceResponse();
+		response.setContentType("text/html; charset=" + encoding);
+
+		final String status = getStatus(attributes);
 		response.setWriteCallback(new WriteCallback()
 		{
 			@Override
-			public void writeData(Attributes attributes)
+			public void writeData(final Attributes attributes)
 			{
-				attributes.getResponse().write(content);
+				attributes.getResponse().write("<html><body>|");
+				attributes.getResponse().write(status);
+				attributes.getResponse().write("|</body></html>");
 			}
 		});
 
-		response.setContentLength(content.getBytes().length);
-
 		return response;
-
-
 	}
 
 	/**
 	 * @param attributes
-	 * @return
+	 * @return status string with progress data that will feed the progressbar.js variables on
+	 *         browser to update the progress bar
 	 */
-	private String getStatus(Attributes attributes)
+	private String getStatus(final Attributes attributes)
 	{
-		HttpServletRequest req = ((ServletWebRequest)attributes.getRequest()).getHttpServletRequest();
-		UploadInfo info = UploadWebRequest.getUploadInfo(req);
+		final HttpServletRequest req = (HttpServletRequest)attributes.getRequest()
+			.getContainerRequest();
+
+		final String upload = req.getParameter(UPLOAD_PARAMETER);
+
+		UploadInfo info = MultipartServletWebRequestImpl.getUploadInfo(req, upload);
 
 		String status = null;
-		if (info == null || info.getTotalBytes() < 1)
+		if ((info == null) || (info.getTotalBytes() < 1))
 		{
-			status = "0|0|0|0";
+			status = "100|";
 		}
 		else
 		{
-			status = "" + info.getPercentageComplete() + "|" + info.getBytesUploadedString() + "|" +
-				info.getTotalBytesString() + "|" + info.getTransferRateString() + "|" +
-				info.getRemainingTimeString();
+			status = info.getPercentageComplete() +
+				"|" +
+				new StringResourceModel(
+					RESOURCE_STATUS,
+					(Component)null,
+					Model.of(info),
+					"${percentageComplete}% finished, ${bytesUploadedString} of ${totalBytesString} at ${transferRateString}; ${remainingTimeString}").getString();
 		}
-		status = "<html>|" + status + "|</html>";
 		return status;
 	}
 
-
+	/**
+	 * Create a new parameter for the given identifier of a {@link UploadInfo}.
+	 * 
+	 * @param upload
+	 *            identifier
+	 * @return page parameter suitable for URLs to this resource
+	 */
+	public static PageParameters newParameter(String upload)
+	{
+		return new PageParameters().add(UPLOAD_PARAMETER, upload);
+	}
 }

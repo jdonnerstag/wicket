@@ -42,7 +42,7 @@ public abstract class IndicatingAjaxButton extends AjaxButton implements IAjaxIn
 	 * 
 	 * @param id
 	 */
-	public IndicatingAjaxButton(String id)
+	public IndicatingAjaxButton(final String id)
 	{
 		this(id, null, null);
 	}
@@ -54,19 +54,19 @@ public abstract class IndicatingAjaxButton extends AjaxButton implements IAjaxIn
 	 * @param model
 	 *            model used to set <code>value</code> markup attribute
 	 */
-	public IndicatingAjaxButton(String id, IModel<String> model)
+	public IndicatingAjaxButton(final String id, final IModel<String> model)
 	{
 		this(id, model, null);
 	}
 
 	/**
-	 *
+	 * 
 	 * Constructor
 	 * 
 	 * @param id
 	 * @param form
 	 */
-	public IndicatingAjaxButton(String id, Form<?> form)
+	public IndicatingAjaxButton(final String id, final Form<?> form)
 	{
 		this(id, null, form);
 	}
@@ -75,9 +75,10 @@ public abstract class IndicatingAjaxButton extends AjaxButton implements IAjaxIn
 	 * Constructor
 	 * 
 	 * @param id
+	 * @param model
 	 * @param form
 	 */
-	public IndicatingAjaxButton(String id, IModel<String> model, Form<?> form)
+	public IndicatingAjaxButton(final String id, final IModel<String> model, final Form<?> form)
 	{
 		super(id, model, form);
 		add(indicatorAppender);

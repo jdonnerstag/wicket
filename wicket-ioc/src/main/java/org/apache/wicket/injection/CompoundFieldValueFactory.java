@@ -18,7 +18,7 @@ package org.apache.wicket.injection;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -40,17 +40,14 @@ public class CompoundFieldValueFactory implements IFieldValueFactory
 	 * 
 	 * @param factories
 	 */
-	public CompoundFieldValueFactory(IFieldValueFactory[] factories)
+	public CompoundFieldValueFactory(final IFieldValueFactory[] factories)
 	{
 		if (factories == null)
 		{
 			throw new IllegalArgumentException("argument [factories] cannot be null");
 		}
 
-		for (int i = 0; i < factories.length; i++)
-		{
-			delegates.add(factories[i]);
-		}
+		delegates.addAll(Arrays.asList(factories));
 	}
 
 	/**
@@ -58,7 +55,7 @@ public class CompoundFieldValueFactory implements IFieldValueFactory
 	 * 
 	 * @param factories
 	 */
-	public CompoundFieldValueFactory(List<IFieldValueFactory> factories)
+	public CompoundFieldValueFactory(final List<IFieldValueFactory> factories)
 	{
 		if (factories == null)
 		{
@@ -73,7 +70,7 @@ public class CompoundFieldValueFactory implements IFieldValueFactory
 	 * @param f1
 	 * @param f2
 	 */
-	public CompoundFieldValueFactory(IFieldValueFactory f1, IFieldValueFactory f2)
+	public CompoundFieldValueFactory(final IFieldValueFactory f1, final IFieldValueFactory f2)
 	{
 		if (f1 == null)
 		{
@@ -92,7 +89,7 @@ public class CompoundFieldValueFactory implements IFieldValueFactory
 	 * 
 	 * @param factory
 	 */
-	public void addFactory(IFieldValueFactory factory)
+	public void addFactory(final IFieldValueFactory factory)
 	{
 		if (factory == null)
 		{
@@ -105,12 +102,10 @@ public class CompoundFieldValueFactory implements IFieldValueFactory
 	 * @see org.apache.wicket.injection.IFieldValueFactory#getFieldValue(java.lang.reflect.Field,
 	 *      java.lang.Object)
 	 */
-	public Object getFieldValue(Field field, Object fieldOwner)
+	public Object getFieldValue(final Field field, final Object fieldOwner)
 	{
-		Iterator<IFieldValueFactory> it = delegates.iterator();
-		while (it.hasNext())
+		for (IFieldValueFactory factory : delegates)
 		{
-			final IFieldValueFactory factory = it.next();
 			Object object = factory.getFieldValue(field, fieldOwner);
 			if (object != null)
 			{
@@ -123,12 +118,10 @@ public class CompoundFieldValueFactory implements IFieldValueFactory
 	/**
 	 * @see org.apache.wicket.injection.IFieldValueFactory#supportsField(java.lang.reflect.Field)
 	 */
-	public boolean supportsField(Field field)
+	public boolean supportsField(final Field field)
 	{
-		Iterator<IFieldValueFactory> it = delegates.iterator();
-		while (it.hasNext())
+		for (IFieldValueFactory factory : delegates)
 		{
-			final IFieldValueFactory factory = it.next();
 			if (factory.supportsField(field))
 			{
 				return true;

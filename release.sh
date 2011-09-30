@@ -27,13 +27,22 @@ stty -echo
 read passphrase
 stty $stty_orig
 
+# test the GPGP passphrase to fail-fast:
+echo "$passphrase" | gpg --passphrase-fd 0 --armor --output pom.xml.asc --detach-sig pom.xml
+gpg --verify pom.xml.asc
+if [ $? -ne 0 ]; then
+	echo "It appears that you fat-fingered your GPG passphrase"
+	exit $?
+fi
+rm pom.xml.asc
+
 # Clear the current NOTICE.txt file
 echo "Creating notice file."
 
 NOTICE=NOTICE
 > $NOTICE 
 echo "Apache Wicket" >> $NOTICE
-echo "Copyright 2008 The Apache Software Foundation" >> $NOTICE
+echo "Copyright 2006-$(date +%Y) The Apache Software Foundation" >> $NOTICE
 echo "" >> $NOTICE
 echo "This product includes software developed at" >> $NOTICE
 echo "The Apache Software Foundation (http://www.apache.org/)." >> $NOTICE

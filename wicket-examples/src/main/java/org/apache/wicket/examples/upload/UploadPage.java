@@ -20,11 +20,9 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.wicket.Application;
 import org.apache.wicket.examples.WicketExamplePage;
-import org.apache.wicket.markup.html.WebMarkupContainer;
+import org.apache.wicket.extensions.ajax.markup.html.form.upload.UploadProgressBar;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.upload.FileUpload;
@@ -39,13 +37,15 @@ import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.apache.wicket.util.file.Files;
 import org.apache.wicket.util.file.Folder;
 import org.apache.wicket.util.lang.Bytes;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Upload example.
  * 
  * @author Eelco Hillenius
  */
+@SuppressWarnings("serial")
 public class UploadPage extends WicketExamplePage
 {
 	/**
@@ -74,7 +74,7 @@ public class UploadPage extends WicketExamplePage
 		{
 			final File file = listItem.getModelObject();
 			listItem.add(new Label("file", file.getName()));
-			listItem.add(new Link("delete")
+			listItem.add(new Link<Void>("delete")
 			{
 				@Override
 				public void onClick()
@@ -91,7 +91,7 @@ public class UploadPage extends WicketExamplePage
 	 */
 	private class FileUploadForm extends Form<Void>
 	{
-		private FileUploadField fileUploadField;
+		FileUploadField fileUploadField;
 
 		/**
 		 * Construct.
@@ -119,32 +119,35 @@ public class UploadPage extends WicketExamplePage
 		@Override
 		protected void onSubmit()
 		{
-			final FileUpload upload = fileUploadField.getFileUpload();
-			if (upload != null)
+			final List<FileUpload> uploads = fileUploadField.getFileUploads();
+			if (uploads != null)
 			{
-				// Create a new file
-				File newFile = new File(getUploadFolder(), upload.getClientFileName());
-
-				// Check new file, delete if it allready existed
-				checkFileExists(newFile);
-				try
+				for (FileUpload upload : uploads)
 				{
-					// Save to new file
-					newFile.createNewFile();
-					upload.writeTo(newFile);
+					// Create a new file
+					File newFile = new File(getUploadFolder(), upload.getClientFileName());
 
-					UploadPage.this.info("saved file: " + upload.getClientFileName());
-				}
-				catch (Exception e)
-				{
-					throw new IllegalStateException("Unable to write file");
+					// Check new file, delete if it already existed
+					checkFileExists(newFile);
+					try
+					{
+						// Save to new file
+						newFile.createNewFile();
+						upload.writeTo(newFile);
+
+						UploadPage.this.info("saved file: " + upload.getClientFileName());
+					}
+					catch (Exception e)
+					{
+						throw new IllegalStateException("Unable to write file", e);
+					}
 				}
 			}
 		}
 	}
 
 	/** Log. */
-	private static final Log log = LogFactory.getLog(UploadPage.class);
+	private static final Logger log = LoggerFactory.getLogger(UploadPage.class);
 
 	/** Reference to listview for easy access. */
 	private final FileListView fileListView;
@@ -182,15 +185,17 @@ public class UploadPage extends WicketExamplePage
 		});
 		add(fileListView);
 
-		// Add upload form with ajax progress bar
-		final FileUploadForm ajaxSimpleUploadForm = new FileUploadForm("ajax-simpleUpload");
+		// Add upload form with progress bar
+		final FileUploadForm progressUploadForm = new FileUploadForm("progressUpload");
 
-		// TODO NG
-// ajaxSimpleUploadForm.add(new UploadProgressBar("progress", ajaxSimpleUploadForm));
-		ajaxSimpleUploadForm.add(new WebMarkupContainer("progress"));
-		add(ajaxSimpleUploadForm);
+		progressUploadForm.add(new UploadProgressBar("progress", progressUploadForm,
+			progressUploadForm.fileUploadField));
+		add(progressUploadForm);
 
-
+		// Add upload form that uses HTML5 <input type="file" multiple />, so it can upload
+		// more than one file in browsers which support "multiple" attribute
+		final FileUploadForm html5UploadForm = new FileUploadForm("html5Upload");
+		add(html5UploadForm);
 	}
 
 	/**

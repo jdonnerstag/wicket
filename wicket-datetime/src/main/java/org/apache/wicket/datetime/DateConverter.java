@@ -16,7 +16,6 @@
  */
 package org.apache.wicket.datetime;
 
-import java.text.ParseException;
 import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
@@ -28,10 +27,8 @@ import org.apache.wicket.request.ClientInfo;
 import org.apache.wicket.util.convert.ConversionException;
 import org.apache.wicket.util.convert.IConverter;
 import org.apache.wicket.util.string.Strings;
-import org.joda.time.DateMidnight;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
-import org.joda.time.MutableDateTime;
 import org.joda.time.format.DateTimeFormatter;
 
 
@@ -44,7 +41,7 @@ import org.joda.time.format.DateTimeFormatter;
  * 
  * @author eelcohillenius
  */
-public abstract class DateConverter implements IConverter
+public abstract class DateConverter implements IConverter<Date>
 {
 	private static final long serialVersionUID = 1L;
 
@@ -85,7 +82,7 @@ public abstract class DateConverter implements IConverter
 			return null;
 		}
 
-		DateTimeFormatter format = getFormat();
+		DateTimeFormatter format = getFormat(locale);
 		if (format == null)
 		{
 			throw new IllegalStateException("format must be not null");
@@ -94,31 +91,27 @@ public abstract class DateConverter implements IConverter
 		if (applyTimeZoneDifference)
 		{
 			TimeZone zone = getClientTimeZone();
-			// instantiate now/ current time
-			MutableDateTime dt = new MutableDateTime(new DateMidnight());
-			if (zone != null)
-			{
-				// set time zone for client
-				format = format.withZone(DateTimeZone.forTimeZone(zone));
-				dt.setZone(DateTimeZone.forTimeZone(zone));
-			}
+			DateTime dateTime = null;
+
+			// set time zone for client
+			format = format.withZone(getTimeZone());
+
 			try
 			{
 				// parse date retaining the time of the submission
-				int result = format.parseInto(dt, value, 0);
-				if (result < 0)
-				{
-					throw new ConversionException(new ParseException("unable to parse date " +
-							value, ~result));
-				}
+				dateTime = format.parseDateTime(value);
 			}
 			catch (RuntimeException e)
 			{
 				throw new ConversionException(e);
 			}
 			// apply the server time zone to the parsed value
-			dt.setZone(getTimeZone());
-			return dt.toDate();
+			if (zone != null)
+			{
+				dateTime = dateTime.withZoneRetainFields(DateTimeZone.forTimeZone(zone));
+			}
+
+			return dateTime.toDate();
 		}
 		else
 		{
@@ -138,10 +131,10 @@ public abstract class DateConverter implements IConverter
 	 * @see org.apache.wicket.util.convert.IConverter#convertToString(java.lang.Object,
 	 *      java.util.Locale)
 	 */
-	public String convertToString(Object value, Locale locale)
+	public String convertToString(Date value, Locale locale)
 	{
-		DateTime dt = new DateTime(((Date)value).getTime(), getTimeZone());
-		DateTimeFormatter format = getFormat();
+		DateTime dt = new DateTime((value).getTime(), getTimeZone());
+		DateTimeFormatter format = getFormat(locale);
 
 		if (applyTimeZoneDifference)
 		{
@@ -181,9 +174,10 @@ public abstract class DateConverter implements IConverter
 	}
 
 	/**
+	 * @param locale
 	 * @return Gets the pattern that is used for printing and parsing
 	 */
-	public abstract String getDatePattern();
+	public abstract String getDatePattern(Locale locale);
 
 	/**
 	 * Sets component for getting the locale
@@ -212,9 +206,11 @@ public abstract class DateConverter implements IConverter
 	}
 
 	/**
+	 * @param locale
+	 * 
 	 * @return formatter The formatter for the current conversion
 	 */
-	protected abstract DateTimeFormatter getFormat();
+	protected abstract DateTimeFormatter getFormat(Locale locale);
 
 	/**
 	 * Gets the locale to use.

@@ -16,8 +16,11 @@
  */
 package org.apache.wicket.extensions.markup.html.repeater.data.table;
 
+import java.util.List;
+
 import org.apache.wicket.extensions.markup.html.repeater.data.sort.ISortStateLocator;
 import org.apache.wicket.extensions.markup.html.repeater.data.sort.OrderByBorder;
+import org.apache.wicket.extensions.markup.html.repeater.data.table.DataTable.CssAttributeBehavior;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.list.AbstractItem;
 import org.apache.wicket.markup.repeater.RepeatingView;
@@ -39,21 +42,22 @@ public class HeadersToolbar extends AbstractToolbar
 	/**
 	 * Constructor
 	 * 
+	 * @param <T>
+	 *            the column data type
 	 * @param table
 	 *            data table this toolbar will be attached to
 	 * @param stateLocator
 	 *            locator for the ISortState implementation used by sortable headers
 	 */
-	public HeadersToolbar(final String id, final DataTable<?> table,
-		final ISortStateLocator stateLocator)
+	public <T> HeadersToolbar(final DataTable<T> table, final ISortStateLocator stateLocator)
 	{
-		super(id, table);
+		super(table);
 
 		RepeatingView headers = new RepeatingView("headers");
 		add(headers);
 
-		final IColumn<?>[] columns = table.getColumns();
-		for (final IColumn<?> column : columns)
+		final List<IColumn<T>> columns = table.getColumns();
+		for (final IColumn<T> column : columns)
 		{
 			AbstractItem item = new AbstractItem(headers.newChildId());
 			headers.add(item);
@@ -70,7 +74,7 @@ public class HeadersToolbar extends AbstractToolbar
 
 			if (column instanceof IStyledColumn)
 			{
-				header.add(new DataTable.CssAttributeBehavior()
+				CssAttributeBehavior cssAttributeBehavior = new DataTable.CssAttributeBehavior()
 				{
 					private static final long serialVersionUID = 1L;
 
@@ -79,13 +83,14 @@ public class HeadersToolbar extends AbstractToolbar
 					{
 						return ((IStyledColumn<?>)column).getCssClass();
 					}
-				});
+				};
+
+				header.add(cssAttributeBehavior);
 			}
 
 			item.add(header);
 			item.setRenderBodyOnly(true);
 			header.add(column.getHeader("label"));
-
 		}
 	}
 
@@ -101,8 +106,8 @@ public class HeadersToolbar extends AbstractToolbar
 	 *            sort state locator
 	 * @return created header component
 	 */
-	protected WebMarkupContainer newSortableHeader(String headerId, String property,
-		ISortStateLocator locator)
+	protected WebMarkupContainer newSortableHeader(final String headerId, final String property,
+		final ISortStateLocator locator)
 	{
 		return new OrderByBorder(headerId, property, locator)
 		{

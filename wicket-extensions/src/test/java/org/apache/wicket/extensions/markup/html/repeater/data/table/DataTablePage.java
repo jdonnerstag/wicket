@@ -36,6 +36,8 @@ import org.apache.wicket.model.Model;
  */
 public class DataTablePage extends WebPage
 {
+	private static final long serialVersionUID = 1L;
+
 	/**
 	 * constructor
 	 */
@@ -47,8 +49,8 @@ public class DataTablePage extends WebPage
 		{
 			private static final long serialVersionUID = 1L;
 
-			public void populateItem(Item<ICellPopulator<Contact>> cellItem, String componentId,
-				IModel<Contact> rowModel)
+			public void populateItem(final Item<ICellPopulator<Contact>> cellItem,
+				final String componentId, final IModel<Contact> rowModel)
 			{
 				cellItem.add(new WebMarkupContainer(componentId, rowModel));
 			}
@@ -83,6 +85,23 @@ public class DataTablePage extends WebPage
 		columns.add(new PropertyColumn<String>(new Model<String>("Home Phone"), "homePhone"));
 		columns.add(new PropertyColumn<String>(new Model<String>("Cell Phone"), "cellPhone"));
 
-		add(new DefaultDataTable("table", columns, new SortableContactDataProvider(), 8));
+		@SuppressWarnings({ "rawtypes", "unchecked" })
+		DefaultDataTable defaultDataTable = new DefaultDataTable("table", columns,
+			new SortableContactDataProvider(), 8)
+		{
+
+			@Override
+			protected IModel getCaptionModel()
+			{
+				return DataTablePage.this.getCaptionModel();
+			}
+
+		};
+		add(defaultDataTable);
+	}
+
+	protected IModel<String> getCaptionModel()
+	{
+		return null;
 	}
 }

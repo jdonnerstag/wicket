@@ -17,7 +17,6 @@
 package org.apache.wicket.util.lang;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -89,16 +88,12 @@ public abstract class EnumeratedType extends StringValue
 	{
 		EnumeratedType result = this;
 		List<EnumeratedType> values = getValues(getClass());
-		if (values != null)
+		for (EnumeratedType value : values)
 		{
-			for (Iterator<EnumeratedType> i = values.iterator(); i.hasNext();)
+			if ((value.toString() != null) && value.toString().equals(this.toString()))
 			{
-				EnumeratedType type = i.next();
-				if (type.toString() != null && type.toString().equals(this.toString()))
-				{
-					result = type;
-					break;
-				}
+				result = value;
+				break;
 			}
 		}
 		return result;

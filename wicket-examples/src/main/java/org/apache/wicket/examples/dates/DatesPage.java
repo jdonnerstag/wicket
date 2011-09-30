@@ -30,6 +30,7 @@ import org.apache.wicket.datetime.markup.html.form.DateTextField;
 import org.apache.wicket.examples.WicketExamplePage;
 import org.apache.wicket.extensions.yui.calendar.DatePicker;
 import org.apache.wicket.extensions.yui.calendar.DateTimeField;
+import org.apache.wicket.extensions.yui.calendar.TimeField;
 import org.apache.wicket.markup.html.form.ChoiceRenderer;
 import org.apache.wicket.markup.html.form.DropDownChoice;
 import org.apache.wicket.markup.html.form.Form;
@@ -87,7 +88,6 @@ public class DatesPage extends WicketExamplePage
 				@Override
 				public List<Locale> getObject()
 				{
-					getSelectedLocale();
 					List<Locale> locales = new ArrayList<Locale>(LOCALES);
 					Collections.sort(locales, new Comparator<Locale>()
 					{
@@ -130,8 +130,14 @@ public class DatesPage extends WicketExamplePage
 		LOCALES = Arrays.asList(Locale.getAvailableLocales());
 	}
 
+	/** the backing object for DateTextField demo */
 	private final Date date = new Date();
+
+	/** the backing object for DateTimeField demo */
 	private final Date date2 = new Date();
+
+	/** the backing object for TimeField demo */
+	private final Date time = new Date();
 
 	private Locale selectedLocale = LOCALE_EN;
 
@@ -174,6 +180,7 @@ public class DatesPage extends WicketExamplePage
 
 		DatePicker datePicker = new DatePicker();
 		datePicker.setShowOnFieldClick(true);
+		datePicker.setAutoHide(true);
 		dateTextField.add(datePicker);
 		add(new FeedbackPanel("feedback"));
 
@@ -187,6 +194,18 @@ public class DatesPage extends WicketExamplePage
 		};
 		add(form2);
 		form2.add(new DateTimeField("dateTimeField", new PropertyModel<Date>(this, "date2")));
+
+
+		Form<?> form3 = new Form<Void>("form3")
+		{
+			@Override
+			protected void onSubmit()
+			{
+				info("set time to " + time);
+			}
+		};
+		add(form3);
+		form3.add(new TimeField("timeField", new PropertyModel<Date>(this, "time")));
 	}
 
 	/**

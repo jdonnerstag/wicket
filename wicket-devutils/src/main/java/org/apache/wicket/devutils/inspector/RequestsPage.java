@@ -32,13 +32,12 @@ import org.apache.wicket.markup.html.navigation.paging.PagingNavigator;
 import org.apache.wicket.model.AbstractReadOnlyModel;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
-import org.apache.wicket.protocol.http.DummyRequestLogger;
 import org.apache.wicket.protocol.http.IRequestLogger;
 import org.apache.wicket.protocol.http.IRequestLogger.RequestData;
 import org.apache.wicket.protocol.http.IRequestLogger.SessionData;
+import org.apache.wicket.protocol.http.RequestLogger;
 import org.apache.wicket.protocol.http.WebApplication;
 import org.apache.wicket.util.lang.Bytes;
-
 
 /**
  * @author jcompagner
@@ -92,9 +91,8 @@ public class RequestsPage extends DevUtilsPage
 				if (sessionData != null)
 				{
 					ArrayList<RequestData> returnValues = new ArrayList<RequestData>();
-					for (int i = 0; i < requests.size(); i++)
+					for (RequestData data : requests)
 					{
-						RequestData data = requests.get(i);
 						if (sessionData.getSessionId().equals(data.getSessionId()))
 						{
 							returnValues.add(data);
@@ -111,16 +109,21 @@ public class RequestsPage extends DevUtilsPage
 			private static final long serialVersionUID = 1L;
 
 			@Override
-			protected void populateItem(ListItem<RequestData> item)
+			protected void populateItem(final ListItem<RequestData> item)
 			{
 				RequestData rd = item.getModelObject();
 				item.add(new Label("id", new Model<String>(rd.getSessionId())).setVisible(sessionData == null));
 				item.add(new Label("startDate", new Model<String>(sdf.format(rd.getStartDate()))));
 				item.add(new Label("timeTaken", new Model<Long>(rd.getTimeTaken())));
-				item.add(new Label("eventTarget", new Model<String>(rd.getEventTarget())));
-				item.add(new Label("responseTarget", new Model<String>(rd.getResponseTarget())));
-				item.add(new Label("alteredObjects", new Model<String>(rd.getAlteredObjects())))
-					.setEscapeModelStrings(false);
+				String eventTarget = rd.getEventTarget() != null ? rd.getEventTarget()
+					.getClass()
+					.getName() : "";
+				item.add(new Label("eventTarget", new Model<String>(eventTarget)));
+				String responseTarget = rd.getResponseTarget() != null ? rd.getResponseTarget()
+					.getClass()
+					.getName() : "";
+				item.add(new Label("responseTarget", new Model<String>(responseTarget)));
+				item.add(new Label("alteredObjects", new Model<String>(rd.getAlteredObjects())).setEscapeModelStrings(false));
 				item.add(new Label("sessionSize", new Model<Bytes>(Bytes.bytes(rd.getSessionSize()
 					.longValue()))));
 			}
@@ -134,16 +137,11 @@ public class RequestsPage extends DevUtilsPage
 	IRequestLogger getRequestLogger()
 	{
 		WebApplication webApplication = (WebApplication)Application.get();
-		final IRequestLogger requestLogger;
+
+		IRequestLogger requestLogger = webApplication.getRequestLogger();
+
 		if (webApplication.getRequestLogger() == null)
-		{
-			// make default one.
-			requestLogger = new DummyRequestLogger();
-		}
-		else
-		{
-			requestLogger = webApplication.getRequestLogger();
-		}
+			requestLogger = new RequestLogger();
 		return requestLogger;
 	}
 }

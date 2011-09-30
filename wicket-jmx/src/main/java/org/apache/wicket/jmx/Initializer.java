@@ -29,7 +29,6 @@ import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
 
-import org.apache.wicket.IDestroyer;
 import org.apache.wicket.IInitializer;
 import org.apache.wicket.WicketRuntimeException;
 import org.slf4j.Logger;
@@ -50,7 +49,7 @@ import org.slf4j.LoggerFactory;
  * @author eelcohillenius
  * @author David Hosier
  */
-public class Initializer implements IInitializer, IDestroyer
+public class Initializer implements IInitializer
 {
 	private static Logger log = LoggerFactory.getLogger(Initializer.class);
 
@@ -66,7 +65,7 @@ public class Initializer implements IInitializer, IDestroyer
 	/**
 	 * @see org.apache.wicket.IDestroyer#destroy(org.apache.wicket.Application)
 	 */
-	public void destroy(org.apache.wicket.Application application)
+	public void destroy(final org.apache.wicket.Application application)
 	{
 		for (ObjectName objectName : registered)
 		{
@@ -88,7 +87,7 @@ public class Initializer implements IInitializer, IDestroyer
 	/**
 	 * @see org.apache.wicket.IInitializer#init(org.apache.wicket.Application)
 	 */
-	public void init(org.apache.wicket.Application application)
+	public void init(final org.apache.wicket.Application application)
 	{
 		try
 		{
@@ -102,8 +101,7 @@ public class Initializer implements IInitializer, IDestroyer
 			catch (SecurityException e)
 			{
 				// Ignore - we're not allowed to read this property.
-				log
-						.warn("not allowed to read property wicket.mbean.server.agentid due to security settings; ignoring");
+				log.warn("not allowed to read property wicket.mbean.server.agentid due to security settings; ignoring");
 			}
 			if (agentId != null)
 			{
@@ -127,8 +125,7 @@ public class Initializer implements IInitializer, IDestroyer
 				catch (SecurityException e)
 				{
 					// Ignore - we're not allowed to read this property.
-					log
-							.warn("not allowed to read property wicket.mbean.server.class due to security settings; ignoring");
+					log.warn("not allowed to read property wicket.mbean.server.class due to security settings; ignoring");
 				}
 				if (impl != null)
 				{
@@ -176,21 +173,23 @@ public class Initializer implements IInitializer, IDestroyer
 			register(appBean, appBeanName);
 
 			register(new ApplicationSettings(application), new ObjectName(domain +
-					":type=Application,name=ApplicationSettings"));
+				":type=Application,name=ApplicationSettings"));
 			register(new DebugSettings(application), new ObjectName(domain +
-					":type=Application,name=DebugSettings"));
+				":type=Application,name=DebugSettings"));
 			register(new MarkupSettings(application), new ObjectName(domain +
-					":type=Application,name=MarkupSettings"));
+				":type=Application,name=MarkupSettings"));
 			register(new ResourceSettings(application), new ObjectName(domain +
-					":type=Application,name=ResourceSettings"));
+				":type=Application,name=ResourceSettings"));
 			register(new PageSettings(application), new ObjectName(domain +
-					":type=Application,name=PageSettings"));
+				":type=Application,name=PageSettings"));
 			register(new RequestCycleSettings(application), new ObjectName(domain +
-					":type=Application,name=RequestCycleSettings"));
+				":type=Application,name=RequestCycleSettings"));
 			register(new SecuritySettings(application), new ObjectName(domain +
-					":type=Application,name=SecuritySettings"));
+				":type=Application,name=SecuritySettings"));
 			register(new SessionSettings(application), new ObjectName(domain +
-					":type=Application,name=SessionSettings"));
+				":type=Application,name=SessionSettings"));
+			register(new StoreSettings(application), new ObjectName(domain +
+				":type=Application,name=StoreSettings"));
 
 			RequestLogger sessionsBean = new RequestLogger(application);
 			ObjectName sessionsBeanName = new ObjectName(domain + ":type=RequestLogger");
@@ -235,8 +234,9 @@ public class Initializer implements IInitializer, IDestroyer
 	 * @throws MBeanRegistrationException
 	 * @throws InstanceAlreadyExistsException
 	 */
-	private void register(Object o, ObjectName objectName) throws InstanceAlreadyExistsException,
-			MBeanRegistrationException, NotCompliantMBeanException
+	private void register(final Object o, final ObjectName objectName)
+		throws InstanceAlreadyExistsException, MBeanRegistrationException,
+		NotCompliantMBeanException
 	{
 		mbeanServer.registerMBean(o, objectName);
 		registered.add(objectName);

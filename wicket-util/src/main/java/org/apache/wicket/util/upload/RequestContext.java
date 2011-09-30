@@ -32,6 +32,13 @@ public interface RequestContext
 {
 
 	/**
+	 * Retrieve the character encoding for the request.
+	 * 
+	 * @return The character encoding for the request.
+	 */
+	String getCharacterEncoding();
+
+	/**
 	 * Retrieve the content type of the request.
 	 * 
 	 * @return The content type of the request.

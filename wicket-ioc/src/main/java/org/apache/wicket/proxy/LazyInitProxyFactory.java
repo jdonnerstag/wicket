@@ -16,7 +16,6 @@
  */
 package org.apache.wicket.proxy;
 
-import java.io.InvalidClassException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
@@ -33,7 +32,9 @@ import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 
 import org.apache.wicket.IClusterable;
+import org.apache.wicket.WicketRuntimeException;
 import org.apache.wicket.model.IModel;
+import org.apache.wicket.util.lang.WicketObjects;
 
 /**
  * A factory class that creates lazy init proxies given a type and a {@link IProxyTargetLocator}
@@ -103,10 +104,11 @@ public class LazyInitProxyFactory
 	/**
 	 * Primitive java types and their object wrappers
 	 */
-	private static final List<?> PRIMITIVES = Arrays.asList(new Class[] { String.class, byte.class,
-			Byte.class, short.class, Short.class, int.class, Integer.class, long.class, Long.class,
-			float.class, Float.class, double.class, Double.class, char.class, Character.class,
-			boolean.class, Boolean.class });
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private static final List PRIMITIVES = Arrays.asList(String.class, byte.class, Byte.class,
+		short.class, Short.class, int.class, Integer.class, long.class, Long.class, float.class,
+		Float.class, double.class, Double.class, char.class, Character.class, boolean.class,
+		Boolean.class);
 
 	/**
 	 * Create a lazy init proxy for the specified type. The target object will be located using the
@@ -218,7 +220,7 @@ public class LazyInitProxyFactory
 		 * @param type
 		 * @param locator
 		 */
-		public ProxyReplacement(String type, IProxyTargetLocator locator)
+		public ProxyReplacement(final String type, final IProxyTargetLocator locator)
 		{
 			this.type = type;
 			this.locator = locator;
@@ -226,17 +228,14 @@ public class LazyInitProxyFactory
 
 		private Object readResolve() throws ObjectStreamException
 		{
-			Class<?> clazz;
-			try
+			Class<?> clazz = WicketObjects.resolveClass(type);
+			if (clazz == null)
 			{
-				clazz = Class.forName(type);
+				ClassNotFoundException cause = new ClassNotFoundException(
+					"Could not resolve type [" + type +
+						"] with the currently configured org.apache.wicket.application.IClassResolver");
+				throw new WicketRuntimeException(cause);
 			}
-			catch (ClassNotFoundException e)
-			{
-				throw new InvalidClassException(type, "could not resolve class [" + type +
-					"] when deserializing proxy");
-			}
-
 			return LazyInitProxyFactory.createProxy(clazz, locator);
 		}
 	}
@@ -272,7 +271,7 @@ public class LazyInitProxyFactory
 		 * @param locator
 		 *            object locator used to locate the object this proxy represents
 		 */
-		public CGLibInterceptor(Class<?> type, IProxyTargetLocator locator)
+		public CGLibInterceptor(final Class<?> type, final IProxyTargetLocator locator)
 		{
 			super();
 			typeName = type.getName();
@@ -283,8 +282,8 @@ public class LazyInitProxyFactory
 		 * @see net.sf.cglib.proxy.MethodInterceptor#intercept(java.lang.Object,
 		 *      java.lang.reflect.Method, java.lang.Object[], net.sf.cglib.proxy.MethodProxy)
 		 */
-		public Object intercept(Object object, Method method, Object[] args, MethodProxy proxy)
-			throws Throwable
+		public Object intercept(final Object object, final Method method, final Object[] args,
+			final MethodProxy proxy) throws Throwable
 		{
 			if (isFinalizeMethod(method))
 			{
@@ -297,7 +296,7 @@ public class LazyInitProxyFactory
 			}
 			else if (isHashCodeMethod(method))
 			{
-				return new Integer(hashCode());
+				return hashCode();
 			}
 			else if (isToStringMethod(method))
 			{
@@ -367,7 +366,7 @@ public class LazyInitProxyFactory
 		 * @param locator
 		 *            object locator used to locate the object this proxy represents
 		 */
-		public JdkHandler(Class<?> type, IProxyTargetLocator locator)
+		public JdkHandler(final Class<?> type, final IProxyTargetLocator locator)
 		{
 			super();
 			this.locator = locator;
@@ -378,7 +377,8 @@ public class LazyInitProxyFactory
 		 * @see java.lang.reflect.InvocationHandler#invoke(java.lang.Object,
 		 *      java.lang.reflect.Method, java.lang.Object[])
 		 */
-		public Object invoke(Object proxy, Method method, Object[] args) throws Throwable
+		public Object invoke(final Object proxy, final Method method, final Object[] args)
+			throws Throwable
 		{
 			if (isFinalizeMethod(method))
 			{
@@ -391,7 +391,7 @@ public class LazyInitProxyFactory
 			}
 			else if (isHashCodeMethod(method))
 			{
-				return new Integer(hashCode());
+				return hashCode();
 			}
 			else if (isToStringMethod(method))
 			{
@@ -445,10 +445,11 @@ public class LazyInitProxyFactory
 	 *            method being tested
 	 * @return true if the method is derived from Object.equals(), false otherwise
 	 */
-	protected static boolean isEqualsMethod(Method method)
+	protected static boolean isEqualsMethod(final Method method)
 	{
-		return method.getReturnType() == boolean.class && method.getParameterTypes().length == 1 &&
-			method.getParameterTypes()[0] == Object.class && method.getName().equals("equals");
+		return (method.getReturnType() == boolean.class) &&
+			(method.getParameterTypes().length == 1) &&
+			(method.getParameterTypes()[0] == Object.class) && method.getName().equals("equals");
 	}
 
 	/**
@@ -458,9 +459,9 @@ public class LazyInitProxyFactory
 	 *            method being tested
 	 * @return true if the method is defined from Object.hashCode(), false otherwise
 	 */
-	protected static boolean isHashCodeMethod(Method method)
+	protected static boolean isHashCodeMethod(final Method method)
 	{
-		return method.getReturnType() == int.class && method.getParameterTypes().length == 0 &&
+		return (method.getReturnType() == int.class) && (method.getParameterTypes().length == 0) &&
 			method.getName().equals("hashCode");
 	}
 
@@ -471,10 +472,10 @@ public class LazyInitProxyFactory
 	 *            method being tested
 	 * @return true if the method is defined from Object.toString(), false otherwise
 	 */
-	protected static boolean isToStringMethod(Method method)
+	protected static boolean isToStringMethod(final Method method)
 	{
-		return method.getReturnType() == String.class && method.getParameterTypes().length == 0 &&
-			method.getName().equals("toString");
+		return (method.getReturnType() == String.class) &&
+			(method.getParameterTypes().length == 0) && method.getName().equals("toString");
 	}
 
 	/**
@@ -484,9 +485,9 @@ public class LazyInitProxyFactory
 	 *            method being tested
 	 * @return true if the method is defined from Object.finalize(), false otherwise
 	 */
-	protected static boolean isFinalizeMethod(Method method)
+	protected static boolean isFinalizeMethod(final Method method)
 	{
-		return method.getReturnType() == void.class && method.getParameterTypes().length == 0 &&
+		return (method.getReturnType() == void.class) && (method.getParameterTypes().length == 0) &&
 			method.getName().equals("finalize");
 	}
 
@@ -497,9 +498,9 @@ public class LazyInitProxyFactory
 	 *            method being tested
 	 * @return true if the method is the writeReplace method, false otherwise
 	 */
-	protected static boolean isWriteReplaceMethod(Method method)
+	protected static boolean isWriteReplaceMethod(final Method method)
 	{
-		return method.getReturnType() == Object.class && method.getParameterTypes().length == 0 &&
-			method.getName().equals("writeReplace");
+		return (method.getReturnType() == Object.class) &&
+			(method.getParameterTypes().length == 0) && method.getName().equals("writeReplace");
 	}
 }

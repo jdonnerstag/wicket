@@ -19,16 +19,18 @@ package org.apache.wicket.examples;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-import org.apache.wicket.IResponseFilter;
+import org.apache.wicket.request.cycle.RequestCycle;
+import org.apache.wicket.response.filter.IResponseFilter;
 import org.apache.wicket.util.string.AppendingStringBuffer;
-import org.apache.wicket.util.string.JavascriptUtils;
+import org.apache.wicket.util.string.JavaScriptUtils;
 import org.apache.wicket.util.string.Strings;
 import org.apache.wicket.util.time.Duration;
 
 
 /**
  * Displays server host name (combination of name, ipaddress and unique id, which is either based)
- * and time it took to handle the request in the browser's status bar like this: <code>window.defaultStatus = 'Host: myhost/192.168.1.66/someid, handled in: 0.01s'</code>
+ * and time it took to handle the request in the browser's status bar like this:
+ * <code>window.defaultStatus = 'Host: myhost/192.168.1.66/someid, handled in: 0.01s'</code>
  * 
  * @author eelco hillenius
  */
@@ -47,7 +49,7 @@ public class ServerHostNameAndTimeFilter implements IResponseFilter
 		{
 			hostId = System.getProperty("examples.hostname");
 		}
-		catch (SecurityException e)
+		catch (SecurityException ignored)
 		{
 		}
 		if (Strings.isEmpty(hostId))
@@ -80,22 +82,20 @@ public class ServerHostNameAndTimeFilter implements IResponseFilter
 	public AppendingStringBuffer filter(AppendingStringBuffer responseBuffer)
 	{
 		int index = responseBuffer.indexOf("<head>");
-// long timeTaken = System.currentTimeMillis() - RequestCycle.get().getStartTime();
+		long timeTaken = System.currentTimeMillis() - RequestCycle.get().getStartTime();
 
-		// TODO NG
-		long timeTaken = 0;
 		if (index != -1)
 		{
 			AppendingStringBuffer script = new AppendingStringBuffer(75);
 			script.append("\n");
-			script.append(JavascriptUtils.SCRIPT_OPEN_TAG);
+			script.append(JavaScriptUtils.SCRIPT_OPEN_TAG);
 			script.append("\n\twindow.defaultStatus='");
 			script.append("Host: ");
 			script.append(host);
 			script.append(", handled in: ");
 			script.append(Duration.milliseconds(timeTaken));
 			script.append("';\n");
-			script.append(JavascriptUtils.SCRIPT_CLOSE_TAG);
+			script.append(JavaScriptUtils.SCRIPT_CLOSE_TAG);
 			script.append("\n");
 			responseBuffer.insert(index + 6, script);
 		}
@@ -117,7 +117,7 @@ public class ServerHostNameAndTimeFilter implements IResponseFilter
 			host = ((!Strings.isEmpty(hostName)) ? hostName + "/" + address : address) + "/" +
 				hostId;
 		}
-		catch (UnknownHostException e)
+		catch (UnknownHostException ignored)
 		{
 		}
 

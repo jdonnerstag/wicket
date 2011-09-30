@@ -42,7 +42,8 @@ public class ParentPathReferenceRewriter implements IRequestMapper
 	 * 
 	 * @param escapeSequence
 	 */
-	public ParentPathReferenceRewriter(IRequestMapper chain, IProvider<String> escapeSequence)
+	public ParentPathReferenceRewriter(final IRequestMapper chain,
+		final IProvider<String> escapeSequence)
 	{
 		Args.notNull(chain, "chain");
 		Args.notNull(escapeSequence, "relativePathPartEscapeSequence");
@@ -56,7 +57,7 @@ public class ParentPathReferenceRewriter implements IRequestMapper
 	 * @param chain
 	 *            chained request mapper
 	 */
-	public ParentPathReferenceRewriter(IRequestMapper chain)
+	public ParentPathReferenceRewriter(final IRequestMapper chain)
 	{
 		this(chain, new NullProvider<String>());
 	}
@@ -64,7 +65,7 @@ public class ParentPathReferenceRewriter implements IRequestMapper
 	/**
 	 * @see org.apache.wicket.request.IRequestMapper#mapRequest(org.apache.wicket.request.Request)
 	 */
-	public IRequestHandler mapRequest(Request request)
+	public IRequestHandler mapRequest(final Request request)
 	{
 		Url url = request.getUrl();
 
@@ -82,13 +83,11 @@ public class ParentPathReferenceRewriter implements IRequestMapper
 		return chain.mapRequest(request.cloneWithUrl(url));
 	}
 
-	/**
-	 * @see org.apache.wicket.request.IRequestMapper#mapHandler(org.apache.org.apache.wicket.request.IRequestHandler)
-	 */
-	public Url mapHandler(IRequestHandler requestHandler)
+	/** {@inheritDoc} */
+	public Url mapHandler(final IRequestHandler requestHandler)
 	{
 		Url url = chain.mapHandler(requestHandler);
-		if (url != null && escapeSequence.get() != null)
+		if ((url != null) && (escapeSequence.get() != null))
 		{
 			for (int i = 0; i < url.getSegments().size(); i++)
 			{
@@ -101,10 +100,8 @@ public class ParentPathReferenceRewriter implements IRequestMapper
 		return url;
 	}
 
-	/**
-	 * @see org.apache.wicket.request.IRequestMapper#getCompatibilityScore(org.apache.wicket.request.Request)
-	 */
-	public int getCompatibilityScore(Request request)
+	/** {@inheritDoc} */
+	public int getCompatibilityScore(final Request request)
 	{
 		return chain.getCompatibilityScore(request);
 	}

@@ -29,7 +29,7 @@ import org.apache.wicket.util.visit.IVisitor;
  * instance of this class to your application, it will check all components or pages marked with the
  * <tt>StatelessComponent</tt> annotation to make sure that they are stateless as you intended.
  * 
- * This is useful when trying to maintain stateless pages since it is very easy to inadvertantly add
+ * This is useful when trying to maintain stateless pages since it is very easy to inadvertently add
  * a component to a page that internally uses stateful links, etc.
  * 
  * @author Marat Radchenko
@@ -45,10 +45,10 @@ public class StatelessChecker implements IComponentOnBeforeRenderListener
 	 *            component to check.
 	 * @return <code>true</code> if checker must check given component.
 	 */
-	private static boolean mustCheck(final Component component)
+	protected boolean mustCheck(final Component component)
 	{
 		final StatelessComponent ann = component.getClass().getAnnotation(StatelessComponent.class);
-		return ann != null && ann.enabled();
+		return (ann != null) && ann.enabled();
 	}
 
 	/**
@@ -56,19 +56,22 @@ public class StatelessChecker implements IComponentOnBeforeRenderListener
 	 */
 	public void onBeforeRender(final Component component)
 	{
-		if (StatelessChecker.mustCheck(component))
+		if (mustCheck(component))
 		{
 			final IVisitor<Component, Component> visitor = new IVisitor<Component, Component>()
 			{
-				public void component(final Component comp, final IVisit<Component> visit) 
+				public void component(final Component comp, final IVisit<Component> visit)
 				{
-					if (component instanceof Page && StatelessChecker.mustCheck(comp))
+					if ((component instanceof Page) && mustCheck(comp))
 					{
-						// Do not go deeper, because this component will be checked by checker
+						// Do not go deeper, because this component will be
+						// checked by checker
 						// itself.
-						// Actually we could go deeper but that would mean we traverse it twice
+						// Actually we could go deeper but that would mean we
+						// traverse it twice
 						// (for current component and for inspected one).
-						// We go deeper for Page because full tree will be inspected during
+						// We go deeper for Page because full tree will be
+						// inspected during
 						// isPageStateless call.
 						visit.dontGoDeeper();
 					}
@@ -96,7 +99,7 @@ public class StatelessChecker implements IComponentOnBeforeRenderListener
 				final Object o = ((MarkupContainer)component).visitChildren(visitor);
 				if (o != null)
 				{
-				    throw new IllegalArgumentException(msg + " Offending component: " + o);
+					throw new IllegalArgumentException(msg + " Offending component: " + o);
 				}
 			}
 

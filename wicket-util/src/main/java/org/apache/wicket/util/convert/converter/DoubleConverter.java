@@ -27,19 +27,19 @@ import org.apache.wicket.util.convert.IConverter;
  * @author Eelco Hillenius
  * @author Jonathan Locke
  */
-public class DoubleConverter extends AbstractDecimalConverter
+public class DoubleConverter extends AbstractDecimalConverter<Double>
 {
 	private static final long serialVersionUID = 1L;
 
 	/**
 	 * The singleton instance for a double converter
 	 */
-	public static final IConverter INSTANCE = new DoubleConverter();
+	public static final IConverter<Double> INSTANCE = new DoubleConverter();
 
 	/**
 	 * @see org.apache.wicket.util.convert.IConverter#convertToObject(String, java.util.Locale)
 	 */
-	public Double convertToObject(final String value, Locale locale)
+	public Double convertToObject(final String value, final Locale locale)
 	{
 		final Number number = parse(value, -Double.MAX_VALUE, Double.MAX_VALUE, locale);
 		// Double.MIN is the smallest nonzero positive number, not the largest
@@ -50,7 +50,7 @@ public class DoubleConverter extends AbstractDecimalConverter
 			return null;
 		}
 
-		return new Double(number.doubleValue());
+		return number.doubleValue();
 	}
 
 	/**

@@ -94,9 +94,8 @@ public abstract class Delta extends ToString
 			DeltaClass[1][0] = DeleteDelta.class;
 			DeltaClass[1][1] = ChangeDelta.class;
 		}
-		catch (Throwable o)
+		catch (Throwable ignored)
 		{
-
 		}
 	}
 
@@ -110,7 +109,7 @@ public abstract class Delta extends ToString
 	 *            the chunk in the revised text.
 	 * @return Delta
 	 */
-	public static Delta newDelta(Chunk orig, Chunk rev)
+	public static Delta newDelta(final Chunk orig, final Chunk rev)
 	{
 		Class<?> c = DeltaClass[orig.size() > 0 ? 1 : 0][rev.size() > 0 ? 1 : 0];
 		Delta result;
@@ -139,7 +138,7 @@ public abstract class Delta extends ToString
 	 * @param orig
 	 * @param rev
 	 */
-	protected Delta(Chunk orig, Chunk rev)
+	protected Delta(final Chunk orig, final Chunk rev)
 	{
 		init(orig, rev);
 	}
@@ -150,7 +149,7 @@ public abstract class Delta extends ToString
 	 * @param orig
 	 * @param rev
 	 */
-	protected void init(Chunk orig, Chunk rev)
+	protected void init(final Chunk orig, final Chunk rev)
 	{
 		original = orig;
 		revised = rev;
@@ -174,7 +173,7 @@ public abstract class Delta extends ToString
 	 * @throws PatchFailedException
 	 *             if the patch cannot be applied.
 	 */
-	public final void patch(List<Object> target) throws PatchFailedException
+	public final void patch(final List<Object> target) throws PatchFailedException
 	{
 		verify(target);
 		try
@@ -201,11 +200,11 @@ public abstract class Delta extends ToString
 	 * Converts this delta into its Unix diff style string representation.
 	 * 
 	 * @param s
-	 *            a {@link StringBuffer StringBuffer} to which the string representation will be
+	 *            a {@link StringBuilder StringBuffer} to which the string representation will be
 	 *            appended.
 	 */
 	@Override
-	public void toString(StringBuffer s)
+	public void toString(final StringBuilder s)
 	{
 		original.rangeString(s);
 		s.append("x");
@@ -221,12 +220,12 @@ public abstract class Delta extends ToString
 	 * Converts this delta into its RCS style string representation.
 	 * 
 	 * @param s
-	 *            a {@link StringBuffer StringBuffer} to which the string representation will be
+	 *            a {@link StringBuilder StringBuffer} to which the string representation will be
 	 *            appended.
 	 * @param EOL
 	 *            the string to use as line separator.
 	 */
-	public abstract void toRCSString(StringBuffer s, String EOL);
+	public abstract void toRCSString(StringBuilder s, String EOL);
 
 	/**
 	 * Converts this delta into its RCS style string representation.
@@ -235,9 +234,9 @@ public abstract class Delta extends ToString
 	 *            the string to use as line separator.
 	 * @return String
 	 */
-	public String toRCSString(String EOL)
+	public String toRCSString(final String EOL)
 	{
-		StringBuffer s = new StringBuffer();
+		StringBuilder s = new StringBuilder();
 		toRCSString(s, EOL);
 		return s.toString();
 	}

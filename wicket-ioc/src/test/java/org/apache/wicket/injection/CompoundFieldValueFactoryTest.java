@@ -43,7 +43,7 @@ public class CompoundFieldValueFactoryTest extends TestCase
 	@Override
 	protected void setUp() throws Exception
 	{
-		Field field = CompoundFieldValueFactoryTest.class.getDeclaredField("testField");
+		CompoundFieldValueFactoryTest.class.getDeclaredField("testField");
 
 		for (int i = 0; i < 4; i++)
 		{
@@ -52,7 +52,7 @@ public class CompoundFieldValueFactoryTest extends TestCase
 		}
 	}
 
-	protected void prepare(int cnt)
+	protected void prepare(final int cnt)
 	{
 		for (int i = 0; i < cnt; i++)
 		{
@@ -61,7 +61,7 @@ public class CompoundFieldValueFactoryTest extends TestCase
 		}
 	}
 
-	protected void verify(int cnt)
+	protected void verify(final int cnt)
 	{
 		for (int i = 0; i < cnt; i++)
 		{
@@ -97,8 +97,7 @@ public class CompoundFieldValueFactoryTest extends TestCase
 	public void testListConstructor()
 	{
 		prepare(4);
-		List<IFieldValueFactory> list = Arrays.asList(new IFieldValueFactory[] { fact[0], fact[1],
-				fact[2], fact[3] });
+		List<IFieldValueFactory> list = Arrays.asList(fact[0], fact[1], fact[2], fact[3]);
 		CompoundFieldValueFactory f = new CompoundFieldValueFactory(list);
 		f.getFieldValue(field, this);
 		verify(4);
@@ -155,8 +154,7 @@ public class CompoundFieldValueFactoryTest extends TestCase
 		ctrl[2].expectAndReturn(fact[2].getFieldValue(field, this), new Object());
 		ctrl[2].replay();
 		ctrl[3].replay();
-		List<IFieldValueFactory> list = Arrays.asList(new IFieldValueFactory[] { fact[0], fact[1],
-				fact[2], fact[3] });
+		List<IFieldValueFactory> list = Arrays.asList(fact[0], fact[1], fact[2], fact[3]);
 		CompoundFieldValueFactory f = new CompoundFieldValueFactory(list);
 
 		f.getFieldValue(field, this);

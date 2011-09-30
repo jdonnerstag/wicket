@@ -59,7 +59,6 @@ package org.apache.wicket.util.diff;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -98,7 +97,7 @@ public class Revision extends ToString
 	 * @param delta
 	 *            the {@link Delta Delta} to add.
 	 */
-	public synchronized void addDelta(Delta delta)
+	public synchronized void addDelta(final Delta delta)
 	{
 		if (delta == null)
 		{
@@ -113,7 +112,7 @@ public class Revision extends ToString
 	 * @param delta
 	 *            the {@link Delta Delta} to add.
 	 */
-	public synchronized void insertDelta(Delta delta)
+	public synchronized void insertDelta(final Delta delta)
 	{
 		if (delta == null)
 		{
@@ -129,7 +128,7 @@ public class Revision extends ToString
 	 *            the position of the delta to retrieve.
 	 * @return the specified delta
 	 */
-	public Delta getDelta(int i)
+	public Delta getDelta(final int i)
 	{
 		return deltas_.get(i);
 	}
@@ -153,7 +152,7 @@ public class Revision extends ToString
 	 * @throws PatchFailedException
 	 *             if any of the patches cannot be applied.
 	 */
-	public Object[] patch(Object[] src) throws PatchFailedException
+	public Object[] patch(final Object[] src) throws PatchFailedException
 	{
 		List<Object> target = new ArrayList<Object>(Arrays.asList(src));
 		applyTo(target);
@@ -168,7 +167,7 @@ public class Revision extends ToString
 	 * @throws PatchFailedException
 	 *             if any of the patches cannot be applied.
 	 */
-	public synchronized void applyTo(List<Object> target) throws PatchFailedException
+	public synchronized void applyTo(final List<Object> target) throws PatchFailedException
 	{
 		ListIterator<Delta> i = deltas_.listIterator(deltas_.size());
 		while (i.hasPrevious())
@@ -182,16 +181,15 @@ public class Revision extends ToString
 	 * Converts this revision into its Unix diff style string representation.
 	 * 
 	 * @param s
-	 *            a {@link StringBuffer StringBuffer} to which the string representation will be
+	 *            a {@link StringBuilder StringBuffer} to which the string representation will be
 	 *            appended.
 	 */
 	@Override
-	public synchronized void toString(StringBuffer s)
+	public synchronized void toString(final StringBuilder s)
 	{
-		Iterator<Delta> i = deltas_.iterator();
-		while (i.hasNext())
+		for (Delta delta : deltas_)
 		{
-			(i.next()).toString(s);
+			delta.toString(s);
 		}
 	}
 
@@ -199,17 +197,16 @@ public class Revision extends ToString
 	 * Converts this revision into its RCS style string representation.
 	 * 
 	 * @param s
-	 *            a {@link StringBuffer StringBuffer} to which the string representation will be
+	 *            a {@link StringBuilder StringBuffer} to which the string representation will be
 	 *            appended.
 	 * @param EOL
 	 *            the string to use as line separator.
 	 */
-	public synchronized void toRCSString(StringBuffer s, String EOL)
+	public synchronized void toRCSString(final StringBuilder s, final String EOL)
 	{
-		Iterator<Delta> i = deltas_.iterator();
-		while (i.hasNext())
+		for (Delta deltas : deltas_)
 		{
-			(i.next()).toRCSString(s, EOL);
+			deltas.toRCSString(s, EOL);
 		}
 	}
 
@@ -217,10 +214,10 @@ public class Revision extends ToString
 	 * Converts this revision into its RCS style string representation.
 	 * 
 	 * @param s
-	 *            a {@link StringBuffer StringBuffer} to which the string representation will be
+	 *            a {@link StringBuilder StringBuffer} to which the string representation will be
 	 *            appended.
 	 */
-	public void toRCSString(StringBuffer s)
+	public void toRCSString(final StringBuilder s)
 	{
 		toRCSString(s, Diff.NL);
 	}
@@ -232,9 +229,9 @@ public class Revision extends ToString
 	 *            the string to use as line separator.
 	 * @return String
 	 */
-	public String toRCSString(String EOL)
+	public String toRCSString(final String EOL)
 	{
-		StringBuffer s = new StringBuffer();
+		StringBuilder s = new StringBuilder();
 		toRCSString(s, EOL);
 		return s.toString();
 	}
@@ -256,13 +253,12 @@ public class Revision extends ToString
 	 * @param visitor
 	 *            the {@link RevisionVisitor} visiting this instance
 	 */
-	public void accept(RevisionVisitor visitor)
+	public void accept(final RevisionVisitor visitor)
 	{
 		visitor.visit(this);
-		Iterator<Delta> iter = deltas_.iterator();
-		while (iter.hasNext())
+		for (Delta delta : deltas_)
 		{
-			(iter.next()).accept(visitor);
+			delta.accept(visitor);
 		}
 	}
 

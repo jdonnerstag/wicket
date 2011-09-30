@@ -17,7 +17,6 @@
 package org.apache.wicket.extensions.markup.html;
 
 import org.apache.wicket.Component;
-import org.apache.wicket.MarkupContainer;
 import org.apache.wicket.Page;
 import org.apache.wicket.WicketTestCase;
 import org.apache.wicket.extensions.ajax.markup.html.AjaxLazyLoadPanel;
@@ -25,7 +24,7 @@ import org.apache.wicket.extensions.ajax.markup.html.AjaxLazyLoadPanelTester;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.util.tester.DummyPanelPage;
-import org.apache.wicket.util.tester.TestPanelSource;
+import org.apache.wicket.util.tester.ITestPanelSource;
 
 /**
  * 
@@ -36,31 +35,27 @@ import org.apache.wicket.util.tester.TestPanelSource;
 
 public class AjaxLazyLoadPanelTesterTest extends WicketTestCase
 {
-	private MarkupContainer ajaxLazyLoadPanel;
-
 	/**
 	 * Test
 	 */
 	public void test()
 	{
-		final Page dummyPanelPage = new DummyPanelPage(new TestPanelSource()
+		final Page dummyPanelPage = new DummyPanelPage(new ITestPanelSource()
 		{
 			private static final long serialVersionUID = 1L;
 
-			public Panel getTestPanel(String panelId)
+			public Panel getTestPanel(final String panelId)
 			{
-				AjaxLazyLoadPanel ajaxLazyLoadPanel1 = new AjaxLazyLoadPanel(panelId)
+				return new AjaxLazyLoadPanel(panelId)
 				{
 					private static final long serialVersionUID = 1L;
 
 					@Override
-					public Component getLazyLoadComponent(String markupId)
+					public Component getLazyLoadComponent(final String markupId)
 					{
 						return new Label(markupId, "lazy panel test").setRenderBodyOnly(true);
 					}
 				};
-				ajaxLazyLoadPanel = ajaxLazyLoadPanel1;
-				return (Panel)ajaxLazyLoadPanel;
 			}
 
 		});

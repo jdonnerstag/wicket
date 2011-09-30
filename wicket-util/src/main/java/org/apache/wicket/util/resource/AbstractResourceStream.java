@@ -16,14 +16,9 @@
  */
 package org.apache.wicket.util.resource;
 
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.nio.charset.Charset;
 import java.util.Locale;
 
-import org.apache.wicket.util.io.IOUtils;
-import org.apache.wicket.util.io.Streams;
+import org.apache.wicket.util.lang.Bytes;
 import org.apache.wicket.util.time.Time;
 
 
@@ -32,143 +27,54 @@ import org.apache.wicket.util.time.Time;
  * 
  * @author Jonathan Locke
  */
-public abstract class AbstractResourceStream implements IStringResourceStream
+public abstract class AbstractResourceStream implements IResourceStream
 {
 	private static final long serialVersionUID = 1L;
 
-	/** Charset for resource */
-	private Charset charset;
 	private Locale locale;
 	private String style;
 	private String variation;
 
-	/**
-	 * Sets the character set used for reading this resource.
-	 * 
-	 * @param charset
-	 *            Charset for component
-	 */
-	public void setCharset(final Charset charset)
-	{
-		this.charset = charset;
-	}
-
-	/**
-	 * @return This resource as a String.
-	 */
-	public String asString()
-	{
-		Reader reader = null;
-		try
-		{
-			if (charset == null)
-			{
-				reader = new InputStreamReader(getInputStream());
-			}
-			else
-			{
-				reader = new InputStreamReader(getInputStream(), charset);
-			}
-			return Streams.readString(reader);
-		}
-		catch (IOException e)
-		{
-			throw new RuntimeException("Unable to read resource as String", e);
-		}
-		catch (ResourceStreamNotFoundException e)
-		{
-			throw new RuntimeException("Unable to read resource as String", e);
-		}
-		finally
-		{
-			IOUtils.closeQuietly(reader);
-			try
-			{
-				close();
-			}
-			catch (IOException e)
-			{
-				// ignore
-			}
-		}
-	}
-
-	/**
-	 * @return Charset for resource
-	 */
-	protected Charset getCharset()
-	{
-		return charset;
-	}
-
-
-	/**
-	 * @see org.apache.wicket.util.resource.IResourceStream#getLocale()
-	 */
 	public Locale getLocale()
 	{
 		return locale;
 	}
 
-	/**
-	 * @see org.apache.wicket.util.resource.IResourceStream#setLocale(java.util.Locale)
-	 */
-	public void setLocale(Locale locale)
+	public void setLocale(final Locale locale)
 	{
 		this.locale = locale;
 	}
 
-	/**
-	 * @see org.apache.wicket.util.resource.IResourceStream#getStyle()
-	 */
 	public String getStyle()
 	{
 		return style;
 	}
 
-	/**
-	 * @see org.apache.wicket.util.resource.IResourceStream#getVariation()
-	 */
 	public String getVariation()
 	{
 		return variation;
 	}
 
-	/**
-	 * @see org.apache.wicket.util.resource.IResourceStream#setStyle(java.lang.String)
-	 */
-	public void setStyle(String style)
+	public void setStyle(final String style)
 	{
 		this.style = style;
 	}
 
-	/**
-	 * @see org.apache.wicket.util.resource.IResourceStream#setVariation(java.lang.String)
-	 */
-	public void setVariation(String variation)
+	public void setVariation(final String variation)
 	{
 		this.variation = variation;
 	}
 
-	/**
-	 * @see org.apache.wicket.util.resource.IResourceStream#length()
-	 */
-	public long length()
+	public Bytes length()
 	{
-		return -1;
+		return null;
 	}
 
-	/**
-	 * @see org.apache.wicket.util.resource.IResourceStream#getContentType()
-	 */
 	public String getContentType()
 	{
 		return null;
 	}
 
-	/**
-	 * @see org.apache.wicket.util.watch.IModifiable#lastModifiedTime()
-	 */
 	public Time lastModifiedTime()
 	{
 		return null;

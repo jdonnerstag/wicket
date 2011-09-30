@@ -17,6 +17,7 @@
 package org.apache.wicket.extensions.markup.html.repeater.util;
 
 import org.apache.wicket.IClusterable;
+import org.apache.wicket.util.lang.Args;
 
 /**
  * Represents sorting information of a property
@@ -27,27 +28,21 @@ public class SortParam implements IClusterable
 {
 	private static final long serialVersionUID = 1L;
 
-	private String property;
-	private boolean asc;
+	private final String property;
+	private final boolean ascending;
 
 	/**
 	 * @param property
 	 *            sort property
-	 * @param asc
-	 *            sort direction
+	 * @param ascending
+	 *            <code>true<code> if sort order is ascending, <code>false</code> if sort order is
+	 *            descending
 	 */
-	public SortParam(String property, boolean asc)
+	public SortParam(final String property, final boolean ascending)
 	{
+		Args.notNull(property, "property");
 		this.property = property;
-		this.asc = asc;
-	}
-
-	/**
-	 * @return true if sort dir is ascending, false otherwise
-	 */
-	public boolean isAscending()
-	{
-		return asc;
+		this.ascending = ascending;
 	}
 
 	/**
@@ -59,25 +54,52 @@ public class SortParam implements IClusterable
 	}
 
 	/**
-	 * @see java.lang.Object#equals(java.lang.Object)
+	 * check if sort order is ascending
+	 * 
+	 * @return <code>true<code> if sort order is ascending, <code>false</code> if sort order is
+	 *         descending
 	 */
-	public boolean equals(Object rhs)
+	public boolean isAscending()
 	{
-		if (rhs instanceof SortParam)
+		return ascending;
+	}
+
+	@Override
+	public boolean equals(final Object o)
+	{
+		if (this == o)
 		{
-			SortParam param = (SortParam)rhs;
-			return getProperty().equals(param.getProperty()) &&
-					isAscending() == param.isAscending();
+			return true;
 		}
-		return false;
+		if (!(o instanceof SortParam))
+		{
+			return false;
+		}
+
+		SortParam sortParam = (SortParam)o;
+
+		return (ascending == sortParam.ascending) && property.equals(sortParam.property);
+	}
+
+	@Override
+	public int hashCode()
+	{
+		int result = property.hashCode();
+		result = 31 * result + (ascending ? 1 : 0);
+		return result;
 	}
 
 	/**
 	 * @see java.lang.Object#toString()
 	 */
+	@Override
 	public String toString()
 	{
-		return new StringBuffer().append("[SortParam property=").append(getProperty()).append(
-				" ascending=").append(asc).append("]").toString();
+		return new StringBuilder().append("[SortParam property=")
+			.append(getProperty())
+			.append(" ascending=")
+			.append(ascending)
+			.append("]")
+			.toString();
 	}
 }

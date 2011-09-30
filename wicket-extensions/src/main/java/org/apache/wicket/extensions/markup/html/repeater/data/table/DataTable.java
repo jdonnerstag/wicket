@@ -16,16 +16,16 @@
  */
 package org.apache.wicket.extensions.markup.html.repeater.data.table;
 
+import java.util.List;
+
+import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.Component;
-import org.apache.wicket.behavior.AbstractBehavior;
-import org.apache.wicket.behavior.IBehavior;
-import org.apache.wicket.behavior.SimpleAttributeModifier;
+import org.apache.wicket.behavior.Behavior;
 import org.apache.wicket.extensions.markup.html.repeater.data.grid.DataGridView;
 import org.apache.wicket.markup.ComponentTag;
-import org.apache.wicket.markup.IMarkupFragment;
 import org.apache.wicket.markup.html.WebMarkupContainer;
-import org.apache.wicket.markup.html.list.AbstractItem;
-import org.apache.wicket.markup.html.navigation.paging.IPageable;
+import org.apache.wicket.markup.html.basic.Label;
+import org.apache.wicket.markup.html.navigation.paging.IPageableItems;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.markup.repeater.IItemReuseStrategy;
 import org.apache.wicket.markup.repeater.Item;
@@ -34,6 +34,8 @@ import org.apache.wicket.markup.repeater.RepeatingView;
 import org.apache.wicket.markup.repeater.data.IDataProvider;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.util.string.Strings;
+import org.apache.wicket.util.visit.IVisit;
+import org.apache.wicket.util.visit.IVisitor;
 
 
 /**
@@ -53,10 +55,10 @@ import org.apache.wicket.util.string.Strings;
  * specified, the second column will not )
  * 
  * <pre>
- * IColumn[] columns = new IColumn[2];
+ * List&lt;IColumn&lt;T&gt;&gt; columns = new ArrayList&lt;IColumn&lt;T&gt;&gt;();
  * 
- * columns[0] = new PropertyColumn(new Model&lt;String&gt;(&quot;First Name&quot;), &quot;name.first&quot;, &quot;name.first&quot;);
- * columns[1] = new PropertyColumn(new Model&lt;String&gt;(&quot;Last Name&quot;), &quot;name.last&quot;);
+ * columns.add(new PropertyColumn(new Model&lt;String&gt;(&quot;First Name&quot;), &quot;name.first&quot;, &quot;name.first&quot;));
+ * columns.add(new PropertyColumn(new Model&lt;String&gt;(&quot;Last Name&quot;), &quot;name.last&quot;));
  * 
  * DataTable table = new DataTable(&quot;datatable&quot;, columns, new UserProvider(), 10);
  * table.addBottomToolbar(new NavigationToolbar(table));
@@ -72,27 +74,24 @@ import org.apache.wicket.util.string.Strings;
  *            The model object type
  * 
  */
-public class DataTable<T> extends Panel implements IPageable
+public class DataTable<T> extends Panel implements IPageableItems
 {
-	static abstract class CssAttributeBehavior extends AbstractBehavior
+	static abstract class CssAttributeBehavior extends Behavior
 	{
-		/**
-		 * 
-		 */
 		private static final long serialVersionUID = 1L;
 
 		protected abstract String getCssClass();
 
 		/**
-		 * @see IBehavior#onComponentTag(Component, ComponentTag)
+		 * @see Behavior#onComponentTag(Component, ComponentTag)
 		 */
 		@Override
-		public void onComponentTag(Component component, ComponentTag tag)
+		public void onComponentTag(final Component component, final ComponentTag tag)
 		{
 			String className = getCssClass();
 			if (!Strings.isEmpty(className))
 			{
-				CharSequence oldClassName = tag.getString("class");
+				CharSequence oldClassName = tag.getAttribute("class");
 				if (Strings.isEmpty(oldClassName))
 				{
 					tag.put("class", className);
@@ -111,11 +110,13 @@ public class DataTable<T> extends Panel implements IPageable
 
 	private final WebMarkupContainer body;
 
-	private final IColumn<?>[] columns;
+	private final List<IColumn<T>> columns;
 
-	private final RepeatingView topToolbars;
+	private final ToolbarsContainer topToolbars;
 
-	private final RepeatingView bottomToolbars;
+	private final ToolbarsContainer bottomToolbars;
+
+	private final Caption caption;
 
 	/**
 	 * Constructor
@@ -129,26 +130,30 @@ public class DataTable<T> extends Panel implements IPageable
 	 * @param rowsPerPage
 	 *            number of rows per page
 	 */
-	public DataTable(String id, IColumn<T>[] columns, IDataProvider<T> dataProvider, int rowsPerPage)
+	public DataTable(final String id, final List<IColumn<T>> columns,
+		final IDataProvider<T> dataProvider, final int rowsPerPage)
 	{
 		super(id);
 
-		if (columns == null || columns.length < 1)
+		if ((columns == null) || (columns.size() < 1))
 		{
 			throw new IllegalArgumentException("Argument `columns` cannot be null or empty");
 		}
 
 		this.columns = columns;
+		this.caption = new Caption("caption", getCaptionModel());
+		add(caption);
 		body = newBodyContainer("body");
 		datagrid = new DataGridView<T>("rows", columns, dataProvider)
 		{
 			private static final long serialVersionUID = 1L;
 
+			@SuppressWarnings({ "rawtypes", "unchecked" })
 			@Override
-			protected Item newCellItem(String id, int index, IModel model)
+			protected Item newCellItem(final String id, final int index, final IModel model)
 			{
 				Item item = DataTable.this.newCellItem(id, index, model);
-				final IColumn<?> column = DataTable.this.columns[index];
+				final IColumn<T> column = DataTable.this.columns.get(index);
 				if (column instanceof IStyledColumn)
 				{
 					item.add(new DataTable.CssAttributeBehavior()
@@ -166,18 +171,29 @@ public class DataTable<T> extends Panel implements IPageable
 			}
 
 			@Override
-			protected Item<T> newRowItem(String id, int index, IModel<T> model)
+			protected Item<T> newRowItem(final String id, final int index, final IModel<T> model)
 			{
 				return DataTable.this.newRowItem(id, index, model);
 			}
 		};
-		datagrid.setRowsPerPage(rowsPerPage);
+		datagrid.setItemsPerPage(rowsPerPage);
 		body.add(datagrid);
 		add(body);
 		topToolbars = new ToolbarsContainer("topToolbars");
 		bottomToolbars = new ToolbarsContainer("bottomToolbars");
 		add(topToolbars);
 		add(bottomToolbars);
+	}
+
+	/**
+	 * Returns the model for table's caption. The caption wont be rendered if the model has empty
+	 * value.
+	 * 
+	 * @return the model for table's caption
+	 */
+	protected IModel<String> getCaptionModel()
+	{
+		return null;
 	}
 
 	/**
@@ -199,7 +215,7 @@ public class DataTable<T> extends Panel implements IPageable
 	 */
 	public final void setTableBodyCss(final String cssStyle)
 	{
-		body.add(new SimpleAttributeModifier("class", cssStyle));
+		body.add(AttributeModifier.replace("class", cssStyle));
 	}
 
 	/**
@@ -210,7 +226,7 @@ public class DataTable<T> extends Panel implements IPageable
 	 * 
 	 * @see AbstractToolbar
 	 */
-	public void addBottomToolbar(AbstractToolbar toolbar)
+	public void addBottomToolbar(final AbstractToolbar toolbar)
 	{
 		addToolbar(toolbar, bottomToolbars);
 	}
@@ -223,7 +239,7 @@ public class DataTable<T> extends Panel implements IPageable
 	 * 
 	 * @see AbstractToolbar
 	 */
-	public void addTopToolbar(AbstractToolbar toolbar)
+	public void addTopToolbar(final AbstractToolbar toolbar)
 	{
 		addToolbar(toolbar, topToolbars);
 	}
@@ -239,7 +255,7 @@ public class DataTable<T> extends Panel implements IPageable
 	/**
 	 * @return array of column objects this table displays
 	 */
-	public final IColumn<?>[] getColumns()
+	public final List<IColumn<T>> getColumns()
 	{
 		return columns;
 	}
@@ -271,15 +287,15 @@ public class DataTable<T> extends Panel implements IPageable
 	/**
 	 * @return number of rows per page
 	 */
-	public final int getRowsPerPage()
+	public final int getItemsPerPage()
 	{
-		return datagrid.getRowsPerPage();
+		return datagrid.getItemsPerPage();
 	}
 
 	/**
 	 * @see org.apache.wicket.markup.html.navigation.paging.IPageable#setCurrentPage(int)
 	 */
-	public final void setCurrentPage(int page)
+	public final void setCurrentPage(final int page)
 	{
 		datagrid.setCurrentPage(page);
 		onPageChanged();
@@ -296,7 +312,7 @@ public class DataTable<T> extends Panel implements IPageable
 	 *            item reuse strategy
 	 * @return this for chaining
 	 */
-	public final DataTable<T> setItemReuseStrategy(IItemReuseStrategy strategy)
+	public final DataTable<T> setItemReuseStrategy(final IItemReuseStrategy strategy)
 	{
 		datagrid.setItemReuseStrategy(strategy);
 		return this;
@@ -309,19 +325,27 @@ public class DataTable<T> extends Panel implements IPageable
 	 *            number of items to display per page
 	 * 
 	 */
-	public void setRowsPerPage(int items)
+	public void setItemsPerPage(final int items)
 	{
-		datagrid.setRowsPerPage(items);
+		datagrid.setItemsPerPage(items);
 	}
 
-	private void addToolbar(AbstractToolbar toolbar, RepeatingView container)
+	/**
+	 * @see org.apache.wicket.markup.html.navigation.paging.IPageableItems#getItemCount()
+	 */
+	public int getItemCount()
+	{
+		return datagrid.getItemCount();
+	}
+
+	private void addToolbar(final AbstractToolbar toolbar, final ToolbarsContainer container)
 	{
 		if (toolbar == null)
 		{
 			throw new IllegalArgumentException("argument [toolbar] cannot be null");
 		}
 
-		container.add(toolbar);
+		container.getRepeatingView().add(toolbar);
 	}
 
 	/**
@@ -358,7 +382,7 @@ public class DataTable<T> extends Panel implements IPageable
 	 * 
 	 * @return DataItem created DataItem
 	 */
-	protected Item<T> newRowItem(final String id, int index, final IModel<T> model)
+	protected Item<T> newRowItem(final String id, final int index, final IModel<T> model)
 	{
 		return new Item<T>(id, index, model);
 	}
@@ -370,12 +394,10 @@ public class DataTable<T> extends Panel implements IPageable
 	protected void onDetach()
 	{
 		super.onDetach();
-		if (columns != null)
+
+		for (IColumn<?> column : columns)
 		{
-			for (int i = 0; i < columns.length; i++)
-			{
-				columns[i].detach();
-			}
+			column.detach();
 		}
 	}
 
@@ -388,68 +410,97 @@ public class DataTable<T> extends Panel implements IPageable
 	}
 
 	/**
-	 * Acts as a repeater item with its container generated id. It essentially only forwards the
-	 * request to its (single) child component.
-	 * 
-	 * TODO 1.5 optimization: this can probably be removed and items can be added directly to the
-	 * toolbarcontainer
+	 * This class acts as a repeater that will contain the toolbar. It makes sure that the table row
+	 * group (e.g. thead) tags are only visible when they contain rows in accordance with the HTML
+	 * specification.
 	 * 
 	 * @author igor.vaynberg
 	 */
-	private static final class ToolbarContainer extends AbstractItem
+	private static class ToolbarsContainer extends WebMarkupContainer
 	{
 		private static final long serialVersionUID = 1L;
 
-		/**
-		 * Construct.
-		 * 
-		 * @param id
-		 */
-		private ToolbarContainer(String id)
-		{
-			super(id);
-		}
-
-		/** {@inheritDoc} */
-		@Override
-		public boolean isVisible()
-		{
-			return (iterator().next()).isVisible();
-		}
-
-		@Override
-		protected void onRender()
-		{
-			get(0).render();
-		}
-
-		/**
-		 * @see org.apache.wicket.MarkupContainer#getMarkup(org.apache.wicket.Component)
-		 */
-		@Override
-		public IMarkupFragment getMarkup(Component child)
-		{
-			return getMarkup();
-		}
-	}
-
-	/**
-	 * This class acts as a repeater that will contain the toolbar.
-	 * 
-	 * @author igor.vaynberg
-	 */
-	private static class ToolbarsContainer extends RepeatingView
-	{
-		private static final long serialVersionUID = 1L;
+		private final RepeatingView toolbars;
 
 		/**
 		 * Constructor
 		 * 
 		 * @param id
 		 */
-		private ToolbarsContainer(String id)
+		private ToolbarsContainer(final String id)
 		{
 			super(id);
+			toolbars = new RepeatingView("toolbars");
+			add(toolbars);
+		}
+
+		public RepeatingView getRepeatingView()
+		{
+			return toolbars;
+		}
+
+		@Override
+		public void onConfigure()
+		{
+			super.onConfigure();
+
+			toolbars.configure();
+
+			Boolean visible = toolbars.visitChildren(new IVisitor<Component, Boolean>()
+			{
+				public void component(Component object, IVisit<Boolean> visit)
+				{
+					object.configure();
+					if (object.isVisible())
+					{
+						visit.stop(Boolean.TRUE);
+					}
+					else
+					{
+						visit.dontGoDeeper();
+					}
+				}
+			});
+			if (visible == null)
+			{
+				visible = false;
+			}
+			setVisible(visible);
+		}
+	}
+
+	/**
+	 * A caption for the table. It renders itself only if {@link DataTable#getCaptionModel()} has
+	 * non-empty value.
+	 */
+	private static class Caption extends Label
+	{
+		/**
+		 * Construct.
+		 * 
+		 * @param id
+		 *            the component id
+		 * @param model
+		 *            the caption model
+		 */
+		public Caption(String id, IModel<String> model)
+		{
+			super(id, model);
+		}
+
+		@Override
+		protected void onConfigure()
+		{
+			setRenderBodyOnly(Strings.isEmpty(getDefaultModelObjectAsString()));
+
+			super.onConfigure();
+		}
+
+		@Override
+		protected IModel<?> initModel()
+		{
+			// don't try to find the model in the parent
+			return null;
 		}
 	}
 }

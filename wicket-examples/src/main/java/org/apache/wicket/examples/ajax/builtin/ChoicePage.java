@@ -22,7 +22,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
@@ -66,20 +65,16 @@ public class ChoicePage extends BasePage
 	 */
 	public ChoicePage()
 	{
-		modelsMap.put("AUDI", Arrays.asList(new String[] { "A4", "A6", "TT" }));
-		modelsMap.put("CADILLAC", Arrays.asList(new String[] { "CTS", "DTS", "ESCALADE", "SRX",
-				"DEVILLE" }));
-		modelsMap.put("FORD", Arrays.asList(new String[] { "CROWN", "ESCAPE", "EXPEDITION",
-				"EXPLORER", "F-150" }));
+		modelsMap.put("AUDI", Arrays.asList("A4", "A6", "TT"));
+		modelsMap.put("CADILLAC", Arrays.asList("CTS", "DTS", "ESCALADE", "SRX", "DEVILLE"));
+		modelsMap.put("FORD", Arrays.asList("CROWN", "ESCAPE", "EXPEDITION", "EXPLORER", "F-150"));
 
 		IModel<List<? extends String>> makeChoices = new AbstractReadOnlyModel<List<? extends String>>()
 		{
 			@Override
 			public List<String> getObject()
 			{
-				Set<String> keys = modelsMap.keySet();
-				List<String> list = new ArrayList<String>(keys);
-				return list;
+				return new ArrayList<String>(modelsMap.keySet());
 			}
 
 		};

@@ -469,7 +469,7 @@ public class Duration extends AbstractTimeValue
 	 * @param object
 	 *            The monitor to wait on
 	 */
-	public void wait(Object object)
+	public void wait(final Object object)
 	{
 		try
 		{
@@ -526,7 +526,7 @@ public class Duration extends AbstractTimeValue
 				return unitString(seconds(), "second", locale);
 			}
 
-			return getMilliseconds() + " milliseconds";
+			return unitString(seconds(), "millisecond", locale);
 		}
 		else
 		{

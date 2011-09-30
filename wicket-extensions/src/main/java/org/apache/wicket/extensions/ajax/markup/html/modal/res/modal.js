@@ -58,7 +58,7 @@ if (Wicket.Object.extend == null) {
  * The problem when dragging a div with an iframe is that when the mouse cursor
  * gets over an iframe, all mouse events are received by the iframe's document. (IE and FF)
  * 
- * This code can recursively traverse all iframes in document and temporatily forward
+ * This code can recursively traverse all iframes in document and temporarily forward
  * events from their documents to parent document. 
  */ 
 Wicket.Iframe = { 
@@ -101,7 +101,7 @@ Wicket.Iframe = {
 
 	/**
 	 * Forwards the events from iframe to the parent document (works recursively).
-	 * @param {Document} doc - document to which the events will be forwardeded   
+	 * @param {Document} doc - document to which the events will be forwarded   
 	 * @param {HTMLElement} iframe - source iframe 
 	 * @param {Array} revertList - list to which altered iframes will be added 
 	 */
@@ -208,7 +208,7 @@ Wicket.Window.create = function(settings) {
 	
 	// if it is an iframe window...
 	if (typeof(settings.src) != "undefined" && Wicket.Browser.isKHTML() == false) {
-		// attempt to get class crom parent
+		// attempt to get class from parent
 		try {		
 			win = window.parent.Wicket.Window;			
 		} catch (ignore) {		
@@ -244,7 +244,7 @@ Wicket.Window.get = function() {
 
 
 /**
- * Closes the current wicket open window. This method is supposed to 
+ * Closes the current open window. This method is supposed to 
  * be called from inside the window (therefore it checks window.parent).
  */
 Wicket.Window.close = function() {
@@ -352,6 +352,7 @@ Wicket.Window.prototype = {
 					 idBottom, idCaptionText, this.isIframe());								
 		
 		var element = document.createElement("div");
+		element.id = idWindow;
 		document.body.appendChild(element);		
 		Wicket.replaceOuterHtml(element, markup);
 				
@@ -397,7 +398,7 @@ Wicket.Window.prototype = {
 	},
 
 	/**
-	 * Creates the new uniqe id for window element.
+	 * Creates the new unique id for window element.
 	 */ 
 	newId: function() {
 		return "_wicket_window_" + Wicket.Window.idCounter++;
@@ -618,23 +619,27 @@ Wicket.Window.prototype = {
 		if (this.settings.title == null)
 			this.update = window.setInterval(this.updateTitle.bind(this), 100);
 		
+		// opera seems to have problem accessing contentWindow here
+		if (Wicket.Browser.isOpera()) {
+			this.content.onload = function() {
+				this.content.contentWindow.name = this.settings.iframeName;
+			}.bind(this);
+		} else {
+			this.content.contentWindow.name = this.settings.iframeName;
+		}
+		
 		try
 		{
-			this.content.contentWindow.location.replace(this.settings.src);
+			if(Wicket.Browser.isIELessThan9()){
+				this.content.contentWindow.location.replace(this.settings.ie8_src);
+			}else{
+				this.content.contentWindow.location.replace(this.settings.src);
+			}
 		}
 		catch(ignore)
 		{
 			this.content.src = this.settings.src;
 		}		
-	
-		// opera seems to have problem accessing contentWindow here
-		if (Wicket.Browser.isOpera()) {
-			this.content.onload = function() {
-				this.content.contentWindow.name = this.settings.iframeName;
-			}
-		} else {
-			this.content.contentWindow.name = this.settings.iframeName;
-		}
 	},
 	
 	/**
@@ -930,18 +935,29 @@ Wicket.Window.prototype = {
 	 */	
 	onMove: function(object, deltaX, deltaY) {
 		var w = this.window;
-		var x = parseInt(w.style.left, 10) + deltaX;
-		var y = parseInt(w.style.top, 10) + deltaY;
+		this.left_ = parseInt(w.style.left, 10) + deltaX;
+		this.top_ = parseInt(w.style.top, 10) + deltaY;
 		
-		if (x < 0)
-			x = 0;
-		if (y < 0)
-			y = 0;							
+		if (this.left_ < 0) {
+			this.left_ = 0;
+		}
 			
-		w.style.left = x + "px";
-		w.style.top = y + "px";
+		if (this.top_ < 0) {
+			this.top_ = 0;	
+		}							
+			
+		w.style.left = this.left_ + "px";
+		w.style.top = this.top_ + "px";
+		
+		this.moving();
 	},
 	
+	/**
+	 * Called when window is being moved
+	 */
+	moving: function() {
+	},
+
 	/**
 	 * Called when window is resizing.
 	 */
@@ -955,13 +971,13 @@ Wicket.Window.prototype = {
 		this.res = [0, 0];
 
 		if (this.width < this.settings.minWidth) {
-			this.left -= this.settings.minWidth - this.width;
+			this.left_ -= this.settings.minWidth - this.width;
 			this.res[0] = this.settings.minWidth - this.width;
 			this.width = this.settings.minWidth;
 		}
 		
 		if (this.height < this.settings.minHeight) {
-			this.top -= this.settings.minHeight - this.height;
+			this.top_ -= this.settings.minHeight - this.height;
 			this.res[1] = this.settings.minHeight - this.height;
 			this.height = this.settings.minHeight;
 		}
@@ -988,6 +1004,7 @@ Wicket.Window.prototype = {
 		w.style.width = this.width + "px";
 		f.style.height = this.height + "px";
 		
+		this.moving();
 		this.resizing();
 		
 		return this.res;
@@ -999,13 +1016,16 @@ Wicket.Window.prototype = {
 		
 		this.width = parseInt(w.style.width, 10) - deltaX;
 		this.height = parseInt(f.style.height, 10) + deltaY;
-		this. left = parseInt(w.style.left, 10) + deltaX;
+		this.left_ = parseInt(w.style.left, 10) + deltaX;
 		
 		this.clipSize(true);
 		
 		w.style.width = this.width + "px";
-		w.style.left = this.left + "px";
+		w.style.left = this.left_ + "px";
 		f.style.height = this.height  + "px";
+		
+		this.moving();
+		this.resizing();
 		
 		return this.res;
 	},	
@@ -1027,13 +1047,14 @@ Wicket.Window.prototype = {
 		var w = this.window;
 
 		this.width = parseInt(w.style.width, 10) - deltaX;
-		this.left = parseInt(w.style.left, 10) + deltaX;
+		this.left_ = parseInt(w.style.left, 10) + deltaX;
 		
 		this.clipSize(true);
 		
 		w.style.width = this.width + "px";
-		w.style.left = this.left + "px";
+		w.style.left = this.left_ + "px";
 		
+		this.moving();
 		this.resizing();
 		
 		return this.res;
@@ -1043,7 +1064,6 @@ Wicket.Window.prototype = {
 		var w = this.window;
 		
 		this.width = parseInt(w.style.width, 10) + deltaX;
-		
 
 		this.clipSize();
 											
@@ -1060,16 +1080,17 @@ Wicket.Window.prototype = {
 		
 		this.width = parseInt(w.style.width, 10) - deltaX;
 		this.height = parseInt(f.style.height, 10) - deltaY;
-		this.left = parseInt(w.style.left, 10) + deltaX;
-		this.top =  parseInt(w.style.top, 10) + deltaY;
+		this.left_ = parseInt(w.style.left, 10) + deltaX;
+		this.top_ =  parseInt(w.style.top, 10) + deltaY;
 		
 		this.clipSize(true, true);
 		
 		w.style.width = this.width + "px";
-		w.style.left = this.left + "px";
+		w.style.left = this.left_ + "px";
 		f.style.height = this.height  + "px";
-		w.style.top = this.top + "px";
+		w.style.top = this.top_ + "px";
 		
+		this.moving();
 		this.resizing();
 									
 		return this.res;
@@ -1081,14 +1102,15 @@ Wicket.Window.prototype = {
 		
 		this.width = parseInt(w.style.width, 10) + deltaX;
 		this.height = parseInt(f.style.height, 10) - deltaY;
-		this.top = parseInt(w.style.top, 10) + deltaY;
+		this.top_ = parseInt(w.style.top, 10) + deltaY;
 		
 		this.clipSize(false, true);
 		
 		w.style.width = this.width + "px";
 		f.style.height = this.height  + "px";
-		w.style.top = this.top + "px";
+		w.style.top = this.top_ + "px";
 		
+		this.moving();
 		this.resizing();
 						
 		return this.res;
@@ -1099,13 +1121,14 @@ Wicket.Window.prototype = {
 		var w = this.window;
 		
 		this.height = parseInt(f.style.height, 10) - deltaY;
-		this.top = parseInt(w.style.top, 10) + deltaY;
+		this.top_ = parseInt(w.style.top, 10) + deltaY;
 		
 		this.clipSize(false, true);
 		
 		f.style.height = this.height  + "px";
-		w.style.top = this.top + "px";
+		w.style.top = this.top_ + "px";
 		
+		this.moving();
 		this.resizing();
 						
 		return this.res;
@@ -1165,7 +1188,7 @@ Wicket.Window.getMarkup = function(idWindow, idClassElement, idCaption, idConten
 						"<div class=\"w_right\" id='"+idRight+"'>"+
 							"<div class=\"w_content_1\" onmousedown=\"if (Wicket.Browser.isSafari()) { event.ignore = true; }  else { Wicket.stopEvent(event); } \">"+																			
 								"<div class=\"w_caption\"  id=\""+idCaption+"\">"+
-									"<a class=\"w_close\" href=\"#\"></a>"+									
+									"<a class=\"w_close\" style=\"z-index:1\" href=\"#\"></a>"+									
 									"<h3 id=\""+idCaptionText+"\" class=\"w_captionText\"></h3>"+
 								"</div>"+
 							
@@ -1173,16 +1196,14 @@ Wicket.Window.getMarkup = function(idWindow, idClassElement, idCaption, idConten
 								"<div class=\"w_content_3\">"+
 		 							"<div class=\"w_content\">";
 				if (isFrame) {
-					if (Wicket.Browser.isIELessThan7() || !Wicket.Browser.isIE()) {												
-						s+= "<iframe src='\/\/:' frameborder=\"0\" id='"+idContent+"' allowtransparency=\"false\" style=\"height: 200px\" class=\"wicket_modal\">"+
-										"</iframe>";
-					} else {
-						s+= "<iframe src='about:blank' frameborder=\"0\" id='"+idContent+"' allowtransparency=\"false\" style=\"height: 200px\" class=\"wicket_modal\">"+
-						"</iframe>";
+					s+= "<iframe";
+					if (Wicket.Browser.isIELessThan7()) {
+						s+= " src=\"about:blank\""
 					}
+					s+= " frameborder=\"0\" id=\""+idContent+"\" allowtransparency=\"false\" style=\"height: 200px\" class=\"wicket_modal\"></iframe>";
 				} else {
 					s+=
-										"<div id='"+idContent+"'></div>";
+										"<div id='"+idContent+"' class='w_content_container'></div>";
 				}
 					s+= 						
 									"</div>"+
@@ -1242,11 +1263,11 @@ Wicket.Window.Mask.prototype = {
 	 */
 	show: function() {				
 		
-		// if the mask is not alrady shown...
+		// if the mask is not already shown...
 		if (typeof(Wicket.Window.Mask.element) == "undefined" ||
 			Wicket.Window.Mask.element == null) {		
 		
-			// crate the mask element and add  it to document
+			// create the mask element and add it to the document
 			var e = document.createElement("div");
 			document.body.appendChild(e);							
 			
@@ -1572,7 +1593,7 @@ Wicket.Window.Mask.prototype = {
  * Returns the height of visible area.
  */
 Wicket.Window.getViewportHeight = function() {
-	if (window.innerHeight != window.undefined) 
+	if (typeof(window.innerHeight) != "undefined") 
 		return window.innerHeight;
 	
 	if (document.compatMode == 'CSS1Compat') 
@@ -1581,14 +1602,14 @@ Wicket.Window.getViewportHeight = function() {
 	if (document.body) 
 		return document.body.clientHeight;
 		 
-	return window.undefined; 
+	return undefined; 
 }
 
 /**
  * Returns the width of visible area.
  */
 Wicket.Window.getViewportWidth =  function() {
-	if (window.innerWidth != window.undefined) 
+	if (typeof(window.innerWidth) != "undefined") 
 		return window.innerWidth;
 		 
 	if (document.compatMode == 'CSS1Compat') 
@@ -1597,7 +1618,7 @@ Wicket.Window.getViewportWidth =  function() {
 	if (document.body) 
 		return document.body.clientWidth;
 		 
-	return window.undefined;
+	return undefined;
 }
 
 /**

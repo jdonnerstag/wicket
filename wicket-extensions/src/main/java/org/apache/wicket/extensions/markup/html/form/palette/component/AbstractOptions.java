@@ -24,8 +24,8 @@ import org.apache.wicket.markup.ComponentTag;
 import org.apache.wicket.markup.MarkupStream;
 import org.apache.wicket.markup.html.form.FormComponent;
 import org.apache.wicket.markup.html.form.IChoiceRenderer;
-import org.apache.wicket.util.string.AppendingStringBuffer;
-import org.apache.wicket.util.string.JavascriptUtils;
+import org.apache.wicket.util.convert.IConverter;
+import org.apache.wicket.util.string.JavaScriptUtils;
 import org.apache.wicket.util.string.Strings;
 import org.apache.wicket.util.value.IValueMap;
 
@@ -54,7 +54,7 @@ public abstract class AbstractOptions<T> extends FormComponent<T>
 	 * @param palette
 	 *            parent palette
 	 */
-	public AbstractOptions(String id, Palette<T> palette)
+	public AbstractOptions(final String id, final Palette<T> palette)
 	{
 		super(id);
 		this.palette = palette;
@@ -64,21 +64,18 @@ public abstract class AbstractOptions<T> extends FormComponent<T>
 	protected abstract Iterator<T> getOptionsIterator();
 
 	/**
-	 * 
-	 * @see org.apache.wicket.MarkupContainer#onComponentTagBody(org.apache.wicket.markup.MarkupStream,
-	 *      org.apache.wicket.markup.ComponentTag)
+	 * {@inheritDoc}
 	 */
 	@Override
-	protected void onComponentTagBody(MarkupStream markupStream, ComponentTag openTag)
+	public void onComponentTagBody(final MarkupStream markupStream, final ComponentTag openTag)
 	{
-		final AppendingStringBuffer buffer = new AppendingStringBuffer(128);
+		StringBuilder buffer = new StringBuilder(128);
 		Iterator<T> options = getOptionsIterator();
 		IChoiceRenderer<T> renderer = getPalette().getChoiceRenderer();
 
 		while (options.hasNext())
 		{
 			final T choice = options.next();
-
 
 			final CharSequence id;
 			{
@@ -99,8 +96,9 @@ public abstract class AbstractOptions<T> extends FormComponent<T>
 				Object displayValue = renderer.getDisplayValue(choice);
 				Class<?> displayClass = displayValue == null ? null : displayValue.getClass();
 
-				String displayString = getConverter(displayClass).convertToString(displayValue,
-					getLocale());
+				@SuppressWarnings("unchecked")
+				IConverter<Object> converter = (IConverter<Object>)getConverter(displayClass);
+				String displayString = converter.convertToString(displayValue, getLocale());
 				displayString = getLocalizer().getString(displayString, this, displayString);
 
 				if (getEscapeModelStrings())
@@ -118,14 +116,17 @@ public abstract class AbstractOptions<T> extends FormComponent<T>
 			Map<String, String> additionalAttributesMap = getAdditionalAttributes(choice);
 			if (additionalAttributesMap != null)
 			{
-				for (String s : additionalAttributesMap.keySet())
+				for (Map.Entry<String, String> entry : additionalAttributesMap.entrySet())
 				{
-					buffer.append(" " + s + "=\"" + additionalAttributesMap.get(s) + "\"");
+					buffer.append(' ')
+						.append(entry.getKey())
+						.append("=\"")
+						.append(entry.getValue())
+						.append("\"");
 				}
 			}
 
 			buffer.append(">").append(value).append("</option>");
-
 		}
 
 		buffer.append("\n");
@@ -137,16 +138,16 @@ public abstract class AbstractOptions<T> extends FormComponent<T>
 	 * @param choice
 	 * @return map of attribute/value pairs (String/String)
 	 */
-	protected Map<String, String> getAdditionalAttributes(T choice)
+	protected Map<String, String> getAdditionalAttributes(final T choice)
 	{
 		return null;
 	}
 
 	/**
-	 * @see org.apache.wicket.markup.html.form.FormComponent#onComponentTag(org.apache.wicket.markup.ComponentTag)
+	 * {@inheritDoc}
 	 */
 	@Override
-	protected void onComponentTag(ComponentTag tag)
+	protected void onComponentTag(final ComponentTag tag)
 	{
 		checkComponentTag(tag, "select");
 
@@ -165,19 +166,19 @@ public abstract class AbstractOptions<T> extends FormComponent<T>
 	}
 
 	/**
-	* A piece of javascript to avoid serializing the options during AJAX
-	* serialization.
-	*/
-	protected void avoidAjaxSerialization() {
+	 * A piece of javascript to avoid serializing the options during AJAX serialization.
+	 */
+	protected void avoidAjaxSerialization()
+	{
 		getResponse().write(
-			JavascriptUtils.SCRIPT_OPEN_TAG +
+			JavaScriptUtils.SCRIPT_OPEN_TAG +
 				"if (typeof(Wicket) != \"undefined\" && typeof(Wicket.Form) != \"undefined\")" +
 				"    Wicket.Form.excludeFromAjaxSerialization." + getMarkupId() + "='true';" +
-				JavascriptUtils.SCRIPT_CLOSE_TAG);
+				JavaScriptUtils.SCRIPT_CLOSE_TAG);
 	}
 
 	/**
-	 * @see org.apache.wicket.markup.html.form.FormComponent#updateModel()
+	 * {@inheritDoc}
 	 */
 	@Override
 	public void updateModel()

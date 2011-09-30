@@ -105,6 +105,11 @@ public final class Bytes extends LongValue
 	private Bytes(final long bytes)
 	{
 		super(bytes);
+
+		if (bytes < 0)
+		{
+			throw new IllegalArgumentException("'bytes' cannot be negative.");
+		}
 	}
 
 	/**
@@ -379,34 +384,27 @@ public final class Bytes extends LongValue
 	 */
 	public String toString(final Locale locale)
 	{
-		if (value >= 0)
+		if (terabytes() >= 1.0)
 		{
-			if (terabytes() >= 1.0)
-			{
-				return unitString(terabytes(), "T", locale);
-			}
-
-			if (gigabytes() >= 1.0)
-			{
-				return unitString(gigabytes(), "G", locale);
-			}
-
-			if (megabytes() >= 1.0)
-			{
-				return unitString(megabytes(), "M", locale);
-			}
-
-			if (kilobytes() >= 1.0)
-			{
-				return unitString(kilobytes(), "K", locale);
-			}
-
-			return Long.toString(value) + " bytes";
+			return unitString(terabytes(), "T", locale);
 		}
-		else
+
+		if (gigabytes() >= 1.0)
 		{
-			return "N/A";
+			return unitString(gigabytes(), "G", locale);
 		}
+
+		if (megabytes() >= 1.0)
+		{
+			return unitString(megabytes(), "M", locale);
+		}
+
+		if (kilobytes() >= 1.0)
+		{
+			return unitString(kilobytes(), "K", locale);
+		}
+
+		return Long.toString(value) + " bytes";
 	}
 
 	/**
@@ -423,5 +421,22 @@ public final class Bytes extends LongValue
 	private String unitString(final double value, final String units, final Locale locale)
 	{
 		return StringValue.valueOf(value, locale) + units;
+	}
+
+	/**
+	 * Compares this <code>Bytes</code> with another <code>Bytes</code> instance.
+	 * 
+	 * @param other
+	 *            the <code>Bytes</code> instance to compare with
+	 * @return <code>true</code> if this <code>Bytes</code> is greater than the given
+	 *         <code>Bytes</code> instance
+	 */
+	public boolean greaterThan(final Bytes other)
+	{
+		if ((this == other) || (other == null))
+		{
+			return false;
+		}
+		return bytes() > other.bytes();
 	}
 }

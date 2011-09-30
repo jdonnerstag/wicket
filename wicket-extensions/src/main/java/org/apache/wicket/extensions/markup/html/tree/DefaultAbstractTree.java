@@ -25,22 +25,22 @@ import org.apache.wicket.MarkupContainer;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.markup.html.AjaxFallbackLink;
 import org.apache.wicket.ajax.markup.html.AjaxLink;
+import org.apache.wicket.ajax.markup.html.IAjaxLink;
 import org.apache.wicket.markup.ComponentTag;
 import org.apache.wicket.markup.MarkupStream;
 import org.apache.wicket.markup.html.IHeaderResponse;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.link.Link;
 import org.apache.wicket.markup.html.tree.AbstractTree;
+import org.apache.wicket.markup.html.tree.LinkType;
 import org.apache.wicket.markup.html.tree.WicketTreeModel;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.request.IRequestHandler;
 import org.apache.wicket.request.Response;
 import org.apache.wicket.request.cycle.RequestCycle;
 import org.apache.wicket.request.handler.resource.ResourceReferenceRequestHandler;
-import org.apache.wicket.request.resource.CompressedResourceReference;
 import org.apache.wicket.request.resource.PackageResourceReference;
 import org.apache.wicket.request.resource.ResourceReference;
-import org.apache.wicket.util.lang.EnumeratedType;
 
 /**
  * Tree class that contains convenient functions related to presentation of the tree, which includes
@@ -61,67 +61,18 @@ public abstract class DefaultAbstractTree extends AbstractTree
 	private static final long serialVersionUID = 1L;
 
 	/**
-	 * The type of junction links and node selection links.
-	 * <dl>
-	 * <dt>Regular link</dt>
-	 * <dd>Non-ajax link, always refreshes the whole page. Works with javascript disabled.</dd>
-	 * <dt>Ajax link</dt>
-	 * <dd>Links that supports partial updates. Doesn't work with javascript disabled</dd>
-	 * <dt>Ajax fallback link</dt>
-	 * <dd>Link that supports partial updates. With javascript disabled acts like regular link. The
-	 * drawback is that generated url (thus the entire html) is larger then using the other two</dd>
-	 * </dl>
-	 */
-	public static final class LinkType extends EnumeratedType
-	{
-
-		/** partial updates with no fallback. */
-		public static final LinkType AJAX = new LinkType("AJAX");
-
-		/**
-		 * partial updates that falls back to a regular link in case the client does not support
-		 * javascript.
-		 */
-		public static final LinkType AJAX_FALLBACK = new LinkType("AJAX_FALLBACK");
-
-		/**
-		 * non-ajax version that always re-renders the whole page.
-		 */
-		public static final LinkType REGULAR = new LinkType("REGULAR");
-
-		private static final long serialVersionUID = 1L;
-
-		/**
-		 * Construct.
-		 * 
-		 * @param name
-		 */
-		public LinkType(String name)
-		{
-			super(name);
-		}
-	}
-
-	/**
 	 * Helper class for calling an action from a link.
 	 * 
 	 * @author Matej Knopp
 	 */
-	protected interface ILinkCallback extends IClusterable
+	protected interface ILinkCallback extends IAjaxLink, IClusterable
 	{
-		/**
-		 * Called when the click is executed.
-		 * 
-		 * @param target
-		 *            The ajax request target
-		 */
-		void onClick(AjaxRequestTarget target);
 	}
 
 	/**
 	 * Reference to the css file.
 	 */
-	private static final ResourceReference CSS = new CompressedResourceReference(
+	private static final ResourceReference CSS = new PackageResourceReference(
 		DefaultAbstractTree.class, "res/tree.css");
 
 	/** Reference to the icon of closed tree folder */
@@ -145,7 +96,7 @@ public abstract class DefaultAbstractTree extends AbstractTree
 	 * @param id
 	 *            The component id
 	 */
-	public DefaultAbstractTree(String id)
+	public DefaultAbstractTree(final String id)
 	{
 		super(id);
 	}
@@ -158,7 +109,7 @@ public abstract class DefaultAbstractTree extends AbstractTree
 	 * @param model
 	 *            The tree model
 	 */
-	public DefaultAbstractTree(String id, IModel<? extends TreeModel> model)
+	public DefaultAbstractTree(final String id, final IModel<? extends TreeModel> model)
 	{
 		super(id, model);
 	}
@@ -171,7 +122,7 @@ public abstract class DefaultAbstractTree extends AbstractTree
 	 * @param model
 	 *            The tree model
 	 */
-	public DefaultAbstractTree(String id, TreeModel model)
+	public DefaultAbstractTree(final String id, final TreeModel model)
 	{
 		super(id, new WicketTreeModel());
 		setModelObject(model);
@@ -194,7 +145,7 @@ public abstract class DefaultAbstractTree extends AbstractTree
 	 * @param linkType
 	 *            type of links
 	 */
-	public void setLinkType(LinkType linkType)
+	public void setLinkType(final LinkType linkType)
 	{
 		if (this.linkType != linkType)
 		{
@@ -250,7 +201,7 @@ public abstract class DefaultAbstractTree extends AbstractTree
 	 *            The node
 	 * @return The package resource reference
 	 */
-	protected ResourceReference getNodeIcon(TreeNode node)
+	protected ResourceReference getNodeIcon(final TreeNode node)
 	{
 		if (node.isLeaf() == true)
 		{
@@ -284,19 +235,19 @@ public abstract class DefaultAbstractTree extends AbstractTree
 	 *            The current level
 	 * @return The indentation component
 	 */
-	protected Component newIndentation(MarkupContainer parent, String id, final TreeNode node,
-		final int level)
+	protected Component newIndentation(final MarkupContainer parent, final String id,
+		final TreeNode node, final int level)
 	{
 		WebMarkupContainer result = new WebMarkupContainer(id)
 		{
 			private static final long serialVersionUID = 1L;
 
 			/**
-			 * @see org.apache.wicket.MarkupContainer#onComponentTagBody(org.apache.wicket.markup.MarkupStream,
-			 *      org.apache.wicket.markup.ComponentTag)
+			 * {@inheritDoc}
 			 */
 			@Override
-			protected void onComponentTagBody(MarkupStream markupStream, ComponentTag openTag)
+			public void onComponentTagBody(final MarkupStream markupStream,
+				final ComponentTag openTag)
 			{
 				Response response = RequestCycle.get().getResponse();
 				TreeNode parent = node.getParent();
@@ -339,7 +290,7 @@ public abstract class DefaultAbstractTree extends AbstractTree
 	 *            The tree node
 	 * @return The component that represents a junction
 	 */
-	protected MarkupContainer newJunctionImage(MarkupContainer parent, final String id,
+	protected MarkupContainer newJunctionImage(final MarkupContainer parent, final String id,
 		final TreeNode node)
 	{
 		return (MarkupContainer)new WebMarkupContainer(id)
@@ -347,10 +298,10 @@ public abstract class DefaultAbstractTree extends AbstractTree
 			private static final long serialVersionUID = 1L;
 
 			/**
-			 * @see org.apache.wicket.Component#onComponentTag(org.apache.wicket.markup.ComponentTag)
+			 * {@inheritDoc}
 			 */
 			@Override
-			protected void onComponentTag(ComponentTag tag)
+			protected void onComponentTag(final ComponentTag tag)
 			{
 				super.onComponentTag(tag);
 
@@ -391,7 +342,7 @@ public abstract class DefaultAbstractTree extends AbstractTree
 	 *            tree node for which the link should be created.
 	 * @return The link component
 	 */
-	protected Component newJunctionLink(MarkupContainer parent, final String id,
+	protected Component newJunctionLink(final MarkupContainer parent, final String id,
 		final String imageId, final TreeNode node)
 	{
 		final MarkupContainer junctionLink;
@@ -402,7 +353,7 @@ public abstract class DefaultAbstractTree extends AbstractTree
 			{
 				private static final long serialVersionUID = 1L;
 
-				public void onClick(AjaxRequestTarget target)
+				public void onClick(final AjaxRequestTarget target)
 				{
 					if (isNodeExpanded(node))
 					{
@@ -413,7 +364,10 @@ public abstract class DefaultAbstractTree extends AbstractTree
 						getTreeState().expandNode(node);
 					}
 					onJunctionLinkClicked(target, node);
-					updateTree(target);
+					if (target != null)
+					{
+						updateTree(target);
+					}
 				}
 			});
 		}
@@ -424,17 +378,15 @@ public abstract class DefaultAbstractTree extends AbstractTree
 				private static final long serialVersionUID = 1L;
 
 				/**
-				 * @see org.apache.wicket.Component#onComponentTag(org.apache.wicket.markup.ComponentTag
-				 *      )
+				 * {@inheritDoc}
 				 */
 				@Override
-				protected void onComponentTag(ComponentTag tag)
+				protected void onComponentTag(final ComponentTag tag)
 				{
 					super.onComponentTag(tag);
 					tag.put("onclick", "return false");
 				}
 			};
-
 		}
 
 		if (imageId != null)
@@ -457,7 +409,7 @@ public abstract class DefaultAbstractTree extends AbstractTree
 	 *            The link call back
 	 * @return The link component
 	 */
-	protected MarkupContainer newLink(MarkupContainer parent, String id,
+	protected MarkupContainer newLink(final MarkupContainer parent, final String id,
 		final ILinkCallback callback)
 	{
 		if (getLinkType() == LinkType.REGULAR)
@@ -467,7 +419,7 @@ public abstract class DefaultAbstractTree extends AbstractTree
 				private static final long serialVersionUID = 1L;
 
 				/**
-				 * @see org.apache.wicket.markup.html.link.Link#onClick()
+				 * {@inheritDoc}
 				 */
 				@Override
 				public void onClick()
@@ -483,10 +435,10 @@ public abstract class DefaultAbstractTree extends AbstractTree
 				private static final long serialVersionUID = 1L;
 
 				/**
-				 * @see org.apache.wicket.ajax.markup.html.AjaxLink#onClick(org.apache.wicket.ajax.AjaxRequestTarget)
+				 * {@inheritDoc}
 				 */
 				@Override
-				public void onClick(AjaxRequestTarget target)
+				public void onClick(final AjaxRequestTarget target)
 				{
 					callback.onClick(target);
 				}
@@ -499,10 +451,10 @@ public abstract class DefaultAbstractTree extends AbstractTree
 				private static final long serialVersionUID = 1L;
 
 				/**
-				 * @see org.apache.wicket.ajax.markup.html.AjaxFallbackLink#onClick(org.apache.wicket.ajax.AjaxRequestTarget)
+				 * {@inheritDoc}
 				 */
 				@Override
-				public void onClick(AjaxRequestTarget target)
+				public void onClick(final AjaxRequestTarget target)
 				{
 					callback.onClick(target);
 				}
@@ -522,22 +474,25 @@ public abstract class DefaultAbstractTree extends AbstractTree
 	 *            The tree node
 	 * @return The web component that represents the icon of the current node
 	 */
-	protected Component newNodeIcon(MarkupContainer parent, String id, final TreeNode node)
+	protected Component newNodeIcon(final MarkupContainer parent, final String id,
+		final TreeNode node)
 	{
 		return new WebMarkupContainer(id)
 		{
 			private static final long serialVersionUID = 1L;
 
+			/**
+			 * {@inheritDoc}
+			 */
 			@Override
-			protected void onComponentTag(ComponentTag tag)
+			protected void onComponentTag(final ComponentTag tag)
 			{
 				super.onComponentTag(tag);
 				IRequestHandler handler = new ResourceReferenceRequestHandler(getNodeIcon(node));
-				tag.put("style",
-					"background-image: url('" + RequestCycle.get().urlFor(handler) + "')");
+				tag.put("style", "background-image: url('" + RequestCycle.get().urlFor(handler) +
+					"')");
 			}
 		};
-
 	}
 
 	/**
@@ -551,17 +506,22 @@ public abstract class DefaultAbstractTree extends AbstractTree
 	 *            The parent node
 	 * @return The component that represents the link
 	 */
-	protected MarkupContainer newNodeLink(MarkupContainer parent, String id, final TreeNode node)
+	protected MarkupContainer newNodeLink(final MarkupContainer parent, final String id,
+		final TreeNode node)
 	{
 		return newLink(parent, id, new ILinkCallback()
 		{
 			private static final long serialVersionUID = 1L;
 
-			public void onClick(AjaxRequestTarget target)
+			public void onClick(final AjaxRequestTarget target)
 			{
 				getTreeState().selectNode(node, !getTreeState().isNodeSelected(node));
 				onNodeLinkClicked(target, node);
-				updateTree(target);
+
+				if (target != null)
+				{
+					updateTree(target);
+				}
 			}
 		});
 	}
@@ -572,11 +532,10 @@ public abstract class DefaultAbstractTree extends AbstractTree
 	 * 
 	 * @param target
 	 *            Request target - may be null on non-ajax call
-	 * 
 	 * @param node
 	 *            Node for which this callback is relevant
 	 */
-	protected void onJunctionLinkClicked(AjaxRequestTarget target, TreeNode node)
+	protected void onJunctionLinkClicked(final AjaxRequestTarget target, final TreeNode node)
 	{
 	}
 
@@ -585,11 +544,10 @@ public abstract class DefaultAbstractTree extends AbstractTree
 	 * 
 	 * @param target
 	 *            Request target - may be null on non-ajax call
-	 * 
 	 * @param node
 	 *            Node for which this this callback is fired.
 	 */
-	protected void onNodeLinkClicked(AjaxRequestTarget target, TreeNode node)
+	protected void onNodeLinkClicked(final AjaxRequestTarget target, final TreeNode node)
 	{
 	}
 
@@ -600,7 +558,7 @@ public abstract class DefaultAbstractTree extends AbstractTree
 	 *            The node
 	 * @return whether the provided node is the last child
 	 */
-	private boolean isNodeLast(TreeNode node)
+	private boolean isNodeLast(final TreeNode node)
 	{
 		TreeNode parent = node.getParent();
 		if (parent == null)
@@ -613,8 +571,11 @@ public abstract class DefaultAbstractTree extends AbstractTree
 		}
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
-	public void renderHead(IHeaderResponse response)
+	public void renderHead(final IHeaderResponse response)
 	{
 		super.renderHead(response);
 		ResourceReference css = getCSS();

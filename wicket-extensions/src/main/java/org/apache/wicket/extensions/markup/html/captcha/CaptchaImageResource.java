@@ -63,7 +63,8 @@ public final class CaptchaImageResource extends DynamicImageResource
 		private final double shearX;
 		private final double shearY;
 
-		CharAttributes(char c, String name, double rotation, int rise, double shearX, double shearY)
+		CharAttributes(final char c, final String name, final double rotation, final int rise,
+			final double shearX, final double shearY)
 		{
 			this.c = c;
 			this.name = name;
@@ -106,38 +107,32 @@ public final class CaptchaImageResource extends DynamicImageResource
 
 	private static final long serialVersionUID = 1L;
 
-	private static int randomInt(int min, int max)
+	private static int randomInt(final int min, final int max)
 	{
 		return (int)(Math.random() * (max - min) + min);
 	}
 
-	private static String randomString(int min, int max)
+	private static String randomString(final int min, final int max)
 	{
 		int num = randomInt(min, max);
 		byte b[] = new byte[num];
 		for (int i = 0; i < num; i++)
+		{
 			b[i] = (byte)randomInt('a', 'z');
+		}
 		return new String(b);
 	}
 
 	private final IModel<String> challengeId;
-	private Integer challengeIdhashCode;
-	private List<CharAttributes> charAttsList;
 
-	private final List<String> fontNames = Arrays.asList(new String[] { "Helvetica", "Arial",
-			"Courier" });
+	private final List<String> fontNames = Arrays.asList("Helvetica", "Arial", "Courier");
 	private final int fontSize;
 	private final int fontStyle;
-
-	private int height = 0;
 
 	/** Transient image data so that image only needs to be generated once per VM */
 	private transient SoftReference<byte[]> imageData;
 
 	private final int margin;
-
-	private int width = 0;
-
 
 	/**
 	 * Construct.
@@ -153,7 +148,7 @@ public final class CaptchaImageResource extends DynamicImageResource
 	 * @param challengeId
 	 *            The id of the challenge
 	 */
-	public CaptchaImageResource(String challengeId)
+	public CaptchaImageResource(final String challengeId)
 	{
 		this(new Model<String>(challengeId));
 	}
@@ -165,7 +160,7 @@ public final class CaptchaImageResource extends DynamicImageResource
 	 * @param challengeId
 	 *            The id of the challenge
 	 */
-	public CaptchaImageResource(IModel<String> challengeId)
+	public CaptchaImageResource(final IModel<String> challengeId)
 	{
 		this(challengeId, 48, 30);
 	}
@@ -180,7 +175,8 @@ public final class CaptchaImageResource extends DynamicImageResource
 	 * @param margin
 	 *            The image's margin
 	 */
-	public CaptchaImageResource(IModel<String> challengeId, int fontSize, int margin)
+	public CaptchaImageResource(final IModel<String> challengeId, final int fontSize,
+		final int margin)
 	{
 		this.challengeId = challengeId;
 		fontStyle = 1;
@@ -199,7 +195,7 @@ public final class CaptchaImageResource extends DynamicImageResource
 	 * @param margin
 	 *            The image's margin
 	 */
-	public CaptchaImageResource(String challengeId, int fontSize, int margin)
+	public CaptchaImageResource(final String challengeId, final int fontSize, final int margin)
 	{
 		this(new Model<String>(challengeId), fontSize, margin);
 	}
@@ -226,25 +222,18 @@ public final class CaptchaImageResource extends DynamicImageResource
 
 	/**
 	 * Causes the image to be redrawn the next time its requested.
-	 * 
-	 * @see org.apache.wicket.Resource#invalidate()
 	 */
 	public final void invalidate()
 	{
-		challengeIdhashCode = null;
 		imageData = null;
 	}
 
-	/**
-	 * @see org.apache.wicket.markup.html.image.resource.DynamicImageResource#getImageData()
-	 */
 	@Override
-	protected final byte[] getImageData(Attributes attributes)
+	protected final byte[] getImageData(final Attributes attributes)
 	{
 		// get image data is always called in sync block
 		byte[] data = null;
-		if (imageData != null && challengeIdhashCode != null &&
-			challengeIdhashCode.equals(challengeId.getObject().hashCode()))
+		if (imageData != null)
 		{
 			data = imageData.get();
 		}
@@ -257,7 +246,7 @@ public final class CaptchaImageResource extends DynamicImageResource
 		return data;
 	}
 
-	private Font getFont(String fontName)
+	private Font getFont(final String fontName)
 	{
 		return new Font(fontName, fontStyle, fontSize);
 	}
@@ -269,14 +258,15 @@ public final class CaptchaImageResource extends DynamicImageResource
 	 */
 	private final byte[] render()
 	{
-		width = margin * 2;
-		height = margin * 2;
+		int width = margin * 2;
+		int height = margin * 2;
 		char[] chars = challengeId.getObject().toCharArray();
-		charAttsList = new ArrayList<CharAttributes>();
+		List<CharAttributes> charAttsList = new ArrayList<CharAttributes>();
 		TextLayout text;
 		AffineTransform textAt;
 		Shape shape;
-		for (int i = 0; i < chars.length; i++)
+
+		for (char ch : chars)
 		{
 			String fontName = fontNames.get(randomInt(0, fontNames.size()));
 			double rotation = Math.toRadians(randomInt(-35, 35));
@@ -284,11 +274,10 @@ public final class CaptchaImageResource extends DynamicImageResource
 			Random ran = new Random();
 			double shearX = ran.nextDouble() * 0.2;
 			double shearY = ran.nextDouble() * 0.2;
-			CharAttributes cf = new CharAttributes(chars[i], fontName, rotation, rise, shearX,
-				shearY);
+			CharAttributes cf = new CharAttributes(ch, fontName, rotation, rise, shearX, shearY);
 			charAttsList.add(cf);
-			text = new TextLayout(chars[i] + "", getFont(fontName), new FontRenderContext(null,
-				false, false));
+			text = new TextLayout(ch + "", getFont(fontName), new FontRenderContext(null, false,
+				false));
 			textAt = new AffineTransform();
 			textAt.rotate(rotation);
 			textAt.shear(shearX, shearY);
@@ -299,62 +288,59 @@ public final class CaptchaImageResource extends DynamicImageResource
 				height = (int)shape.getBounds2D().getHeight() + rise;
 			}
 		}
-		while (true)
+
+		final BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+		Graphics2D gfx = (Graphics2D)image.getGraphics();
+		gfx.setBackground(Color.WHITE);
+		int curWidth = margin;
+		for (CharAttributes cf : charAttsList)
 		{
-			final BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-			Graphics2D gfx = (Graphics2D)image.getGraphics();
-			gfx.setBackground(Color.WHITE);
-			int curWidth = margin;
-			for (int i = 0; i < charAttsList.size(); i++)
-			{
-				CharAttributes cf = charAttsList.get(i);
-				text = new TextLayout(cf.getChar() + "", getFont(cf.getName()),
-					gfx.getFontRenderContext());
-				textAt = new AffineTransform();
-				textAt.translate(curWidth, height - cf.getRise());
-				textAt.rotate(cf.getRotation());
-				textAt.shear(cf.getShearX(), cf.getShearY());
-				shape = text.getOutline(textAt);
-				curWidth += shape.getBounds().getWidth();
-				gfx.setXORMode(Color.BLACK);
-				gfx.fill(shape);
-			}
-
-			// XOR circle
-			int dx = randomInt(width, 2 * width);
-			int dy = randomInt(width, 2 * height);
-			int x = randomInt(0, width / 2);
-			int y = randomInt(0, height / 2);
-
+			text = new TextLayout(cf.getChar() + "", getFont(cf.getName()),
+				gfx.getFontRenderContext());
+			textAt = new AffineTransform();
+			textAt.translate(curWidth, height - cf.getRise());
+			textAt.rotate(cf.getRotation());
+			textAt.shear(cf.getShearX(), cf.getShearY());
+			shape = text.getOutline(textAt);
+			curWidth += shape.getBounds().getWidth();
 			gfx.setXORMode(Color.BLACK);
-			gfx.setStroke(new BasicStroke(randomInt(fontSize / 8, fontSize / 2)));
-			gfx.drawOval(x, y, dx, dy);
-
-			WritableRaster rstr = image.getRaster();
-			int[] vColor = new int[3];
-			int[] oldColor = new int[3];
-			Random vRandom = new Random(System.currentTimeMillis());
-
-			// noise
-			for (x = 0; x < width; x++)
-			{
-				for (y = 0; y < height; y++)
-				{
-					rstr.getPixel(x, y, oldColor);
-
-					// hard noise
-					vColor[0] = 0 + (int)(Math.floor(vRandom.nextFloat() * 1.03) * 255);
-					// soft noise
-					vColor[0] = vColor[0] ^ (170 + (int)(vRandom.nextFloat() * 80));
-					// xor to image
-					vColor[0] = vColor[0] ^ oldColor[0];
-					vColor[1] = vColor[0];
-					vColor[2] = vColor[0];
-
-					rstr.setPixel(x, y, vColor);
-				}
-			}
-			return toImageData(image);
+			gfx.fill(shape);
 		}
+
+		// XOR circle
+		int dx = randomInt(width, 2 * width);
+		int dy = randomInt(width, 2 * height);
+		int x = randomInt(0, width / 2);
+		int y = randomInt(0, height / 2);
+
+		gfx.setXORMode(Color.BLACK);
+		gfx.setStroke(new BasicStroke(randomInt(fontSize / 8, fontSize / 2)));
+		gfx.drawOval(x, y, dx, dy);
+
+		WritableRaster rstr = image.getRaster();
+		int[] vColor = new int[3];
+		int[] oldColor = new int[3];
+		Random vRandom = new Random(System.currentTimeMillis());
+
+		// noise
+		for (x = 0; x < width; x++)
+		{
+			for (y = 0; y < height; y++)
+			{
+				rstr.getPixel(x, y, oldColor);
+
+				// hard noise
+				vColor[0] = (int)(Math.floor(vRandom.nextFloat() * 1.03) * 255);
+				// soft noise
+				vColor[0] = vColor[0] ^ (170 + (int)(vRandom.nextFloat() * 80));
+				// xor to image
+				vColor[0] = vColor[0] ^ oldColor[0];
+				vColor[1] = vColor[0];
+				vColor[2] = vColor[0];
+
+				rstr.setPixel(x, y, vColor);
+			}
+		}
+		return toImageData(image);
 	}
 }

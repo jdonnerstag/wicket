@@ -33,8 +33,6 @@ import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.wicket.Component;
 import org.apache.wicket.Page;
 import org.apache.wicket.WicketRuntimeException;
@@ -48,7 +46,7 @@ import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.model.AbstractReadOnlyModel;
-import org.apache.wicket.request.http.handler.ErrorCodeResponseHandler;
+import org.apache.wicket.request.http.handler.ErrorCodeRequestHandler;
 import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.apache.wicket.util.io.IOUtils;
 import org.apache.wicket.util.lang.PackageName;
@@ -57,7 +55,8 @@ import org.apache.wicket.util.string.Strings;
 
 import com.uwyn.jhighlight.renderer.Renderer;
 import com.uwyn.jhighlight.renderer.XhtmlRendererFactory;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Displays the resources in a packages directory in a browsable format.
@@ -66,7 +65,7 @@ import com.uwyn.jhighlight.renderer.XhtmlRendererFactory;
  */
 public class SourcesPage extends WebPage
 {
-	private static final Log log = LogFactory.getLog(SourcesPage.class);
+	private static final Logger log = LoggerFactory.getLogger(SourcesPage.class);
 
 	/**
 	 * Model for retrieving the source code from the classpath of a packaged resource.
@@ -101,7 +100,7 @@ public class SourcesPage extends WebPage
 			String source = null;
 			try
 			{
-				StringBuffer sb = new StringBuffer();
+			 StringBuilder sb = new StringBuilder();
 				source = (name != null) ? name : getPage().getRequest()
 					.getRequestParameters()
 					.getParameterValue(SOURCE)
@@ -250,9 +249,8 @@ public class SourcesPage extends WebPage
 			final AppendingStringBuffer relativePath, final File dir)
 		{
 			File[] files = dir.listFiles();
-			for (int i = 0; i < files.length; i++)
+			for (File file : files)
 			{
-				File file = files[i];
 				if (file.isDirectory())
 				{
 					addResources(scope,
@@ -267,7 +265,6 @@ public class SourcesPage extends WebPage
 					{
 						resources.add(relativePath + name);
 					}
-
 				}
 			}
 		}
@@ -347,7 +344,6 @@ public class SourcesPage extends WebPage
 				throw new WicketRuntimeException(e);
 			}
 			Collections.sort(resources);
-			return;
 		}
 
 		private void scanJarFile(Class<?> scope, String packageRef, JarFile jf)
@@ -407,10 +403,9 @@ public class SourcesPage extends WebPage
 						@Override
 						protected CharSequence getURL()
 						{
-							CharSequence url = urlFor(SourcesPage.class,
-								SourcesPage.generatePageParameters(getPageTargetClass(),
-									item.getModel().getObject()));
-							return url;
+							return urlFor(SourcesPage.class,
+								          SourcesPage.generatePageParameters(getPageTargetClass(),
+									      item.getModel().getObject()));
 						}
 
 						@Override
@@ -605,7 +600,7 @@ public class SourcesPage extends WebPage
 						log.error("key: " + PAGE_CLASS + " is null.");
 					}
 					getRequestCycle().replaceAllRequestHandlers(
-						new ErrorCodeResponseHandler(404,
+						new ErrorCodeRequestHandler(404,
 							"Could not find sources for the page you requested"));
 				}
 				if (!pageParam.startsWith("org.apache.wicket.examples"))
@@ -622,7 +617,7 @@ public class SourcesPage extends WebPage
 			catch (ClassNotFoundException e)
 			{
 				getRequestCycle().replaceAllRequestHandlers(
-					new ErrorCodeResponseHandler(404,
+					new ErrorCodeRequestHandler(404,
 						"Could not find sources for the page you requested"));
 			}
 		}

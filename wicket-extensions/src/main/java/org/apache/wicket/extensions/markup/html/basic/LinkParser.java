@@ -17,7 +17,6 @@
 package org.apache.wicket.extensions.markup.html.basic;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -37,13 +36,14 @@ public class LinkParser implements ILinkParser
 	 * Adds a render strategy to the parser.
 	 * 
 	 * @param pattern
-	 * 		the pattern to which the provided <code>renderStrategy</code> should be applied.
+	 *            the pattern to which the provided <code>renderStrategy</code> should be applied.
 	 * @param renderStrategy
-	 * 		the <code>ILinkRenderStrategy</code> which is applied to the text found by the provided
-	 * 		<code>pattern</code>.
+	 *            the <code>ILinkRenderStrategy</code> which is applied to the text found by the
+	 *            provided <code>pattern</code>.
 	 * @return this <code>ILinkParser</code>.
 	 */
-	public ILinkParser addLinkRenderStrategy(String pattern, ILinkRenderStrategy renderStrategy)
+	public ILinkParser addLinkRenderStrategy(final String pattern,
+		final ILinkRenderStrategy renderStrategy)
 	{
 		renderStrategies.put(pattern, renderStrategy);
 		return this;
@@ -52,7 +52,7 @@ public class LinkParser implements ILinkParser
 	/**
 	 * @see ILinkParser#parse(String)
 	 */
-	public String parse(String text)
+	public String parse(final String text)
 	{
 		if ((text == null) || ("".equals(text)))
 		{
@@ -60,10 +60,8 @@ public class LinkParser implements ILinkParser
 		}
 
 		String work = text;
-		Iterator<String> iter = renderStrategies.keySet().iterator();
-		while (iter.hasNext())
+		for (String pattern : renderStrategies.keySet())
 		{
-			String pattern = iter.next();
 			ILinkRenderStrategy strategy = renderStrategies.get(pattern);
 
 			Matcher matcher = Pattern.compile(pattern, Pattern.DOTALL).matcher(work);

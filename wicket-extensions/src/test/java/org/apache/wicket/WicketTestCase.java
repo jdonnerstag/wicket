@@ -34,6 +34,20 @@ public abstract class WicketTestCase extends TestCase
 	/** */
 	public WicketTester tester;
 
+	/**
+	 * prevent wicket from launching a desktop window:
+	 * once someone uses AWT-specific classes the java runtime environment 
+	 * will automatically allocate a desktop window for interaction 
+	 * unless you tell java to run in 'headless-mode'. since wicket is 
+	 * supposed to run on servers, not desktops, this will be the default.
+	 * 
+	 * @see http://java.sun.com/developer/technicalArticles/J2SE/Desktop/headless
+	 */
+	static
+	{
+		System.setProperty("java.awt.headless", "true");
+	}
+	
 	@Override
 	protected void setUp() throws Exception
 	{
@@ -79,7 +93,7 @@ public abstract class WicketTestCase extends TestCase
 	 * @throws Exception
 	 */
 	protected <T extends Page> void executeTest(final Class<T> pageClass,
-		PageParameters parameters, final String filename) throws Exception
+		final PageParameters parameters, final String filename) throws Exception
 	{
 		System.out.println("=== " + pageClass.getName() + " ===");
 

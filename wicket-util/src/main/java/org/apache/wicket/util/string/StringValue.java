@@ -23,6 +23,7 @@ import java.text.ParseException;
 import java.util.Locale;
 
 import org.apache.wicket.IClusterable;
+import org.apache.wicket.util.lang.Objects;
 import org.apache.wicket.util.time.Duration;
 import org.apache.wicket.util.time.Time;
 
@@ -310,27 +311,27 @@ public class StringValue implements IClusterable
 			return toString();
 		}
 
-		if (type == Integer.TYPE || type == Integer.class)
+		if ((type == Integer.TYPE) || (type == Integer.class))
 		{
 			return toInteger();
 		}
 
-		if (type == Long.TYPE || type == Long.class)
+		if ((type == Long.TYPE) || (type == Long.class))
 		{
 			return toLongObject();
 		}
 
-		if (type == Boolean.TYPE || type == Boolean.class)
+		if ((type == Boolean.TYPE) || (type == Boolean.class))
 		{
 			return toBooleanObject();
 		}
 
-		if (type == Double.TYPE || type == Double.class)
+		if ((type == Double.TYPE) || (type == Double.class))
 		{
 			return toDoubleObject();
 		}
 
-		if (type == Character.TYPE || type == Character.class)
+		if ((type == Character.TYPE) || (type == Character.class))
 		{
 			return toCharacter();
 		}
@@ -417,7 +418,7 @@ public class StringValue implements IClusterable
 	 */
 	public final Character toCharacter() throws StringValueConversionException
 	{
-		return new Character(toChar());
+		return toChar();
 	}
 
 	/**
@@ -460,7 +461,7 @@ public class StringValue implements IClusterable
 	 */
 	public final Double toDoubleObject() throws StringValueConversionException
 	{
-		return new Double(toDouble());
+		return toDouble();
 	}
 
 	/**
@@ -751,4 +752,30 @@ public class StringValue implements IClusterable
 		return Strings.isEmpty(text);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public int hashCode()
+	{
+		return Objects.hashCode(locale, text);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public boolean equals(final Object obj)
+	{
+		if (obj instanceof StringValue)
+		{
+			StringValue stringValue = (StringValue)obj;
+			return Objects.isEqual(text, stringValue.text) &&
+				Objects.isEqual(locale, stringValue.locale);
+		}
+		else
+		{
+			return false;
+		}
+	}
 }

@@ -26,13 +26,10 @@ import org.apache.wicket.util.convert.ConversionException;
  * Base class for all number converters.
  * 
  * @author Jonathan Locke
- * 
+ * @param <N>
  */
-public abstract class AbstractNumberConverter extends AbstractConverter
+public abstract class AbstractNumberConverter<N extends Number> extends AbstractConverter<N>
 {
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L;
 
 	/**
@@ -40,7 +37,6 @@ public abstract class AbstractNumberConverter extends AbstractConverter
 	 * @return Returns the numberFormat.
 	 */
 	public abstract NumberFormat getNumberFormat(Locale locale);
-
 
 	/**
 	 * Parses a value as a String and returns a Number.
@@ -56,7 +52,7 @@ public abstract class AbstractNumberConverter extends AbstractConverter
 	 * @throws ConversionException
 	 *             if value is unparsable or out of range
 	 */
-	protected Number parse(Object value, final double min, final double max, Locale locale)
+	protected N parse(Object value, final double min, final double max, Locale locale)
 	{
 		if (locale == null)
 		{
@@ -72,12 +68,11 @@ public abstract class AbstractNumberConverter extends AbstractConverter
 			// Convert spaces to no-break space (U+00A0) to fix problems with
 			// browser conversions.
 			// Space is not valid thousands-separator, but no-br space is.
-			String v = (String)value;
-			value = v.replace(' ', '\u00A0');
+			value = ((String)value).replace(' ', '\u00A0');
 		}
 
 		final NumberFormat numberFormat = getNumberFormat(locale);
-		final Number number = (Number)parse(numberFormat, value, locale);
+		final N number = parse(numberFormat, value, locale);
 
 		if (number == null)
 		{
@@ -99,11 +94,8 @@ public abstract class AbstractNumberConverter extends AbstractConverter
 		return number;
 	}
 
-	/**
-	 * @see org.apache.wicket.util.convert.IConverter#convertToString(java.lang.Object, Locale)
-	 */
 	@Override
-	public String convertToString(final Object value, Locale locale)
+	public String convertToString(final N value, final Locale locale)
 	{
 		NumberFormat fmt = getNumberFormat(locale);
 		if (fmt != null)
@@ -112,5 +104,4 @@ public abstract class AbstractNumberConverter extends AbstractConverter
 		}
 		return value.toString();
 	}
-
 }

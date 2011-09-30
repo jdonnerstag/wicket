@@ -63,6 +63,7 @@ import org.apache.wicket.validation.validator.RangeValidator;
  */
 public class Home extends WebPage
 {
+	private static final long serialVersionUID = 1L;
 
 	private class ActionPanel extends Panel
 	{
@@ -172,38 +173,47 @@ public class Home extends WebPage
 			{
 				private static final long serialVersionUID = 1L;
 
+				@SuppressWarnings("unchecked")
 				@Override
-				public IConverter getConverter(Class<?> clazz)
+				public <C> IConverter<C> getConverter(Class<C> clazz)
 				{
-					return new IConverter()
+					if (URL.class.isAssignableFrom(clazz))
 					{
-						private static final long serialVersionUID = 1L;
-
-						/**
-						 * @see org.apache.wicket.util.convert.IConverter#convertToObject(java.lang.String,
-						 *      java.util.Locale)
-						 */
-						public URL convertToObject(String value, Locale locale)
+						return (IConverter<C>)new IConverter<URL>()
 						{
-							try
-							{
-								return new URL(value.toString());
-							}
-							catch (MalformedURLException e)
-							{
-								throw new ConversionException("'" + value + "' is not a valid URL");
-							}
-						}
+							private static final long serialVersionUID = 1L;
 
-						/**
-						 * @see org.apache.wicket.util.convert.IConverter#convertToString(java.lang.Object,
-						 *      java.util.Locale)
-						 */
-						public String convertToString(Object value, Locale locale)
-						{
-							return value != null ? value.toString() : null;
-						}
-					};
+							/**
+							 * @see org.apache.wicket.util.convert.IConverter#convertToObject(java.lang.String,
+							 *      java.util.Locale)
+							 */
+							public URL convertToObject(String value, Locale locale)
+							{
+								try
+								{
+									return new URL(value.toString());
+								}
+								catch (MalformedURLException e)
+								{
+									throw new ConversionException("'" + value +
+										"' is not a valid URL");
+								}
+							}
+
+							/**
+							 * @see org.apache.wicket.util.convert.IConverter#convertToString(java.lang.Object,
+							 *      java.util.Locale)
+							 */
+							public String convertToString(URL value, Locale locale)
+							{
+								return value != null ? value.toString() : null;
+							}
+						};
+					}
+					else
+					{
+						return super.getConverter(clazz);
+					}
 				}
 			});
 
@@ -212,9 +222,9 @@ public class Home extends WebPage
 				private static final long serialVersionUID = 1L;
 
 				@Override
-				public IConverter getConverter(Class<?> clazz)
+				public <C> IConverter<C> getConverter(Class<C> clazz)
 				{
-					return new MaskConverter("(###) ###-####", UsPhoneNumber.class);
+					return new MaskConverter<C>("(###) ###-####", UsPhoneNumber.class);
 				}
 			});
 
@@ -286,11 +296,9 @@ public class Home extends WebPage
 		 * @see org.apache.wicket.markup.html.form.IChoiceRenderer#getDisplayValue(Object)
 		 */
 		@Override
-		public Object getDisplayValue(Locale object)
+		public Object getDisplayValue(Locale locale)
 		{
-			Locale locale = object;
-			String display = locale.getDisplayName(getLocale());
-			return display;
+			return locale.getDisplayName(getLocale());
 		}
 	}
 
@@ -332,16 +340,16 @@ public class Home extends WebPage
 	}
 
 	/** Relevant locales wrapped in a list. */
-	private static final List<Locale> LOCALES = Arrays.asList(new Locale[] { Locale.ENGLISH,
-			new Locale("nl"), Locale.GERMAN, Locale.SIMPLIFIED_CHINESE, Locale.JAPANESE,
-			new Locale("pt", "BR"), new Locale("fa", "IR"), new Locale("da", "DK") });
+	private static final List<Locale> LOCALES = Arrays.asList(Locale.ENGLISH, new Locale("nl"),
+		Locale.GERMAN, Locale.SIMPLIFIED_CHINESE, Locale.JAPANESE, new Locale("pt", "BR"),
+		new Locale("fa", "IR"), new Locale("da", "DK"));
 
 	/** available sites for the multiple select. */
-	private static final List<String> SITES = Arrays.asList(new String[] { "The Server Side",
-			"Java Lobby", "Java.Net" });
+	private static final List<String> SITES = Arrays.asList("The Server Side", "Java Lobby",
+		"Java.Net");
 
 	/** available numbers for the radio selection. */
-	static final List<String> NUMBERS = Arrays.asList(new String[] { "1", "2", "3" });
+	static final List<String> NUMBERS = Arrays.asList("1", "2", "3");
 
 	private Contact selected;
 
@@ -381,7 +389,7 @@ public class Home extends WebPage
 				item.add(new Label("homephone", contact.getHomePhone()));
 				item.add(new Label("cellphone", contact.getCellPhone()));
 
-				item.add(new AttributeModifier("class", true, new AbstractReadOnlyModel<String>()
+				item.add(AttributeModifier.replace("class", new AbstractReadOnlyModel<String>()
 				{
 					private static final long serialVersionUID = 1L;
 

@@ -28,13 +28,14 @@ public class Checks
 	 * 
 	 * @param argument
 	 * @param message
+	 * @param params
 	 * @throws IllegalStateException
 	 */
-	public static void notNull(final Object argument, final String message)
+	public static void notNull(final Object argument, final String message, final Object... params)
 	{
 		if (argument == null)
 		{
-			throw new IllegalStateException(message);
+			throw new IllegalStateException(Args.format(message, params));
 		}
 	}
 
@@ -42,14 +43,16 @@ public class Checks
 	 * Checks argument is not empty (not null and has a non-whitespace character)
 	 * 
 	 * @param argument
+	 * @param message
+	 * @param params
 	 * @param name
 	 * @throws IllegalStateException
 	 */
-	public static void notEmpty(final String argument, final String message)
+	public static void notEmpty(final String argument, final String message, final Object... params)
 	{
 		if (Strings.isEmpty(argument))
 		{
-			throw new IllegalStateException(message);
+			throw new IllegalStateException(Args.format(message, params));
 		}
 	}
 
@@ -60,19 +63,20 @@ public class Checks
 	 * @param min
 	 * @param max
 	 * @param value
+	 * @param message
 	 * @param name
 	 * @throws IllegalStateException
 	 */
-	public static <T extends Comparable<T>> void withinRange(T min, T max, T value, String message)
+	public static <T extends Comparable<T>> void withinRange(final T min, final T max,
+		final T value, final String message)
 	{
 		notNull(min, message);
 		notNull(max, message);
-		if (value.compareTo(min) < 0 || value.compareTo(max) > 0)
+
+		if ((value.compareTo(min) < 0) || (value.compareTo(max) > 0))
 		{
 			throw new IllegalStateException(message);
 		}
-
-		return;
 	}
 
 	/**
@@ -109,7 +113,8 @@ public class Checks
 	 * @param name
 	 * @throws IllegalStateException
 	 */
-	public static <T extends Comparable<T>> void withinRangeShort(T min, T max, T value, String name)
+	public static <T extends Comparable<T>> void withinRangeShort(final T min, final T max,
+		final T value, final String name)
 	{
 		withinRange(min, max, value,
 			String.format("%s must have a value within [%s,%s], but was %s", name, min, max, value));

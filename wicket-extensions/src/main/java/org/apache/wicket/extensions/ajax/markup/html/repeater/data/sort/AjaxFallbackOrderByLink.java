@@ -16,10 +16,13 @@
  */
 package org.apache.wicket.extensions.ajax.markup.html.repeater.data.sort;
 
+import org.apache.wicket.ajax.AbstractDefaultAjaxBehavior;
+import org.apache.wicket.ajax.AjaxChannel;
 import org.apache.wicket.ajax.AjaxEventBehavior;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.IAjaxCallDecorator;
 import org.apache.wicket.ajax.calldecorator.CancelEventIfNoAjaxDecorator;
+import org.apache.wicket.ajax.markup.html.IAjaxLink;
 import org.apache.wicket.extensions.markup.html.repeater.data.sort.ISortStateLocator;
 import org.apache.wicket.extensions.markup.html.repeater.data.sort.OrderByLink;
 
@@ -34,12 +37,14 @@ import org.apache.wicket.extensions.markup.html.repeater.data.sort.OrderByLink;
  * @author Igor Vaynberg (ivaynberg)
  * 
  */
-public abstract class AjaxFallbackOrderByLink extends OrderByLink
+public abstract class AjaxFallbackOrderByLink extends OrderByLink implements IAjaxLink
 {
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
+
+	private final IAjaxCallDecorator decorator;
 
 	/**
 	 * Constructor
@@ -49,8 +54,8 @@ public abstract class AjaxFallbackOrderByLink extends OrderByLink
 	 * @param stateLocator
 	 * @param cssProvider
 	 */
-	public AjaxFallbackOrderByLink(String id, String property, ISortStateLocator stateLocator,
-			ICssProvider cssProvider)
+	public AjaxFallbackOrderByLink(final String id, final String property,
+		final ISortStateLocator stateLocator, final ICssProvider cssProvider)
 	{
 		this(id, property, stateLocator, cssProvider, null);
 	}
@@ -62,11 +67,11 @@ public abstract class AjaxFallbackOrderByLink extends OrderByLink
 	 * @param property
 	 * @param stateLocator
 	 */
-	public AjaxFallbackOrderByLink(String id, String property, ISortStateLocator stateLocator)
+	public AjaxFallbackOrderByLink(final String id, final String property,
+		final ISortStateLocator stateLocator)
 	{
 		this(id, property, stateLocator, DefaultCssProvider.getInstance(), null);
 	}
-
 
 	/**
 	 * Constructor
@@ -76,8 +81,8 @@ public abstract class AjaxFallbackOrderByLink extends OrderByLink
 	 * @param stateLocator
 	 * @param decorator
 	 */
-	public AjaxFallbackOrderByLink(String id, String property, ISortStateLocator stateLocator,
-			final IAjaxCallDecorator decorator)
+	public AjaxFallbackOrderByLink(final String id, final String property,
+		final ISortStateLocator stateLocator, final IAjaxCallDecorator decorator)
 	{
 		this(id, property, stateLocator, DefaultCssProvider.getInstance(), decorator);
 	}
@@ -91,38 +96,72 @@ public abstract class AjaxFallbackOrderByLink extends OrderByLink
 	 * @param cssProvider
 	 * @param decorator
 	 */
-	public AjaxFallbackOrderByLink(String id, String property, ISortStateLocator stateLocator,
-			ICssProvider cssProvider, final IAjaxCallDecorator decorator)
+	public AjaxFallbackOrderByLink(final String id, final String property,
+		final ISortStateLocator stateLocator, final ICssProvider cssProvider,
+		final IAjaxCallDecorator decorator)
 	{
 		super(id, property, stateLocator, cssProvider);
 
-		add(new AjaxEventBehavior("onclick")
+		this.decorator = decorator;
+	}
+
+	@Override
+	public void onInitialize()
+	{
+		super.onInitialize();
+
+		add(newAjaxEventBehavior("onclick"));
+	}
+
+	/**
+	 * @param event
+	 *            the name of the default event on which this link will listen to
+	 * @return the ajax behavior which will be executed when the user clicks the link
+	 */
+	protected AjaxEventBehavior newAjaxEventBehavior(final String event)
+	{
+		return new AjaxEventBehavior(event)
 		{
 			private static final long serialVersionUID = 1L;
 
-			protected void onEvent(AjaxRequestTarget target)
+			@Override
+			protected void onEvent(final AjaxRequestTarget target)
 			{
 				onClick();
-				onAjaxClick(target);
+				onClick(target);
 			}
 
+			@Override
 			protected IAjaxCallDecorator getAjaxCallDecorator()
 			{
 				return new CancelEventIfNoAjaxDecorator(decorator);
 			}
 
-		});
+			@Override
+			protected AjaxChannel getChannel()
+			{
+				return AjaxFallbackOrderByLink.this.getChannel();
+			}
+		};
 
 	}
 
 	/**
+	 * @return the channel that manages how Ajax calls are executed
+	 * @see AbstractDefaultAjaxBehavior#getChannel()
+	 */
+	protected AjaxChannel getChannel()
+	{
+		return null;
+	}
+
+	/**
 	 * Callback method when an ajax click occurs. All the behavior of changing the sort, etc is
-	 * already performed bfore this is called so this method should primarily be used to configure
+	 * already performed before this is called so this method should primarily be used to configure
 	 * the target.
 	 * 
 	 * @param target
 	 */
-	protected abstract void onAjaxClick(AjaxRequestTarget target);
-
+	public abstract void onClick(AjaxRequestTarget target);
 
 }

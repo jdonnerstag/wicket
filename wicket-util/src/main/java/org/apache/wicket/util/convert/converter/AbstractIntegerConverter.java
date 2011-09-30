@@ -25,9 +25,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * Base class for all number converters.
  * 
  * @author Jonathan Locke
- * 
+ * @param <I>
  */
-public abstract class AbstractIntegerConverter extends AbstractNumberConverter
+public abstract class AbstractIntegerConverter<I extends Number> extends AbstractNumberConverter<I>
 {
 	private static final long serialVersionUID = 1L;
 
@@ -40,7 +40,7 @@ public abstract class AbstractIntegerConverter extends AbstractNumberConverter
 	 * @return Returns the numberFormat.
 	 */
 	@Override
-	public NumberFormat getNumberFormat(Locale locale)
+	public NumberFormat getNumberFormat(final Locale locale)
 	{
 		NumberFormat numberFormat = numberFormats.get(locale);
 		if (numberFormat == null)
@@ -52,5 +52,4 @@ public abstract class AbstractIntegerConverter extends AbstractNumberConverter
 		}
 		return (NumberFormat)numberFormat.clone();
 	}
-
 }

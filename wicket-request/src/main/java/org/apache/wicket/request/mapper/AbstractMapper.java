@@ -16,7 +16,6 @@
  */
 package org.apache.wicket.request.mapper;
 
-
 import org.apache.wicket.request.IRequestMapper;
 import org.apache.wicket.request.Request;
 import org.apache.wicket.request.Url;
@@ -26,6 +25,9 @@ import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.apache.wicket.util.lang.Args;
 import org.apache.wicket.util.string.Strings;
 
+/**
+ * 
+ */
 public abstract class AbstractMapper implements IRequestMapper
 {
 
@@ -35,9 +37,35 @@ public abstract class AbstractMapper implements IRequestMapper
 	 * @param s
 	 * @return placeholder key or <code>null</code> if string is not in right format
 	 */
-	protected static String getPlaceholder(String s)
+	protected String getPlaceholder(final String s)
 	{
-		if (s == null || s.length() < 4 || !s.startsWith("${") || !s.endsWith("}"))
+		return getPlaceholder(s, '$');
+	}
+
+	/**
+	 * If the string is in an optional parameter placeholder format #{key} this method returns the
+	 * key.
+	 * 
+	 * @param s
+	 * @return placeholder key or <code>null</code> if string is not in right format
+	 */
+	protected String getOptionalPlaceholder(final String s)
+	{
+		return getPlaceholder(s, '#');
+	}
+
+	/**
+	 * If the string is in a placeholder format x{key}, where 'x' can be specified, this method
+	 * returns the key.
+	 * 
+	 * @param s
+	 * @param startChar
+	 *            the character used to indicate the start of the placeholder
+	 * @return placeholder key or <code>null</code> if string is not in right format
+	 */
+	protected String getPlaceholder(final String s, char startChar)
+	{
+		if ((s == null) || (s.length() < 4) || !s.startsWith(startChar + "{") || !s.endsWith("}"))
 		{
 			return null;
 		}
@@ -47,6 +75,9 @@ public abstract class AbstractMapper implements IRequestMapper
 		}
 	}
 
+	/**
+	 * Construct.
+	 */
 	public AbstractMapper()
 	{
 		super();
@@ -61,7 +92,7 @@ public abstract class AbstractMapper implements IRequestMapper
 	 * @return <code>true</code> if the URL starts with the specified segments, <code>false</code>
 	 *         otherwise
 	 */
-	protected boolean urlStartsWith(Url url, String... segments)
+	protected boolean urlStartsWith(final Url url, final String... segments)
 	{
 		if (url == null)
 		{
@@ -77,8 +108,8 @@ public abstract class AbstractMapper implements IRequestMapper
 			{
 				for (int i = 0; i < segments.length; ++i)
 				{
-					if (segments[i].equals(url.getSegments().get(i)) == false &&
-						getPlaceholder(segments[i]) == null)
+					if ((segments[i].equals(url.getSegments().get(i)) == false) &&
+						(getPlaceholder(segments[i]) == null))
 					{
 						return false;
 					}
@@ -98,15 +129,15 @@ public abstract class AbstractMapper implements IRequestMapper
 	 * @param encoder
 	 * @return PageParameters instance
 	 */
-	protected PageParameters extractPageParameters(Request request, int segmentsToSkip,
-		IPageParametersEncoder encoder)
+	protected PageParameters extractPageParameters(final Request request, int segmentsToSkip,
+		final IPageParametersEncoder encoder)
 	{
 		Args.notNull(request, "request");
 		Args.notNull(encoder, "encoder");
 
 		// strip the segments and first query parameter from URL
 		Url urlCopy = new Url(request.getUrl());
-		while (segmentsToSkip > 0 && urlCopy.getSegments().isEmpty() == false)
+		while ((segmentsToSkip > 0) && (urlCopy.getSegments().isEmpty() == false))
 		{
 			urlCopy.getSegments().remove(0);
 			--segmentsToSkip;
@@ -118,8 +149,7 @@ public abstract class AbstractMapper implements IRequestMapper
 			removeMetaParameter(urlCopy);
 		}
 
-		PageParameters decoded = encoder.decodePageParameters(request.cloneWithUrl(urlCopy));
-		return decoded;
+		return encoder.decodePageParameters(request.cloneWithUrl(urlCopy));
 	}
 
 	/**
@@ -146,7 +176,7 @@ public abstract class AbstractMapper implements IRequestMapper
 	 * @return URL with encoded parameters
 	 */
 	protected Url encodePageParameters(Url url, PageParameters pageParameters,
-		IPageParametersEncoder encoder)
+		final IPageParametersEncoder encoder)
 	{
 		Args.notNull(url, "url");
 		Args.notNull(encoder, "encoder");

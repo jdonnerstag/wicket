@@ -24,6 +24,7 @@ import org.apache.wicket.request.Response;
 import org.apache.wicket.util.lang.Args;
 import org.apache.wicket.util.string.Strings;
 import org.apache.wicket.util.time.Duration;
+import org.apache.wicket.util.time.Time;
 
 /**
  * Base class for web-related responses.
@@ -32,6 +33,7 @@ import org.apache.wicket.util.time.Duration;
  */
 public abstract class WebResponse extends Response
 {
+	/** Recommended value for cache duration */
 	// one year, maximum recommended cache duration in RFC-2616
 	public static final Duration MAX_CACHE_DURATION = Duration.days(365);
 
@@ -60,12 +62,20 @@ public abstract class WebResponse extends Response
 	public abstract void setHeader(String name, String value);
 
 	/**
+	 * Add a value to the servlet response stream.
+	 * 
+	 * @param name
+	 * @param value
+	 */
+	public abstract void addHeader(String name, String value);
+
+	/**
 	 * Set a header to the date value in the servlet response stream.
 	 * 
 	 * @param name
 	 * @param date
 	 */
-	public abstract void setDateHeader(String name, long date);
+	public abstract void setDateHeader(String name, Time date);
 
 	/**
 	 * Set the content length on the response, if appropriate in the subclass. This default
@@ -89,9 +99,9 @@ public abstract class WebResponse extends Response
 	 * Set the contents last modified time, if appropriate in the subclass.
 	 * 
 	 * @param time
-	 *            The last modified time in milliseconds
+	 *            The last modified time
 	 */
-	public void setLastModifiedTime(long time)
+	public void setLastModifiedTime(final Time time)
 	{
 		setDateHeader("Last-Modified", time);
 	}
@@ -104,7 +114,7 @@ public abstract class WebResponse extends Response
 	 * @param filename
 	 *            file name of the attachment
 	 */
-	public void setAttachmentHeader(String filename)
+	public void setAttachmentHeader(final String filename)
 	{
 		setHeader("Content-Disposition", "attachment" +
 			((!Strings.isEmpty(filename)) ? ("; filename=\"" + filename + "\"") : ""));
@@ -118,7 +128,7 @@ public abstract class WebResponse extends Response
 	 * @param filename
 	 *            file name of the attachment
 	 */
-	public void setInlineHeader(String filename)
+	public void setInlineHeader(final String filename)
 	{
 		setHeader("Content-Disposition", "inline" +
 			((!Strings.isEmpty(filename)) ? ("; filename=\"" + filename + "\"") : ""));
@@ -142,8 +152,19 @@ public abstract class WebResponse extends Response
 	public abstract void sendError(int sc, String msg);
 
 	/**
+	 * Encodes urls used to redirect. Sometimes rules for encoding URLs for redirecting differ from
+	 * encoding URLs for links, so this method is broken out away form
+	 * {@link #encodeURL(CharSequence)}.
+	 * 
+	 * @param url
+	 * @return encoded URL
+	 */
+	public abstract String encodeRedirectURL(CharSequence url);
+
+	/**
 	 * Redirects the response to specified URL. The implementation is responsible for properly
-	 * encoding the URL.
+	 * encoding the URL. Implementations of this method should run passed in {@code url} parameters
+	 * throu the {@link #encodeRedirectURL(String)} method.
 	 * 
 	 * @param url
 	 */
@@ -165,80 +186,87 @@ public abstract class WebResponse extends Response
 	 */
 	public void disableCaching()
 	{
-		setDateHeader("Date", System.currentTimeMillis());
-		setDateHeader("Expires", 0);
+		setDateHeader("Date", Time.now());
+		setDateHeader("Expires", Time.START_OF_UNIX_TIME);
 		setHeader("Pragma", "no-cache");
 		setHeader("Cache-Control", "no-cache, no-store");
 	}
 
 	/**
 	 * Make this response cacheable
-	 *
+	 * 
 	 * @param duration
-	 *            maximum duration before the response must be invalidated by any caches.
-	 *            It should not exceed one year, based on
-	 *            <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html">RFC-2616</a>.
+	 *            maximum duration before the response must be invalidated by any caches. It should
+	 *            not exceed one year, based on <a
+	 *            href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html">RFC-2616</a>.
 	 * @param scope
 	 *            controls which caches are allowed to cache the response
-	 *
+	 * 
 	 * @see WebResponse#MAX_CACHE_DURATION
 	 */
-	public void enableCaching(Duration duration, WebResponse.CacheScope scope)
+	public void enableCaching(Duration duration, final WebResponse.CacheScope scope)
 	{
 		Args.notNull(duration, "duration");
 		Args.notNull(scope, "scope");
 
 		// do not exceed the maximum recommended value from RFC-2616
-		if(duration.compareTo(MAX_CACHE_DURATION) > 0)
+		if (duration.compareTo(MAX_CACHE_DURATION) > 0)
+		{
 			duration = MAX_CACHE_DURATION;
+		}
 
 		// Get current time
-		long now = System.currentTimeMillis();
+		Time now = Time.now();
 
 		// Time of message generation
 		setDateHeader("Date", now);
 
 		// Time for cache expiry = now + duration
-		setDateHeader("Expires", now + duration.getMilliseconds());
+		setDateHeader("Expires", now.add(duration));
 
-		// Enable caching and set max age
-		setHeader("Cache-Control", scope.cacheControl + ", max-age=" + duration.getMilliseconds());
+		// Set cache scope
+		setHeader("Cache-Control", scope.cacheControl);
+		
+		// Set maximum age for caching in seconds (rounded)
+		addHeader("Cache-Control", "max-age=" + Math.round(duration.seconds()));
+
+		// Though 'cache' is not an official value it will eliminate an eventual 'no-cache' header
+		setHeader("Pragma", "cache");
 	}
 
 	/**
 	 * caching scope for data
 	 * <p/>
-	 * Unless the data is confidential, session-specific or user-specific the general advice is
-	 * to prefer value <code>PUBLIC</code> for best network performance.
+	 * Unless the data is confidential, session-specific or user-specific the general advice is to
+	 * prefer value <code>PUBLIC</code> for best network performance.
 	 * <p/>
-	 * This value will basically affect the header [Cache-Control]. Details can be found
-	 *  <a href="http://palisade.plynt.com/issues/2008Jul/cache-control-attributes">here</a>
-	 * or in <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html">RFC-2616</a>.
+	 * This value will basically affect the header [Cache-Control]. Details can be found <a
+	 * href="http://palisade.plynt.com/issues/2008Jul/cache-control-attributes">here</a> or in <a
+	 * href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html">RFC-2616</a>.
 	 */
-	public static enum CacheScope
-	{
+	public static enum CacheScope {
 		/**
 		 * use all caches (private + public)
 		 * <p/>
-		 * Use this value for caching if the data is not confidential or session-specific. It will allow
-		 * public caches to cache the data. In some versions of Firefox this will enable caching
-		 * of resources over SSL (details can be found
-		 * <a href="http://blog.pluron.com/2008/07/why-you-should.html">here</a>).
+		 * Use this value for caching if the data is not confidential or session-specific. It will
+		 * allow public caches to cache the data. In some versions of Firefox this will enable
+		 * caching of resources over SSL (details can be found <a
+		 * href="http://blog.pluron.com/2008/07/why-you-should.html">here</a>).
 		 */
-		 PUBLIC("public"),
-		 /**
-		 *	only use non-public caches
-		  * <p/>
-		  * Use this setting if the response is session-specific or confidential and you don't
-		  * want it to be cached on public caches or proxies. On some versions of Firefox this
-		  * will disable caching of any resources in over SSL connections.
+		PUBLIC("public"),
+		/**
+		 * only use non-public caches
+		 * <p/>
+		 * Use this setting if the response is session-specific or confidential and you don't want
+		 * it to be cached on public caches or proxies. On some versions of Firefox this will
+		 * disable caching of any resources in over SSL connections.
 		 */
 		PRIVATE("private");
 
 		// value for Cache-Control header
 		private final String cacheControl;
 
-		CacheScope(String cacheControl)
+		CacheScope(final String cacheControl)
 		{
 			this.cacheControl = cacheControl;
 		}

@@ -90,7 +90,7 @@ public class ValueMap extends LinkedHashMap<String, Object> implements IValueMap
 	 * @param map
 	 *            the <code>ValueMap</code> to copy
 	 */
-	public ValueMap(final Map<? extends String, ? extends Object> map)
+	public ValueMap(final Map<? extends String, ?> map)
 	{
 		super();
 
@@ -311,7 +311,7 @@ public class ValueMap extends LinkedHashMap<String, Object> implements IValueMap
 		{
 			return null;
 		}
-		else if (o.getClass().isArray() && Array.getLength(o) > 0)
+		else if (o.getClass().isArray() && (Array.getLength(o) > 0))
 		{
 			// if it is an array just get the first value
 			final Object arrayValue = Array.get(o, 0);
@@ -341,7 +341,7 @@ public class ValueMap extends LinkedHashMap<String, Object> implements IValueMap
 		{
 			return null;
 		}
-		else if (o.getClass().isArray() && Array.getLength(o) > 0)
+		else if (o.getClass().isArray() && (Array.getLength(o) > 0))
 		{
 			// if it is an array just get the first value
 			final Object arrayValue = Array.get(o, 0);
@@ -489,7 +489,7 @@ public class ValueMap extends LinkedHashMap<String, Object> implements IValueMap
 	 * @see java.util.Map#putAll(java.util.Map)
 	 */
 	@Override
-	public void putAll(final Map<? extends String, ? extends Object> map)
+	public void putAll(final Map<? extends String, ?> map)
 	{
 		checkMutability();
 		super.putAll(map);
@@ -510,15 +510,11 @@ public class ValueMap extends LinkedHashMap<String, Object> implements IValueMap
 	 */
 	public String getKey(final String key)
 	{
-		for (Object keyValue : keySet())
+		for (String other : keySet())
 		{
-			if (keyValue instanceof String)
+			if (other.equalsIgnoreCase(key))
 			{
-				String keyString = (String)keyValue;
-				if (key.equalsIgnoreCase(keyString))
-				{
-					return keyString;
-				}
+				return other;
 			}
 		}
 		return null;
@@ -533,7 +529,7 @@ public class ValueMap extends LinkedHashMap<String, Object> implements IValueMap
 	@Override
 	public String toString()
 	{
-		final StringBuffer buffer = new StringBuffer();
+		final StringBuilder buffer = new StringBuilder();
 		boolean first = true;
 		for (Map.Entry<String, Object> entry : entrySet())
 		{
@@ -583,7 +579,7 @@ public class ValueMap extends LinkedHashMap<String, Object> implements IValueMap
 	 * @see IValueMap#getAsBoolean(String)
 	 * 
 	 */
-	public Boolean getAsBoolean(String key)
+	public Boolean getAsBoolean(final String key)
 	{
 		if (!containsKey(key))
 		{
@@ -604,7 +600,7 @@ public class ValueMap extends LinkedHashMap<String, Object> implements IValueMap
 	 * @see IValueMap#getAsBoolean(String, boolean)
 	 * 
 	 */
-	public boolean getAsBoolean(String key, boolean defaultValue)
+	public boolean getAsBoolean(final String key, final boolean defaultValue)
 	{
 		if (!containsKey(key))
 		{
@@ -624,7 +620,7 @@ public class ValueMap extends LinkedHashMap<String, Object> implements IValueMap
 	/**
 	 * @see IValueMap#getAsInteger(String)
 	 */
-	public Integer getAsInteger(String key)
+	public Integer getAsInteger(final String key)
 	{
 		if (!containsKey(key))
 		{
@@ -644,7 +640,7 @@ public class ValueMap extends LinkedHashMap<String, Object> implements IValueMap
 	/**
 	 * @see IValueMap#getAsInteger(String, int)
 	 */
-	public int getAsInteger(String key, int defaultValue)
+	public int getAsInteger(final String key, final int defaultValue)
 	{
 		try
 		{
@@ -659,7 +655,7 @@ public class ValueMap extends LinkedHashMap<String, Object> implements IValueMap
 	/**
 	 * @see IValueMap#getAsLong(String)
 	 */
-	public Long getAsLong(String key)
+	public Long getAsLong(final String key)
 	{
 		if (!containsKey(key))
 		{
@@ -679,7 +675,7 @@ public class ValueMap extends LinkedHashMap<String, Object> implements IValueMap
 	/**
 	 * @see IValueMap#getAsLong(String, long)
 	 */
-	public long getAsLong(String key, long defaultValue)
+	public long getAsLong(final String key, final long defaultValue)
 	{
 		try
 		{
@@ -694,7 +690,7 @@ public class ValueMap extends LinkedHashMap<String, Object> implements IValueMap
 	/**
 	 * @see IValueMap#getAsDouble(String)
 	 */
-	public Double getAsDouble(String key)
+	public Double getAsDouble(final String key)
 	{
 		if (!containsKey(key))
 		{
@@ -822,7 +818,7 @@ public class ValueMap extends LinkedHashMap<String, Object> implements IValueMap
 	 * @param <T>
 	 * @return Enum
 	 */
-	@SuppressWarnings( { "unchecked" })
+	@SuppressWarnings({ "unchecked" })
 	private <T extends Enum<T>> T getEnumImpl(final String key, final Class<?> eClass,
 		final T defaultValue)
 	{

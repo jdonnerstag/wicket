@@ -18,6 +18,10 @@ package org.apache.wicket.util.upload;
 
 import java.io.File;
 
+import org.apache.wicket.util.file.FileCleaningTracker;
+import org.apache.wicket.util.file.IFileCleaner;
+
+
 /**
  * <p>
  * The default {@link org.apache.wicket.util.upload.FileItemFactory} implementation. This
@@ -34,6 +38,16 @@ import java.io.File;
  * <li>Repository is the system default temp directory, as returned by
  * <code>System.getProperty("java.io.tmpdir")</code>.</li>
  * </ul>
+ * </p>
+ * 
+ * <p>
+ * When using the <code>DiskFileItemFactory</code>, then you should consider the following:
+ * Temporary files are automatically deleted as soon as they are no longer needed. (More precisely,
+ * when the corresponding instance of {@link java.io.File} is garbage collected.) Cleaning up those
+ * files is done by an instance of {@link FileCleaningTracker}, and an associated thread. In a
+ * complex environment, for example in a web application, you should consider terminating this
+ * thread, for example, when your web application ends. See the section on "Resource cleanup" in the
+ * users guide of commons-fileupload.
  * </p>
  * 
  * @author <a href="mailto:martinc@apache.org">Martin Cooper</a>
@@ -64,6 +78,7 @@ public class DiskFileItemFactory implements FileItemFactory
 	 */
 	private int sizeThreshold = DEFAULT_SIZE_THRESHOLD;
 
+	private final IFileCleaner fileUploadCleaner;
 
 	// ----------------------------------------------------------- Constructors
 
@@ -71,9 +86,12 @@ public class DiskFileItemFactory implements FileItemFactory
 	/**
 	 * Constructs an unconfigured instance of this class. The resulting factory may be configured by
 	 * calling the appropriate setter methods.
+	 * 
+	 * @param fileUploadCleaner
 	 */
-	public DiskFileItemFactory()
+	public DiskFileItemFactory(final IFileCleaner fileUploadCleaner)
 	{
+		this(DEFAULT_SIZE_THRESHOLD, null, fileUploadCleaner);
 	}
 
 
@@ -86,13 +104,15 @@ public class DiskFileItemFactory implements FileItemFactory
 	 * @param repository
 	 *            The data repository, which is the directory in which files will be created, should
 	 *            the item size exceed the threshold.
+	 * @param fileUploadCleaner
 	 */
-	public DiskFileItemFactory(int sizeThreshold, File repository)
+	public DiskFileItemFactory(final int sizeThreshold, final File repository,
+		final IFileCleaner fileUploadCleaner)
 	{
 		this.sizeThreshold = sizeThreshold;
 		this.repository = repository;
+		this.fileUploadCleaner = fileUploadCleaner;
 	}
-
 
 	// ------------------------------------------------------------- Properties
 
@@ -122,7 +142,7 @@ public class DiskFileItemFactory implements FileItemFactory
 	 * @see #getRepository()
 	 * 
 	 */
-	public void setRepository(File repository)
+	public void setRepository(final File repository)
 	{
 		this.repository = repository;
 	}
@@ -130,7 +150,7 @@ public class DiskFileItemFactory implements FileItemFactory
 
 	/**
 	 * Returns the size threshold beyond which files are written directly to disk. The default value
-	 * is 1024 bytes.
+	 * is 10240 bytes.
 	 * 
 	 * @return The size threshold, in bytes.
 	 * 
@@ -151,7 +171,7 @@ public class DiskFileItemFactory implements FileItemFactory
 	 * @see #getSizeThreshold()
 	 * 
 	 */
-	public void setSizeThreshold(int sizeThreshold)
+	public void setSizeThreshold(final int sizeThreshold)
 	{
 		this.sizeThreshold = sizeThreshold;
 	}
@@ -174,10 +194,11 @@ public class DiskFileItemFactory implements FileItemFactory
 	 * 
 	 * @return The newly created file item.
 	 */
-	public FileItem createItem(String fieldName, String contentType, boolean isFormField,
-		String fileName)
+	public FileItem createItem(final String fieldName, final String contentType,
+		final boolean isFormField, final String fileName)
 	{
 		return new DiskFileItem(fieldName, contentType, isFormField, fileName, sizeThreshold,
-			repository);
+			repository, fileUploadCleaner);
 	}
+
 }

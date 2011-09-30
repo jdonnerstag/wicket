@@ -25,7 +25,7 @@ import org.apache.wicket.util.string.Strings;
  * &lt;listenerInterface&gt.&lt;behaviorIndex&gt;-&lt;componentPath&gt; or
  * &lt;render-count&gt;.&lt;listenerInterface&gt.&lt;behaviorIndex&gt;-&lt;componentPath&gt;
  * <p>
- * Component path is escaped (':' characters are replaced by '-')
+ * Component path is escaped (':' characters are replaced by '~')
  * 
  * @author Matej Knopp
  */
@@ -33,18 +33,38 @@ public class ComponentInfo
 {
 	private static final char BEHAVIOR_INDEX_SEPARATOR = '.';
 	private static final char SEPARATOR = '-';
+	private static final char COMPONENT_SEPARATOR = ':';
+	private static final char SEPARATOR_ENCODED = '~';
 
-	private static final String TMP_PLACEHOLDER = "[[[[[[[WICKET[[TMP]]DASH]]" + Math.random() +
-		"]]]]";
-
-	private static String encodeComponentPath(String path)
+	/**
+	 * Replaces ':' with '-', and '-' with '~'.
+	 * 
+	 * @param path
+	 *            the path to the component in its page
+	 * @return the encoded path
+	 */
+	private static String encodeComponentPath(CharSequence path)
 	{
 		if (path != null)
 		{
-			path = path.replace("" + SEPARATOR, TMP_PLACEHOLDER);
-			path = path.replace(':', SEPARATOR);
-			path = path.replace(TMP_PLACEHOLDER, "" + SEPARATOR + SEPARATOR);
-			return path;
+			StringBuilder result = new StringBuilder();
+			int length = path.length();
+			for (int i = 0; i < length; i++)
+			{
+				char c = path.charAt(i);
+				switch (c)
+				{
+					case COMPONENT_SEPARATOR :
+						result.append(SEPARATOR);
+						break;
+					case SEPARATOR :
+						result.append(SEPARATOR_ENCODED);
+						break;
+					default :
+						result.append(c);
+				}
+			}
+			return result.toString();
 		}
 		else
 		{
@@ -52,14 +72,35 @@ public class ComponentInfo
 		}
 	}
 
-	private static String decodeComponentPath(String path)
+	/**
+	 * Replaces '~' with '-' and '-' with ':'
+	 * 
+	 * @param path
+	 *            the encoded path of the component in its page
+	 * @return the (non-encoded) path of the component in its page
+	 */
+	private static String decodeComponentPath(CharSequence path)
 	{
 		if (path != null)
 		{
-			path = path.replace("" + SEPARATOR + SEPARATOR, TMP_PLACEHOLDER);
-			path = path.replace(SEPARATOR, ':');
-			path = path.replace(TMP_PLACEHOLDER, "" + SEPARATOR);
-			return path;
+			StringBuilder result = new StringBuilder();
+			int length = path.length();
+			for (int i = 0; i < length; i++)
+			{
+				char c = path.charAt(i);
+				switch (c)
+				{
+					case SEPARATOR_ENCODED :
+						result.append(SEPARATOR);
+						break;
+					case SEPARATOR :
+						result.append(COMPONENT_SEPARATOR);
+						break;
+					default :
+						result.append(c);
+				}
+			}
+			return result.toString();
 		}
 		else
 		{
@@ -69,7 +110,7 @@ public class ComponentInfo
 
 	private final String listenerInterface;
 	private final String componentPath;
-	private final Integer behaviorIndex;
+	private final Integer behaviorId;
 	private final Integer renderCount;
 
 	/**
@@ -78,17 +119,17 @@ public class ComponentInfo
 	 * @param renderCount
 	 * @param listenerInterface
 	 * @param componentPath
-	 * @param behaviorIndex
+	 * @param behaviorId
 	 */
-	public ComponentInfo(Integer renderCount, String listenerInterface, String componentPath,
-		Integer behaviorIndex)
+	public ComponentInfo(final Integer renderCount, final String listenerInterface,
+		final String componentPath, final Integer behaviorId)
 	{
 		Args.notEmpty(listenerInterface, "listenerInterface");
 		Args.notNull(componentPath, "componentPath");
 
 		this.listenerInterface = listenerInterface;
 		this.componentPath = componentPath;
-		this.behaviorIndex = behaviorIndex;
+		this.behaviorId = behaviorId;
 		this.renderCount = renderCount;
 	}
 
@@ -111,9 +152,9 @@ public class ComponentInfo
 	/**
 	 * @return behavior index
 	 */
-	public Integer getBehaviorIndex()
+	public Integer getBehaviorId()
 	{
-		return behaviorIndex;
+		return behaviorId;
 	}
 
 	/**
@@ -141,10 +182,10 @@ public class ComponentInfo
 
 		result.append(listenerInterface);
 
-		if (behaviorIndex != null)
+		if (behaviorId != null)
 		{
 			result.append(BEHAVIOR_INDEX_SEPARATOR);
-			result.append(behaviorIndex);
+			result.append(behaviorId);
 		}
 		result.append(SEPARATOR);
 		result.append(encodeComponentPath(componentPath));
@@ -158,9 +199,9 @@ public class ComponentInfo
 	 * @param string
 	 * @return whether the string consists of digits only
 	 */
-	private static boolean isNumber(String string)
+	private static boolean isNumber(final String string)
 	{
-		if (string == null || string.length() == 0)
+		if ((string == null) || (string.length() == 0))
 		{
 			return false;
 		}
@@ -180,7 +221,7 @@ public class ComponentInfo
 	 * @param string
 	 * @return component info or <code>null</code> if the string is not in correct format.
 	 */
-	public static ComponentInfo parse(String string)
+	public static ComponentInfo parse(final String string)
 	{
 		if (Strings.isEmpty(string))
 		{

@@ -18,7 +18,8 @@ package org.apache.wicket.extensions.markup.html.repeater.util;
 
 import org.apache.wicket.IClusterable;
 import org.apache.wicket.extensions.markup.html.repeater.data.sort.ISortState;
-
+import org.apache.wicket.extensions.markup.html.repeater.data.sort.SortOrder;
+import org.apache.wicket.util.lang.Args;
 
 /**
  * Implementation of ISortState that can keep track of sort information for a single property.
@@ -33,42 +34,39 @@ public class SingleSortState implements ISortState, IClusterable
 	SortParam param;
 
 	/**
-	 * @see org.apache.wicket.extensions.markup.html.repeater.data.sort.ISortState#setPropertySortOrder(java.lang.String,
-	 *      int)
+	 * @see org.apache.wicket.extensions.markup.html.repeater.data.sort.ISortState#setPropertySortOrder(String,
+	 *      org.apache.wicket.extensions.markup.html.repeater.data.sort.SortOrder)
 	 */
-	public void setPropertySortOrder(String property, int dir)
+	public void setPropertySortOrder(final String property, final SortOrder order)
 	{
-		if (property == null)
-		{
-			throw new IllegalArgumentException("argument [property] cannot be null");
-		}
+		Args.notNull(property, "property");
+		Args.notNull(order, "order");
 
-		param = new SortParam(property, dir == ISortState.ASCENDING);
+		if (order == SortOrder.NONE)
+		{
+			if ((param != null) && property.equals(param.getProperty()))
+			{
+				param = null;
+			}
+		}
+		else
+		{
+			param = new SortParam(property, order == SortOrder.ASCENDING);
+		}
 	}
 
 	/**
 	 * @see org.apache.wicket.extensions.markup.html.repeater.data.sort.ISortState#getPropertySortOrder(java.lang.String)
 	 */
-	public int getPropertySortOrder(String property)
+	public SortOrder getPropertySortOrder(final String property)
 	{
-		if (property == null)
-		{
-			throw new IllegalArgumentException("argument [property] cannot be null");
-		}
+		Args.notNull(property, "property");
 
-		if (param == null || !param.getProperty().equals(property))
+		if ((param == null) || (param.getProperty().equals(property) == false))
 		{
-			return NONE;
+			return SortOrder.NONE;
 		}
-		else if (param.isAscending())
-		{
-			return ASCENDING;
-		}
-		else
-		{
-			return DESCENDING;
-		}
-
+		return param.isAscending() ? SortOrder.ASCENDING : SortOrder.DESCENDING;
 	}
 
 	/**
@@ -85,7 +83,7 @@ public class SingleSortState implements ISortState, IClusterable
 	 * @param param
 	 *            parameter containing new sorting information
 	 */
-	public void setSort(SortParam param)
+	public void setSort(final SortParam param)
 	{
 		this.param = param;
 	}
@@ -93,6 +91,7 @@ public class SingleSortState implements ISortState, IClusterable
 	/**
 	 * @see java.lang.Object#toString()
 	 */
+	@Override
 	public String toString()
 	{
 		return "[SingleSortState sort=" + ((param == null) ? "null" : param.toString()) + "]";

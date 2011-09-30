@@ -20,7 +20,7 @@ import org.apache.wicket.Component;
 import org.apache.wicket.ajax.AbstractDefaultAjaxBehavior;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.IAjaxIndicatorAware;
-import org.apache.wicket.behavior.AbstractBehavior;
+import org.apache.wicket.behavior.Behavior;
 import org.apache.wicket.markup.html.IHeaderResponse;
 import org.apache.wicket.request.IRequestHandler;
 import org.apache.wicket.request.Response;
@@ -41,7 +41,7 @@ import org.apache.wicket.request.handler.resource.ResourceReferenceRequestHandle
  * 
  * @author Igor Vaynberg (ivaynberg)
  */
-public class AjaxIndicatorAppender extends AbstractBehavior
+public class AjaxIndicatorAppender extends Behavior
 {
 	/**
 	 * Component instance this behavior is bound to
@@ -61,23 +61,22 @@ public class AjaxIndicatorAppender extends AbstractBehavior
 	}
 
 	@Override
-	public void renderHead(IHeaderResponse response)
+	public void renderHead(final Component component, final IHeaderResponse response)
 	{
 		if (AjaxRequestTarget.get() != null)
 		{
 			final String javascript = "var e = Wicket.$('" + getMarkupId() +
 				"'); if (e != null && typeof(e.parentNode) != 'undefined') e.parentNode.removeChild(e);";
 
-			response.renderJavascript(javascript, null);
+			response.renderOnDomReadyJavaScript(javascript);
 		}
 	}
 
-	/**
-	 * @see org.apache.wicket.behavior.AbstractBehavior#onRendered(org.apache.wicket.Component)
-	 */
+
 	@Override
-	public void onRendered(Component component)
+	public void afterRender(final Component component)
 	{
+		super.afterRender(component);
 		final Response r = component.getResponse();
 
 		r.write("<span style=\"display:none;\" class=\"");
@@ -89,6 +88,7 @@ public class AjaxIndicatorAppender extends AbstractBehavior
 		r.write("<img src=\"");
 		r.write(getIndicatorUrl());
 		r.write("\" alt=\"\"/></span>");
+
 	}
 
 	/**
@@ -124,7 +124,7 @@ public class AjaxIndicatorAppender extends AbstractBehavior
 	 * @see org.apache.wicket.behavior.AbstractBehavior#bind(org.apache.wicket.Component)
 	 */
 	@Override
-	public final void bind(Component component)
+	public final void bind(final Component component)
 	{
 		this.component = component;
 	}

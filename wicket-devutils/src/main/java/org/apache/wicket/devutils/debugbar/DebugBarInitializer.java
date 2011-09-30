@@ -18,6 +18,7 @@ package org.apache.wicket.devutils.debugbar;
 
 import org.apache.wicket.Application;
 import org.apache.wicket.IInitializer;
+import org.apache.wicket.devutils.diskstore.DebugDiskDataStore;
 
 /**
  * Debug bar module initializer
@@ -28,19 +29,29 @@ import org.apache.wicket.IInitializer;
 public class DebugBarInitializer implements IInitializer
 {
 
-    /** {@inheritDoc} */
-    public void init(Application application)
-    {
-        // register standard debug contributors
-        DebugBar.registerContributor(VersionDebugContributor.DEBUG_BAR_CONTRIB, application);
-        DebugBar.registerContributor(InspectorDebugPanel.DEBUG_BAR_CONTRIB, application);
-        DebugBar.registerContributor(SessionSizeDebugPanel.DEBUG_BAR_CONTRIB, application);
-    }
+	/** {@inheritDoc} */
+	public void init(final Application application)
+	{
+		if (application.getDebugSettings().isDevelopmentUtilitiesEnabled())
+		{
+			// register standard debug contributors
+			DebugBar.registerContributor(VersionDebugContributor.DEBUG_BAR_CONTRIB, application);
+			DebugBar.registerContributor(InspectorDebugPanel.DEBUG_BAR_CONTRIB, application);
+			DebugBar.registerContributor(SessionSizeDebugPanel.DEBUG_BAR_CONTRIB, application);
+			DebugBar.registerContributor(PageSizeDebugPanel.DEBUG_BAR_CONTRIB, application);
+			DebugDiskDataStore.register(application);
+		}
+	}
 
-    @Override
-    public String toString()
-    {
-        return "DevUtils DebugBar Initializer";
-    }
+	@Override
+	public String toString()
+	{
+		return "DevUtils DebugBar Initializer";
+	}
+
+	/** {@inheritDoc} */
+	public void destroy(final Application application)
+	{
+	}
 
 }

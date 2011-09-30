@@ -18,6 +18,7 @@ package org.apache.wicket.request.flow;
 
 import org.apache.wicket.request.IRequestCycle;
 import org.apache.wicket.request.IRequestHandler;
+import org.apache.wicket.request.IRequestHandlerDelegate;
 import org.apache.wicket.request.RequestHandlerStack.ReplaceHandlerException;
 
 /**
@@ -28,38 +29,49 @@ import org.apache.wicket.request.RequestHandlerStack.ReplaceHandlerException;
  */
 public abstract class ResetResponseException extends ReplaceHandlerException
 {
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L;
 
 	/**
 	 * Construct.
+	 * 
+	 * @param handler
 	 */
-	protected ResetResponseException(IRequestHandler handler)
+	protected ResetResponseException(final IRequestHandler handler)
 	{
 		super(new ResponseResettingDecorator(handler), true);
 	}
 
-	private static class ResponseResettingDecorator implements IRequestHandler
+	private static class ResponseResettingDecorator
+		implements
+			IRequestHandler,
+			IRequestHandlerDelegate
 	{
 		private final IRequestHandler delegate;
 
-		public ResponseResettingDecorator(IRequestHandler delegate)
+		/**
+		 * Construct.
+		 * 
+		 * @param delegate
+		 */
+		public ResponseResettingDecorator(final IRequestHandler delegate)
 		{
 			this.delegate = delegate;
 		}
 
-		public void detach(IRequestCycle requestCycle)
+		public void detach(final IRequestCycle requestCycle)
 		{
 			delegate.detach(requestCycle);
 		}
 
-		public void respond(IRequestCycle requestCycle)
+		public void respond(final IRequestCycle requestCycle)
 		{
 			requestCycle.getResponse().reset();
 			delegate.respond(requestCycle);
 		}
 
+		public IRequestHandler getDelegateHandler()
+		{
+			return delegate;
+		}
 	}
 }

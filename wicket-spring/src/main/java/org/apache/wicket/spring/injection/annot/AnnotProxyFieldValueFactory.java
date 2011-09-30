@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import org.apache.wicket.injection.IFieldValueFactory;
 import org.apache.wicket.proxy.LazyInitProxyFactory;
@@ -40,9 +40,9 @@ import org.springframework.context.support.AbstractApplicationContext;
 /**
  * {@link IFieldValueFactory} that uses {@link LazyInitProxyFactory} to create proxies for Spring
  * dependencies based on the {@link SpringBean} annotation applied to a field. This class is usually
- * used by the {@link AnnotSpringInjector} to inject objects with lazy init proxies. However, this
- * class can be used on its own to create proxies for any field decorated with a {@link SpringBean}
- * annotation.
+ * used by the {@link SpringComponentInjector} to inject objects with lazy init proxies. However,
+ * this class can be used on its own to create proxies for any field decorated with a
+ * {@link SpringBean} annotation.
  * <p>
  * Example:
  * 
@@ -67,17 +67,14 @@ import org.springframework.context.support.AbstractApplicationContext;
  * 
  * @author Igor Vaynberg (ivaynberg)
  * @author Istvan Devai
- * 
  */
 public class AnnotProxyFieldValueFactory implements IFieldValueFactory
 {
 	private final ISpringContextLocator contextLocator;
 
-	private final ConcurrentHashMap<SpringBeanLocator, Object> cache = Generics
-			.newConcurrentHashMap();
+	private final ConcurrentMap<SpringBeanLocator, Object> cache = Generics.newConcurrentHashMap();
 
-	private final ConcurrentHashMap<Class< ? >, String> beanNameCache = Generics
-			.newConcurrentHashMap();
+	private final ConcurrentMap<Class<?>, String> beanNameCache = Generics.newConcurrentHashMap();
 
 	private final boolean wrapInProxies;
 
@@ -85,7 +82,7 @@ public class AnnotProxyFieldValueFactory implements IFieldValueFactory
 	 * @param contextLocator
 	 *            spring context locator
 	 */
-	public AnnotProxyFieldValueFactory(ISpringContextLocator contextLocator)
+	public AnnotProxyFieldValueFactory(final ISpringContextLocator contextLocator)
 	{
 		this(contextLocator, true);
 	}
@@ -97,7 +94,8 @@ public class AnnotProxyFieldValueFactory implements IFieldValueFactory
 	 *            whether or not wicket should wrap dependencies with specialized proxies that can
 	 *            be safely serialized. in most cases this should be set to true.
 	 */
-	public AnnotProxyFieldValueFactory(ISpringContextLocator contextLocator, boolean wrapInProxies)
+	public AnnotProxyFieldValueFactory(final ISpringContextLocator contextLocator,
+		final boolean wrapInProxies)
 	{
 		if (contextLocator == null)
 		{
@@ -107,16 +105,19 @@ public class AnnotProxyFieldValueFactory implements IFieldValueFactory
 		this.wrapInProxies = wrapInProxies;
 	}
 
-	/**
-	 * @see org.apache.wicket.injection.IFieldValueFactory#getFieldValue(java.lang.reflect.Field,
-	 *      java.lang.Object)
-	 */
-	public Object getFieldValue(Field field, Object fieldOwner)
+	public Object getFieldValue(final Field field, final Object fieldOwner)
 	{
 		if (supportsField(field))
 		{
-			SpringBeanLocator locator = new SpringBeanLocator(getBeanName(field), field.getType(),
-					contextLocator);
+			String beanName = getBeanName(field);
+
+			if (beanName == null)
+			{
+				return null;
+			}
+
+			SpringBeanLocator locator = new SpringBeanLocator(beanName, field.getType(),
+				contextLocator);
 
 			// only check the cache if the bean is a singleton
 			Object cachedValue = cache.get(locator);
@@ -160,8 +161,12 @@ public class AnnotProxyFieldValueFactory implements IFieldValueFactory
 			name = beanNameCache.get(field.getType());
 			if (name == null)
 			{
-				name = getBeanNameOfClass(contextLocator.getSpringContext(), field.getType());
-				beanNameCache.put(field.getType(), name);
+				name = getBeanNameOfClass(contextLocator.getSpringContext(), field.getType(), annot);
+
+				if (name != null)
+				{
+					beanNameCache.put(field.getType(), name);
+				}
 			}
 		}
 		return name;
@@ -175,26 +180,30 @@ public class AnnotProxyFieldValueFactory implements IFieldValueFactory
 	 *            spring application context
 	 * @param clazz
 	 *            bean class
+	 * @param annot
+	 *            the SpringBean annotation
 	 * @throws IllegalStateException
 	 * @return spring name of the bean
 	 */
-	private final String getBeanNameOfClass(ApplicationContext ctx, Class< ? > clazz)
+	private final String getBeanNameOfClass(final ApplicationContext ctx, final Class<?> clazz,
+		final SpringBean annot)
 	{
 		// get the list of all possible matching beans
-		List<String> names = new ArrayList<String>(Arrays.asList(BeanFactoryUtils
-				.beanNamesForTypeIncludingAncestors(ctx, clazz)));
+		List<String> names = new ArrayList<String>(
+			Arrays.asList(BeanFactoryUtils.beanNamesForTypeIncludingAncestors(ctx, clazz)));
 
 		// filter out beans that are not candidates for autowiring
-		Iterator<String> it = names.iterator();
-		while (it.hasNext())
+		if (ctx instanceof AbstractApplicationContext)
 		{
-			final String possibility = it.next();
-			if (ctx instanceof AbstractApplicationContext)
+			Iterator<String> it = names.iterator();
+			while (it.hasNext())
 			{
-				BeanDefinition beanDef = getBeanDefinition(((AbstractApplicationContext)ctx)
-						.getBeanFactory(), possibility);
+				final String possibility = it.next();
+				BeanDefinition beanDef = getBeanDefinition(
+					((AbstractApplicationContext)ctx).getBeanFactory(), possibility);
 				if (BeanFactoryUtils.isFactoryDereference(possibility) ||
-						possibility.startsWith("scopedTarget.") || !beanDef.isAutowireCandidate())
+					possibility.startsWith("scopedTarget.") ||
+					(beanDef != null && !beanDef.isAutowireCandidate()))
 				{
 					it.remove();
 				}
@@ -203,7 +212,11 @@ public class AnnotProxyFieldValueFactory implements IFieldValueFactory
 
 		if (names.isEmpty())
 		{
-			throw new IllegalStateException("bean of type [" + clazz.getName() + "] not found");
+			if (annot.required())
+			{
+				throw new IllegalStateException("bean of type [" + clazz.getName() + "] not found");
+			}
+			return null;
 		}
 		else if (names.size() > 1)
 		{
@@ -212,11 +225,11 @@ public class AnnotProxyFieldValueFactory implements IFieldValueFactory
 				List<String> primaries = new ArrayList<String>();
 				for (String name : names)
 				{
-					BeanDefinition beanDef = getBeanDefinition(((AbstractApplicationContext)ctx)
-							.getBeanFactory(), name);
+					BeanDefinition beanDef = getBeanDefinition(
+						((AbstractApplicationContext)ctx).getBeanFactory(), name);
 					if (beanDef instanceof AbstractBeanDefinition)
 					{
-						if (((AbstractBeanDefinition)beanDef).isPrimary())
+						if (beanDef.isPrimary())
 						{
 							primaries.add(name);
 						}
@@ -233,7 +246,7 @@ public class AnnotProxyFieldValueFactory implements IFieldValueFactory
 			msg.append("] found, you have to specify the name of the bean ");
 			msg.append("(@SpringBean(name=\"foo\")) in order to resolve this conflict. ");
 			msg.append("Matched beans: ");
-			msg.append(Strings.join(",", names.toArray(new String[0])));
+			msg.append(Strings.join(",", names.toArray(new String[names.size()])));
 			throw new IllegalStateException(msg.toString());
 		}
 		else
@@ -242,8 +255,8 @@ public class AnnotProxyFieldValueFactory implements IFieldValueFactory
 		}
 	}
 
-	private BeanDefinition getBeanDefinition(ConfigurableListableBeanFactory beanFactory,
-			String name)
+	private BeanDefinition getBeanDefinition(final ConfigurableListableBeanFactory beanFactory,
+		final String name)
 	{
 		if (beanFactory.containsBeanDefinition(name))
 		{
@@ -252,7 +265,7 @@ public class AnnotProxyFieldValueFactory implements IFieldValueFactory
 		else
 		{
 			BeanFactory parent = beanFactory.getParentBeanFactory();
-			if (parent != null && parent instanceof ConfigurableListableBeanFactory)
+			if ((parent != null) && (parent instanceof ConfigurableListableBeanFactory))
 			{
 				return getBeanDefinition((ConfigurableListableBeanFactory)parent, name);
 			}
@@ -263,11 +276,10 @@ public class AnnotProxyFieldValueFactory implements IFieldValueFactory
 		}
 	}
 
-
 	/**
 	 * @see org.apache.wicket.injection.IFieldValueFactory#supportsField(java.lang.reflect.Field)
 	 */
-	public boolean supportsField(Field field)
+	public boolean supportsField(final Field field)
 	{
 		return field.isAnnotationPresent(SpringBean.class);
 	}

@@ -1,13 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:wicket="http://wicket.apache.org">
 	<head>
 		<title>Wicket Examples - stateless</title>
 		<link rel="stylesheet" type="text/css" href="style.css" />
-		<style>
-			body { background-image: none; }
-		</style>
 	</head>
 	<body>
+		<span wicket:id="mainNavigation"/>
 		<span wicket:id="message" id="message">Message goes here</span>
 		<br />
 		<a wicket:id="indexLink" href="#">go to index</a>
@@ -28,8 +26,8 @@
 
 		<p>
 		<form wicket:id="statelessform">
-		<input type="text" wicket:id="textfield">
-		<input type="submit"> 
+		<input type="text" wicket:id="textfield" />
+		<input type="submit" />
 		</form>
 		</p>
 			<p>

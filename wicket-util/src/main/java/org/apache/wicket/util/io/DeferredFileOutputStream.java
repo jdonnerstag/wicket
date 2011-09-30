@@ -21,6 +21,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import org.apache.wicket.util.lang.Args;
+
+
 /**
  * <p>
  * An output stream which will retain data in memory until a specified threshold is reached, and
@@ -34,35 +37,26 @@ import java.io.OutputStream;
  * </p>
  * 
  * @author <a href="mailto:martinc@apache.org">Martin Cooper</a>
- * @version $Id$
  */
 public class DeferredFileOutputStream extends ThresholdingOutputStream
 {
-
-	// ----------------------------------------------------------- Data members
-
-
 	/**
 	 * The output stream to which data will be written at any given time. This will always be one of
 	 * <code>memoryOutputStream</code> or <code>diskOutputStream</code>.
 	 */
 	private OutputStream currentOutputStream;
 
-
 	/**
 	 * The output stream to which data will be written prior to the threshold being reached.
 	 */
 	private ByteArrayOutputStream memoryOutputStream;
 
-
 	/**
 	 * The file to which output will be directed if the threshold is exceeded.
 	 */
-	private final File outputFile;
+	private File outputFile;
 
-
-	// ----------------------------------------------------------- Constructors
-
+	private final FileFactory fileFactory;
 
 	/**
 	 * Constructs an instance of this class which will trigger an event at the specified threshold,
@@ -73,18 +67,34 @@ public class DeferredFileOutputStream extends ThresholdingOutputStream
 	 * @param outputFile
 	 *            The file to which data is saved beyond the threshold.
 	 */
-	public DeferredFileOutputStream(int threshold, File outputFile)
+	public DeferredFileOutputStream(final int threshold, final File outputFile)
 	{
 		super(threshold);
-		this.outputFile = outputFile;
+
+		this.outputFile = Args.notNull(outputFile, "outputFile");
+		fileFactory = null;
 
 		memoryOutputStream = new ByteArrayOutputStream();
 		currentOutputStream = memoryOutputStream;
 	}
 
+	/**
+	 * Constructs an instance of this class which will trigger an event at the specified threshold,
+	 * and save data to a file beyond that point.
+	 * 
+	 * @param threshold
+	 *            The number of bytes at which to trigger an event.
+	 * @param fileFactory
+	 *            The FileFactory to create the file.
+	 */
+	public DeferredFileOutputStream(final int threshold, final FileFactory fileFactory)
+	{
+		super(threshold);
+		this.fileFactory = Args.notNull(fileFactory, "fileFactory");
 
-	// --------------------------------------- ThresholdingOutputStream methods
-
+		memoryOutputStream = new ByteArrayOutputStream();
+		currentOutputStream = memoryOutputStream;
+	}
 
 	/**
 	 * Returns the data for this output stream as an array of bytes, assuming that the data has been
@@ -101,7 +111,6 @@ public class DeferredFileOutputStream extends ThresholdingOutputStream
 		return null;
 	}
 
-
 	/**
 	 * Returns the data for this output stream as a <code>File</code>, assuming that the data was
 	 * written to disk. If the data was retained in memory, this method returns <code>null</code>.
@@ -113,10 +122,6 @@ public class DeferredFileOutputStream extends ThresholdingOutputStream
 		return outputFile;
 	}
 
-
-	// --------------------------------------------------------- Public methods
-
-
 	/**
 	 * Determines whether or not the data for this output stream has been retained in memory.
 	 * 
@@ -126,7 +131,6 @@ public class DeferredFileOutputStream extends ThresholdingOutputStream
 	{
 		return (!isThresholdExceeded());
 	}
-
 
 	/**
 	 * Returns the current output stream. This may be memory based or disk based, depending on the
@@ -142,7 +146,6 @@ public class DeferredFileOutputStream extends ThresholdingOutputStream
 		return currentOutputStream;
 	}
 
-
 	/**
 	 * Switches the underlying output stream from a memory based stream to one that is backed by
 	 * disk. This is the point at which we realize that too much data is being written to keep in
@@ -155,9 +158,26 @@ public class DeferredFileOutputStream extends ThresholdingOutputStream
 	protected void thresholdReached() throws IOException
 	{
 		byte[] data = memoryOutputStream.toByteArray();
+		if (outputFile == null)
+		{
+			outputFile = fileFactory.createFile();
+		}
 		FileOutputStream fos = new FileOutputStream(outputFile);
 		fos.write(data);
 		currentOutputStream = fos;
 		memoryOutputStream = null;
+	}
+
+	/**
+	 * The file factory for this deferred file output stream.
+	 * 
+	 * @author jcompagner
+	 */
+	public interface FileFactory
+	{
+		/**
+		 * @return the file to use for disk cache
+		 */
+		File createFile();
 	}
 }

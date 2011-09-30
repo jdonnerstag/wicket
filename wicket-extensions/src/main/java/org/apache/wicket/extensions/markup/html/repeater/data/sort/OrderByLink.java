@@ -16,11 +16,12 @@
  */
 package org.apache.wicket.extensions.markup.html.repeater.data.sort;
 
-import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.Component;
 import org.apache.wicket.IClusterable;
+import org.apache.wicket.behavior.Behavior;
+import org.apache.wicket.markup.ComponentTag;
 import org.apache.wicket.markup.html.link.Link;
-import org.apache.wicket.model.Model;
+import org.apache.wicket.util.string.Strings;
 
 /**
  * A component that represents a sort header. When the link is clicked it will toggle the state of a
@@ -29,7 +30,7 @@ import org.apache.wicket.model.Model;
  * @author Phil Kulak
  * @author Igor Vaynberg (ivaynberg)
  */
-public class OrderByLink extends Link
+public class OrderByLink extends Link<Void>
 {
 	private static final long serialVersionUID = 1L;
 
@@ -52,7 +53,7 @@ public class OrderByLink extends Link
 	 *            locator used to locate sort state object that this will use to read/write state of
 	 *            sorted properties
 	 */
-	public OrderByLink(String id, String property, ISortStateLocator stateLocator)
+	public OrderByLink(final String id, final String property, final ISortStateLocator stateLocator)
 	{
 		this(id, property, stateLocator, DefaultCssProvider.getInstance());
 	}
@@ -75,8 +76,8 @@ public class OrderByLink extends Link
 	 * @see OrderByLink.ICssProvider
 	 * 
 	 */
-	public OrderByLink(String id, String property, ISortStateLocator stateLocator,
-		ICssProvider cssProvider)
+	public OrderByLink(final String id, final String property,
+		final ISortStateLocator stateLocator, final ICssProvider cssProvider)
 	{
 		super(id);
 
@@ -128,20 +129,34 @@ public class OrderByLink extends Link
 
 		ISortState state = stateLocator.getSortState();
 
-		int oldDir = state.getPropertySortOrder(property);
+		// get current sort order
+		SortOrder order = state.getPropertySortOrder(property);
 
-		int newDir = ISortState.ASCENDING;
-
-		if (oldDir == ISortState.ASCENDING)
-		{
-			newDir = ISortState.DESCENDING;
-		}
-
-		state.setPropertySortOrder(property, newDir);
+		// set next sort order
+		state.setPropertySortOrder(property, nextSortOrder(order));
 
 		return this;
 	}
 
+	/**
+	 * returns the next sort order when changing it
+	 * 
+	 * @param order
+	 *            previous sort order
+	 * @return next sort order
+	 */
+	protected SortOrder nextSortOrder(final SortOrder order)
+	{
+		// init / flip order
+		if (order == SortOrder.NONE)
+		{
+			return SortOrder.ASCENDING;
+		}
+		else
+		{
+			return order == SortOrder.ASCENDING ? SortOrder.DESCENDING : SortOrder.ASCENDING;
+		}
+	}
 
 	/**
 	 * Uses the specified ICssProvider to add css class attributes to the link.
@@ -149,10 +164,11 @@ public class OrderByLink extends Link
 	 * @author Igor Vaynberg ( ivaynberg )
 	 * 
 	 */
-	public static class CssModifier extends AttributeModifier
+	public static class CssModifier extends Behavior
 	{
 		private static final long serialVersionUID = 1L;
-
+		private final OrderByLink link;
+		private final ICssProvider provider;
 
 		/**
 		 * @param link
@@ -162,36 +178,24 @@ public class OrderByLink extends Link
 		 */
 		public CssModifier(final OrderByLink link, final ICssProvider provider)
 		{
-			super("class", true, new Model<String>()
-			{
-				private static final long serialVersionUID = 1L;
-
-				@Override
-				public String getObject()
-				{
-
-					final ISortState sortState = link.stateLocator.getSortState();
-					return provider.getClassAttributeValue(sortState, link.property);
-				}
-
-				@Override
-				public void setObject(String object)
-				{
-					throw new UnsupportedOperationException();
-				}
-
-			});
+			this.link = link;
+			this.provider = provider;
 		}
 
-		/**
-		 * @see org.apache.wicket.AttributeModifier#isEnabled(Component)
-		 */
 		@Override
-		public boolean isEnabled(Component component)
+		public void onComponentTag(final Component component, final ComponentTag tag)
 		{
-			return getReplaceModel().getObject() != null;
+			super.onComponentTag(component, tag);
+
+			final ISortState sortState = link.stateLocator.getSortState();
+			String cssClass = provider.getClassAttributeValue(sortState, link.property);
+			if (!Strings.isEmpty(cssClass))
+			{
+				tag.append("class", cssClass, " ");
+			}
+
 		}
-	};
+	}
 
 
 	/**
@@ -238,7 +242,7 @@ public class OrderByLink extends Link
 		 * @param none
 		 *            css class when not sorted
 		 */
-		public CssProvider(String ascending, String descending, String none)
+		public CssProvider(final String ascending, final String descending, final String none)
 		{
 			this.ascending = ascending;
 			this.descending = descending;
@@ -249,14 +253,15 @@ public class OrderByLink extends Link
 		 * @see org.apache.wicket.extensions.markup.html.repeater.data.sort.OrderByLink.ICssProvider#getClassAttributeValue(org.apache.wicket.extensions.markup.html.repeater.data.sort.ISortState,
 		 *      java.lang.String)
 		 */
-		public String getClassAttributeValue(ISortState state, String property)
+		public String getClassAttributeValue(final ISortState state, final String property)
 		{
-			int dir = state.getPropertySortOrder(property);
-			if (dir == ISortState.ASCENDING)
+			SortOrder dir = state.getPropertySortOrder(property);
+
+			if (dir == SortOrder.ASCENDING)
 			{
 				return ascending;
 			}
-			else if (dir == ISortState.DESCENDING)
+			else if (dir == SortOrder.DESCENDING)
 			{
 				return descending;
 			}

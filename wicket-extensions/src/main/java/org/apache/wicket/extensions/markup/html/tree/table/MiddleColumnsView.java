@@ -17,17 +17,13 @@
 package org.apache.wicket.extensions.markup.html.tree.table;
 
 import java.text.NumberFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Locale;
 
 import javax.swing.tree.TreeNode;
 
 import org.apache.wicket.Component;
 import org.apache.wicket.extensions.markup.html.tree.table.ColumnLocation.Unit;
-import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.request.Response;
 import org.apache.wicket.request.cycle.RequestCycle;
 import org.apache.wicket.response.NullResponse;
@@ -39,17 +35,9 @@ import org.apache.wicket.response.NullResponse;
  * 
  * @author Matej Knopp
  */
-final class MiddleColumnsView extends WebMarkupContainer
+final class MiddleColumnsView extends AbstractColumnsView
 {
 	private static final long serialVersionUID = 1L;
-
-	private final List<IColumn> columns = new ArrayList<IColumn>();
-
-	private final List<Component> components = new ArrayList<Component>();
-
-	private final TreeNode node;
-
-	private final List<IRenderable> renderables = new ArrayList<IRenderable>();
 
 	private final boolean treeHasLeftColumn;
 
@@ -63,31 +51,10 @@ final class MiddleColumnsView extends WebMarkupContainer
 	 * @param treeHasLeftColumn
 	 *            Whether there is a column aligned to left in the tree table
 	 */
-	public MiddleColumnsView(String id, TreeNode node, boolean treeHasLeftColumn)
+	public MiddleColumnsView(final String id, final TreeNode node, final boolean treeHasLeftColumn)
 	{
-		super(id);
-		this.node = node;
+		super(id, node);
 		this.treeHasLeftColumn = treeHasLeftColumn;
-	}
-
-	/**
-	 * Adds a column to be rendered.
-	 * 
-	 * @param column
-	 *            The column to render
-	 * @param component
-	 *            The component
-	 * @param renderable
-	 *            The renderer
-	 */
-	public void addColumn(IColumn column, Component component, IRenderable renderable)
-	{
-		if (column.isVisible())
-		{
-			columns.add(column);
-			components.add(component);
-			renderables.add(renderable);
-		}
 	}
 
 	/**
@@ -108,9 +75,8 @@ final class MiddleColumnsView extends WebMarkupContainer
 
 		// go over all columns, check their alignment and count sum of their
 		// weights
-		for (Iterator<IColumn> i = columns.iterator(); i.hasNext();)
+		for (IColumn column : columns)
 		{
-			IColumn column = i.next();
 			// check if the unit is right
 			if (column.getLocation().getUnit() != Unit.PROPORTIONAL)
 			{
@@ -127,9 +93,8 @@ final class MiddleColumnsView extends WebMarkupContainer
 		int spanLeft = 0; // over how many columns does the spanning column
 		// span
 
-		for (Iterator<IColumn> i = columns.iterator(); i.hasNext();)
+		for (IColumn column : columns)
 		{
-			IColumn column = i.next();
 			int ix = index; // to which column should we append the size
 			if (spanLeft > 0) // is there a column spanning over current
 			// column?
@@ -144,7 +109,7 @@ final class MiddleColumnsView extends WebMarkupContainer
 
 			// wants this column to span and no other column is spanning over
 			// this column?
-			if (spanLeft == 0 && column.getSpan(node) > 1)
+			if ((spanLeft == 0) && (column.getSpan(node) > 1))
 			{
 				int maxSpan = columns.size() - columns.indexOf(column); // how
 				// many
@@ -164,9 +129,9 @@ final class MiddleColumnsView extends WebMarkupContainer
 		// count the sum
 		double together = 0d;
 
-		for (int i = 0; i < result.length; i++)
+		for (double value : result)
 		{
-			together += result[i];
+			together += value;
 		}
 
 		// is it bigger than 99.8? that can cause layout problems in IE
@@ -198,7 +163,7 @@ final class MiddleColumnsView extends WebMarkupContainer
 
 		NumberFormat nf = NumberFormat.getNumberInstance(Locale.ENGLISH);
 		nf.setMaximumFractionDigits(0);
-		nf.setMaximumFractionDigits(2);
+		nf.setMaximumIntegerDigits(2);
 
 		for (int i = 0; i < columns.size(); ++i)
 		{
@@ -210,10 +175,14 @@ final class MiddleColumnsView extends WebMarkupContainer
 			response.write("<span class=\"b_\" style=\"width:" + nf.format(widths[i]) + "%\">");
 
 			// determine whether we should render the left border
-			if (!treeHasLeftColumn && i == 0)
+			if (!treeHasLeftColumn && (i == 0))
+			{
 				response.write("<span class=\"d_\">");
+			}
 			else
+			{
 				response.write("<span class=\"c_\">");
+			}
 
 			if (component != null) // is there a component for current column?
 			{
@@ -244,7 +213,7 @@ final class MiddleColumnsView extends WebMarkupContainer
 				// render the component to null response (otherwise the
 				// component will
 				// complain that it hasn't been rendered
-				for (int j = 1; j < span && i < components.size(); ++j)
+				for (int j = 1; (j < span) && (i < components.size()); ++j)
 				{
 					++i;
 					if (components.get(i) != null)

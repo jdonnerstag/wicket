@@ -19,8 +19,6 @@ package org.apache.wicket.threadtest;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.wicket.threadtest.tester.SimpleGetCommand;
 import org.apache.wicket.threadtest.tester.Tester;
 
@@ -30,8 +28,6 @@ import org.apache.wicket.threadtest.tester.Tester;
 public class App2Test1
 {
 
-	private static final Log log = LogFactory.getLog(App2Test1.class);
-
 	/**
 	 * @param args
 	 * @throws Exception
@@ -39,7 +35,7 @@ public class App2Test1
 	public static void main(String[] args) throws Exception
 	{
 
-		List<String> gets = Arrays.asList(new String[] { "/app2/wicket/bookmarkable/org.apache.wicket.threadtest.apps.app2.Home" });
+		List<String> gets = Arrays.asList("/app2/wicket/bookmarkable/org.apache.wicket.threadtest.apps.app2.Home");
 
 		SimpleGetCommand getCmd = new SimpleGetCommand(gets, 5);
 

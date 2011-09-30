@@ -35,8 +35,13 @@ import com.google.inject.Module;
 import com.google.inject.Provider;
 import com.google.inject.TypeLiteral;
 
+/**
+ */
 public class GuiceInjectorTest extends TestCase
 {
+	/**
+	 * testInjectionAndSerialization()
+	 */
 	public void testInjectionAndSerialization()
 	{
 		MockApplication app = new MockApplication();
@@ -55,7 +60,7 @@ public class GuiceInjectorTest extends TestCase
 			GuiceComponentInjector injector = new GuiceComponentInjector(app, new Module()
 			{
 
-				public void configure(Binder binder)
+				public void configure(final Binder binder)
 				{
 					binder.bind(ITestService.class).to(TestService.class);
 					binder.bind(ITestService.class)
@@ -103,12 +108,12 @@ public class GuiceInjectorTest extends TestCase
 		}
 	}
 
-	private void doChecksForNoComponent(TestNoComponent component)
+	private void doChecksForNoComponent(final TestNoComponent component)
 	{
 		assertEquals(ITestService.RESULT_RED, component.getString());
 	}
 
-	private void doChecksForComponent(TestComponent component)
+	private void doChecksForComponent(final TestComponent component)
 	{
 		assertEquals(ITestService.RESULT, component.getInjectedField().getString());
 		assertEquals(null, component.getInjectedOptionalField());
