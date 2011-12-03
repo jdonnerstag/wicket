@@ -20,6 +20,7 @@ import org.apache.wicket.WicketTestCase;
 import org.apache.wicket.util.crypt.ICrypt;
 import org.apache.wicket.util.crypt.NoCrypt;
 import org.apache.wicket.util.crypt.SunJceCrypt;
+import org.junit.Test;
 
 
 /**
@@ -28,20 +29,11 @@ import org.apache.wicket.util.crypt.SunJceCrypt;
 public class CryptTest extends WicketTestCase
 {
 	/**
-	 * Construct.
-	 * 
-	 * @param name
-	 */
-	public CryptTest(String name)
-	{
-		super(name);
-	}
-
-	/**
 	 * 
 	 * 
 	 */
-	public void testCrypt()
+	@Test
+	public void crypt()
 	{
 		final ICrypt crypt = new SunJceCrypt();
 
@@ -55,6 +47,7 @@ public class CryptTest extends WicketTestCase
 				final String encrypted = crypt.encryptUrlSafe(text);
 				assertEquals(expectedUrlSafeEncrypted, encrypted);
 				assertEquals(text, crypt.decryptUrlSafe(expectedUrlSafeEncrypted));
+				assertNull(crypt.decryptUrlSafe("style.css"));
 			}
 		}
 		catch (Exception ex)
@@ -67,7 +60,8 @@ public class CryptTest extends WicketTestCase
 	/**
 	 * 
 	 */
-	public void testNoCrypt()
+	@Test
+	public void noCrypt()
 	{
 		// The NoCrypt implementation does not modify the string at all
 		final ICrypt crypt = new NoCrypt();

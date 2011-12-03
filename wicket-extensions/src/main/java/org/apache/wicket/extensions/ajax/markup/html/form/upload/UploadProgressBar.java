@@ -21,11 +21,10 @@ import java.util.Formatter;
 import org.apache.wicket.Application;
 import org.apache.wicket.Component;
 import org.apache.wicket.IInitializer;
-import org.apache.wicket.ajax.WicketAjaxReference;
+import org.apache.wicket.ajax.CoreLibrariesContributor;
 import org.apache.wicket.extensions.ajax.markup.html.modal.ModalWindow;
 import org.apache.wicket.markup.html.IHeaderResponse;
 import org.apache.wicket.markup.html.WebMarkupContainer;
-import org.apache.wicket.markup.html.WicketEventReference;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.upload.FileUploadField;
 import org.apache.wicket.markup.html.panel.Panel;
@@ -202,8 +201,8 @@ public class UploadProgressBar extends Panel
 	public void renderHead(final IHeaderResponse response)
 	{
 		super.renderHead(response);
-		response.renderJavaScriptReference(WicketEventReference.INSTANCE);
-		response.renderJavaScriptReference(WicketAjaxReference.INSTANCE);
+
+		CoreLibrariesContributor.contributeAjax(getApplication(), response);
 		response.renderJavaScriptReference(JS);
 		ResourceReference css = getCss();
 		if (css != null)
@@ -215,15 +214,15 @@ public class UploadProgressBar extends Panel
 
 		final String uploadFieldId = (uploadField == null) ? "" : uploadField.getMarkupId();
 
-		final String status = new StringResourceModel(RESOURCE_STARTING, this, (IModel<?>)null,
-			"Upload starting...").getString();
+		final String status = new StringResourceModel(RESOURCE_STARTING, this, (IModel<?>)null).getString();
 
 		CharSequence url = urlFor(ref, UploadStatusResource.newParameter(getPage().getId()));
 
 		StringBuilder builder = new StringBuilder(128);
 		Formatter formatter = new Formatter(builder);
 
-		formatter.format("new Wicket.WUPB('%s', '%s', '%s', '%s', '%s', '%s').bind('%s')",
+		formatter.format(
+			"Wicket.bind(new Wicket.WUPB('%s', '%s', '%s', '%s', '%s', '%s'), Wicket.$('%s'))",
 			getMarkupId(), statusDiv.getMarkupId(), barDiv.getMarkupId(), url, uploadFieldId,
 			status, getCallbackForm().getMarkupId());
 		response.renderOnDomReadyJavaScript(builder.toString());

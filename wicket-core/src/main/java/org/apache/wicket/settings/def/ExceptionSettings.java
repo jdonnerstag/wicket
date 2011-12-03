@@ -17,6 +17,7 @@
 package org.apache.wicket.settings.def;
 
 import org.apache.wicket.settings.IExceptionSettings;
+import org.apache.wicket.util.lang.Args;
 
 /**
  * @author Jonathan Locke
@@ -36,8 +37,17 @@ public class ExceptionSettings implements IExceptionSettings
 	private AjaxErrorStrategy errorHandlingStrategyDuringAjaxRequests = AjaxErrorStrategy.REDIRECT_TO_ERROR_PAGE;
 
 	/**
+	 * Strategy to use for dumping stack traces of live threads in the JVM.
+	 * <p>
+	 * By default will dump the stacktrace of the thread that holds the lock on the page.
+	 * </p>
+	 */
+	private ThreadDumpStrategy threadDumpStrategy = ThreadDumpStrategy.THREAD_HOLDING_LOCK;
+
+	/**
 	 * @see org.apache.wicket.settings.IRequestCycleSettings#getUnexpectedExceptionDisplay()
 	 */
+	@Override
 	public UnexpectedExceptionDisplay getUnexpectedExceptionDisplay()
 	{
 		return unexpectedExceptionDisplay;
@@ -46,6 +56,7 @@ public class ExceptionSettings implements IExceptionSettings
 	/**
 	 * @see org.apache.wicket.settings.IRequestCycleSettings#setUnexpectedExceptionDisplay(org.apache.wicket.settings.Settings.UnexpectedExceptionDisplay)
 	 */
+	@Override
 	public void setUnexpectedExceptionDisplay(UnexpectedExceptionDisplay unexpectedExceptionDisplay)
 	{
 		this.unexpectedExceptionDisplay = unexpectedExceptionDisplay;
@@ -54,6 +65,7 @@ public class ExceptionSettings implements IExceptionSettings
 	/**
 	 * @see org.apache.wicket.settings.IExceptionSettings#getAjaxErrorHandlingStrategy()
 	 */
+	@Override
 	public AjaxErrorStrategy getAjaxErrorHandlingStrategy()
 	{
 		return errorHandlingStrategyDuringAjaxRequests;
@@ -62,9 +74,22 @@ public class ExceptionSettings implements IExceptionSettings
 	/**
 	 * @see org.apache.wicket.settings.IExceptionSettings#setAjaxErrorHandlingStrategy(org.apache.wicket.settings.IExceptionSettings.AjaxErrorStrategy)
 	 */
+	@Override
 	public void setAjaxErrorHandlingStrategy(
 		AjaxErrorStrategy errorHandlingStrategyDuringAjaxRequests)
 	{
 		this.errorHandlingStrategyDuringAjaxRequests = errorHandlingStrategyDuringAjaxRequests;
+	}
+
+	@Override
+	public void setThreadDumpStrategy(ThreadDumpStrategy strategy)
+	{
+		threadDumpStrategy = Args.notNull(strategy, "strategy");
+	}
+
+	@Override
+	public ThreadDumpStrategy getThreadDumpStrategy()
+	{
+		return threadDumpStrategy;
 	}
 }

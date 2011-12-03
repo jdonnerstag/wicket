@@ -23,6 +23,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.wicket.validation.IValidatable;
+import org.apache.wicket.validation.IValidator;
+import org.apache.wicket.validation.ValidationError;
 
 /**
  * Validator for checking URLs. The default schemes allowed are <code>http://</code>,
@@ -52,7 +54,7 @@ import org.apache.wicket.validation.IValidatable;
  * @since 1.2.6
  * @see "http://www.ietf.org/rfc/rfc2396.txt"
  */
-public class UrlValidator extends AbstractValidator<String>
+public class UrlValidator implements IValidator<String>
 {
 	private static final long serialVersionUID = 1L;
 
@@ -217,17 +219,26 @@ public class UrlValidator extends AbstractValidator<String>
 		allowedSchemes.addAll(Arrays.asList(schemes));
 	}
 
-	/**
-	 * @see AbstractValidator#onValidate(IValidatable)
-	 */
+
 	@Override
-	protected void onValidate(IValidatable<String> validatable)
+	public void validate(IValidatable<String> validatable)
 	{
 		String url = validatable.getValue();
-		if (url != null && !isValid(url))
+		if (!isValid(url))
 		{
-			error(validatable);
+			validatable.error(decorate(new ValidationError(this), validatable));
 		}
+	}
+
+	/**
+	 * Allows subclasses to decorate reported errors
+	 * 
+	 * @param error
+	 * @return decorated error
+	 */
+	protected ValidationError decorate(ValidationError error, IValidatable<String> validatable)
+	{
+		return error;
 	}
 
 	/**
@@ -416,7 +427,7 @@ public class UrlValidator extends AbstractValidator<String>
 			if (segmentCount > 1)
 			{
 				String topLevel = domainSegment[segmentCount - 1];
-				if (topLevel.length() < 2 || topLevel.length() > 4)
+				if (topLevel.length() < 2)
 				{
 					return false;
 				}

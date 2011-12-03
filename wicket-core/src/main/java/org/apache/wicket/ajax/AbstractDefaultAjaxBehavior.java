@@ -16,20 +16,16 @@
  */
 package org.apache.wicket.ajax;
 
-import org.apache.wicket.Application;
 import org.apache.wicket.Component;
 import org.apache.wicket.Page;
 import org.apache.wicket.behavior.AbstractAjaxBehavior;
 import org.apache.wicket.markup.html.IComponentAwareHeaderContributor;
 import org.apache.wicket.markup.html.IHeaderResponse;
-import org.apache.wicket.markup.html.WicketEventReference;
 import org.apache.wicket.protocol.http.WebApplication;
 import org.apache.wicket.request.Url;
 import org.apache.wicket.request.cycle.RequestCycle;
-import org.apache.wicket.request.resource.JavaScriptResourceReference;
 import org.apache.wicket.request.resource.PackageResourceReference;
 import org.apache.wicket.request.resource.ResourceReference;
-import org.apache.wicket.settings.IDebugSettings;
 import org.apache.wicket.util.lang.Args;
 import org.apache.wicket.util.string.AppendingStringBuffer;
 import org.apache.wicket.util.string.Strings;
@@ -51,10 +47,6 @@ public abstract class AbstractDefaultAjaxBehavior extends AbstractAjaxBehavior
 	public static final ResourceReference INDICATOR = new PackageResourceReference(
 		AbstractDefaultAjaxBehavior.class, "indicator.gif");
 
-	/** reference to the default ajax debug support javascript file. */
-	private static final ResourceReference JAVASCRIPT_DEBUG = new JavaScriptResourceReference(
-		AbstractDefaultAjaxBehavior.class, "wicket-ajax-debug.js");
-
 	/**
 	 * Subclasses should call super.onBind()
 	 * 
@@ -74,15 +66,7 @@ public abstract class AbstractDefaultAjaxBehavior extends AbstractAjaxBehavior
 	{
 		super.renderHead(component, response);
 
-		response.renderJavaScriptReference(WicketEventReference.INSTANCE);
-		response.renderJavaScriptReference(WicketAjaxReference.INSTANCE);
-
-		final IDebugSettings debugSettings = Application.get().getDebugSettings();
-		if (debugSettings.isAjaxDebugModeEnabled())
-		{
-			response.renderJavaScriptReference(JAVASCRIPT_DEBUG);
-			response.renderJavaScript("wicketAjaxDebugEnable=true;", "wicket-ajax-debug-enable");
-		}
+		CoreLibrariesContributor.contributeAjax(component.getApplication(), response);
 
 		Url baseUrl = RequestCycle.get().getUrlRenderer().getBaseUrl();
 		CharSequence ajaxBaseUrl = Strings.escapeMarkup(baseUrl.toString());
@@ -111,7 +95,7 @@ public abstract class AbstractDefaultAjaxBehavior extends AbstractAjaxBehavior
 	 */
 	protected CharSequence getCallbackScript()
 	{
-		return generateCallbackScript("wicketAjaxGet('" + getCallbackUrl() + "'");
+		return generateCallbackScript("Wicket.Ajax.get('" + getCallbackUrl() + "'");
 	}
 
 	/**
@@ -179,7 +163,7 @@ public abstract class AbstractDefaultAjaxBehavior extends AbstractAjaxBehavior
 
 		if (!Strings.isEmpty(indicatorId))
 		{
-			String hide = ";Wicket.hideIncrementally('" + indicatorId + "');";
+			String hide = "; Wicket.DOM.hideIncrementally('" + indicatorId + "');";
 			success = success + hide;
 			failure = failure + hide;
 		}
@@ -193,17 +177,17 @@ public abstract class AbstractDefaultAjaxBehavior extends AbstractAjaxBehavior
 		buff.append("var ").append(IAjaxCallDecorator.WICKET_CALL_RESULT_VAR).append("=");
 		buff.append(partialCall);
 
-		buff.append(",function() { ").append(success).append("}.bind(this)");
-		buff.append(",function() { ").append(failure).append("}.bind(this)");
+		buff.append(", Wicket.bind(function() { ").append(success).append("}, this)");
+		buff.append(", Wicket.bind(function() { ").append(failure).append("}, this)");
 
 		if (precondition != null)
 		{
-			buff.append(", function() {");
+			buff.append(", Wicket.bind(function() {");
 			buff.append(precondition);
-			buff.append("}.bind(this)");
+			buff.append("}, this)");
 		}
 
-		String channel = getChannelName();
+		AjaxChannel channel = getChannel();
 		if (channel != null)
 		{
 			if (precondition == null)
@@ -211,7 +195,7 @@ public abstract class AbstractDefaultAjaxBehavior extends AbstractAjaxBehavior
 				buff.append(", null");
 			}
 			buff.append(", '");
-			buff.append(channel);
+			buff.append(channel.getChannelName());
 			buff.append("'");
 		}
 
@@ -225,15 +209,15 @@ public abstract class AbstractDefaultAjaxBehavior extends AbstractAjaxBehavior
 				"if (");
 			if (precondition != null)
 			{
-				indicatorWithPrecondition.append("function(){")
+				indicatorWithPrecondition.append("Wicket.bind(function(){")
 					.append(precondition)
-					.append("}.bind(this)()");
+					.append("}, this)()");
 			}
 			else
 			{
 				indicatorWithPrecondition.append("true");
 			}
-			indicatorWithPrecondition.append(") { Wicket.showIncrementally('")
+			indicatorWithPrecondition.append(") { Wicket.DOM.showIncrementally('")
 				.append(indicatorId)
 				.append("');}")
 				.append(call);
@@ -247,19 +231,6 @@ public abstract class AbstractDefaultAjaxBehavior extends AbstractAjaxBehavior
 		}
 
 		return call;
-	}
-
-	/**
-	 * @return the name and the type of the channel to use when processing Ajax calls at the client
-	 *         side
-	 * @deprecated Use {@link #getChannel()} instead
-	 */
-	// TODO Wicket 1.6 - Remove this method
-	@Deprecated
-	protected String getChannelName()
-	{
-		AjaxChannel channel = getChannel();
-		return channel != null ? channel.getChannelName() : null;
 	}
 
 	/**
@@ -305,6 +276,7 @@ public abstract class AbstractDefaultAjaxBehavior extends AbstractAjaxBehavior
 	/**
 	 * @see org.apache.wicket.behavior.IBehaviorListener#onRequest()
 	 */
+	@Override
 	public final void onRequest()
 	{
 		WebApplication app = (WebApplication)getComponent().getApplication();
@@ -352,11 +324,11 @@ public abstract class AbstractDefaultAjaxBehavior extends AbstractAjaxBehavior
 		Args.notEmpty(throttleId, "throttleId");
 		Args.notNull(throttleDelay, "throttleDelay");
 
-		return new AppendingStringBuffer("wicketThrottler.throttle( '").append(throttleId)
+		return new AppendingStringBuffer("Wicket.throttler.throttle( '").append(throttleId)
 			.append("', ")
 			.append(throttleDelay.getMilliseconds())
-			.append(", function() { ")
+			.append(", Wicket.bind(function() { ")
 			.append(script)
-			.append("}.bind(this));");
+			.append("}, this));");
 	}
 }

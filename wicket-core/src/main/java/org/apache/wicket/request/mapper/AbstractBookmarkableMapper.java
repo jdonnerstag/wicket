@@ -166,6 +166,7 @@ public abstract class AbstractBookmarkableMapper extends AbstractComponentMapper
 	/**
 	 * @see IRequestMapper#getCompatibilityScore(Request)
 	 */
+	@Override
 	public abstract int getCompatibilityScore(Request request);
 
 	/**
@@ -258,6 +259,7 @@ public abstract class AbstractBookmarkableMapper extends AbstractComponentMapper
 	/**
 	 * @see org.apache.wicket.request.IRequestMapper#mapRequest(org.apache.wicket.request.Request)
 	 */
+	@Override
 	public IRequestHandler mapRequest(Request request)
 	{
 		UrlInfo urlInfo = parseRequest(request);
@@ -291,6 +293,11 @@ public abstract class AbstractBookmarkableMapper extends AbstractComponentMapper
 		return null;
 	}
 
+	protected boolean checkPageInstance(IRequestablePage page)
+	{
+		return page != null && checkPageClass(page.getClass());
+	}
+
 	protected boolean checkPageClass(Class<? extends IRequestablePage> pageClass)
 	{
 		return true;
@@ -299,6 +306,7 @@ public abstract class AbstractBookmarkableMapper extends AbstractComponentMapper
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public Url mapHandler(IRequestHandler requestHandler)
 	{
 		// TODO see if we can refactor this to remove dependency on instanceof checks below and
@@ -348,7 +356,8 @@ public abstract class AbstractBookmarkableMapper extends AbstractComponentMapper
 
 			IRequestablePage page = handler.getPage();
 
-			if (!pageMustHaveBeenCreatedBookmarkable() || page.wasCreatedBookmarkable())
+			if (checkPageInstance(page) &&
+				(!pageMustHaveBeenCreatedBookmarkable() || page.wasCreatedBookmarkable()))
 			{
 				PageInfo info = null;
 				if (!page.isPageStateless())

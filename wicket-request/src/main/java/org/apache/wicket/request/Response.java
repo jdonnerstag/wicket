@@ -16,6 +16,11 @@
  */
 package org.apache.wicket.request;
 
+import java.io.IOException;
+import java.io.OutputStream;
+
+import org.apache.wicket.util.lang.Args;
+
 /**
  * Abstract base class for different implementations of response writing.
  * <p>
@@ -60,14 +65,7 @@ public abstract class Response
 	 *             if {@link #write(CharSequence)} has already been called on this instance
 	 * @since 1.5.1
 	 */
-	// TODO Wicket 1.6: make it abstract like other methods in this class
-	public void write(byte[] array, int offset, int length)
-	{
-		// default impl to be able to introduce it in 1.5.x series
-		byte[] towrite = new byte[length];
-		System.arraycopy(array, offset, towrite, 0, length);
-		write(towrite);
-	}
+	public abstract void write(byte[] array, int offset, int length);
 
 	/**
 	 * Closes the response
@@ -102,4 +100,60 @@ public abstract class Response
 	 * @return low-level container response object, or {@code null} if none
 	 */
 	public abstract Object getContainerResponse();
+
+	/**
+	 * Returns an {@link OutputStream} suitable for writing binary data in the response. The servlet
+	 * container does not encode the binary data.
+	 * 
+	 * <p>
+	 * Calling flush() on the OutputStream commits the response.
+	 * </p>
+	 * <p>
+	 * This method returns an output stream that delegates to {@link #write(byte[])},
+	 * {@link #write(byte[], int, int)}, and {@link #close()} methods of this response instance
+	 * </p>
+	 * 
+	 * @return output stream
+	 */
+	public OutputStream getOutputStream()
+	{
+		return new StreamAdapter(this);
+	}
+
+	private static class StreamAdapter extends OutputStream
+	{
+		private final Response response;
+
+		public StreamAdapter(Response response)
+		{
+			Args.notNull(response, "response");
+			this.response = response;
+		}
+
+		@Override
+		public void write(int b) throws IOException
+		{
+			response.write(new byte[] { (byte)b });
+		}
+
+		@Override
+		public void write(byte[] b) throws IOException
+		{
+			response.write(b);
+		}
+
+		@Override
+		public void write(byte[] b, int off, int len) throws IOException
+		{
+			response.write(b, off, len);
+		}
+
+		@Override
+		public void close() throws IOException
+		{
+			super.close();
+			response.close();
+		}
+	}
+
 }

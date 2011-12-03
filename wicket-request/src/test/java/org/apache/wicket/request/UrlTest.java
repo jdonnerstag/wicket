@@ -25,9 +25,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import junit.framework.TestCase;
-
 import org.apache.wicket.request.Url.QueryParameter;
+import org.apache.wicket.request.Url.StringMode;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * @author Matej Knopp
@@ -35,9 +36,7 @@ import org.apache.wicket.request.Url.QueryParameter;
  */
 
 // TODO test removeleadingsegments,prependleadingsegments
-// TODO move this test to wicket-request where class Url is located
-// (once the dependency to WicketObjects is replaced)
-public class UrlTest extends TestCase
+public class UrlTest extends Assert
 {
 	private void checkSegments(Url url, String... segments)
 	{
@@ -59,6 +58,7 @@ public class UrlTest extends TestCase
 	/**
 	 * 
 	 */
+	@Test
 	public void testParse1()
 	{
 		String s = "foo/bar/baz?a=4&b=5";
@@ -70,6 +70,7 @@ public class UrlTest extends TestCase
 	/**
 	 * 
 	 */
+	@Test
 	public void testParse2()
 	{
 		String s = "foo/bar//baz?=4&6";
@@ -81,6 +82,7 @@ public class UrlTest extends TestCase
 	/**
 	 * 
 	 */
+	@Test
 	public void testParse3()
 	{
 		String s = "//foo/bar/";
@@ -92,6 +94,7 @@ public class UrlTest extends TestCase
 	/**
 	 * 
 	 */
+	@Test
 	public void testParse4()
 	{
 		String s = "/foo/bar//";
@@ -103,6 +106,7 @@ public class UrlTest extends TestCase
 	/**
 	 * 
 	 */
+	@Test
 	public void testParse5()
 	{
 		String s = "foo/b%3Dr/b%26z/x%3F?a=b&x%3F%264=y%3Dz";
@@ -114,6 +118,7 @@ public class UrlTest extends TestCase
 	/**
 	 * 
 	 */
+	@Test
 	public void testParse6()
 	{
 		String s = "";
@@ -125,6 +130,7 @@ public class UrlTest extends TestCase
 	/**
 	 * 
 	 */
+	@Test
 	public void testParse7()
 	{
 		String s = "?a=b";
@@ -136,6 +142,7 @@ public class UrlTest extends TestCase
 	/**
 	 * 
 	 */
+	@Test
 	public void testParse8()
 	{
 		String s = "/";
@@ -147,6 +154,7 @@ public class UrlTest extends TestCase
 	/**
 	 * 
 	 */
+	@Test
 	public void testParse9()
 	{
 		String s = "/?a=b";
@@ -158,6 +166,7 @@ public class UrlTest extends TestCase
 	/**
 	 * 
 	 */
+	@Test
 	public void testRender1()
 	{
 		Url url = new Url();
@@ -168,12 +177,13 @@ public class UrlTest extends TestCase
 		url.setQueryParameter("a", "b");
 		url.setQueryParameter("x?&4", "y=z");
 
-		assertEquals("foo/b=r/b&z/x%3F?a=b&x?%264=y%3Dz", url.toString());
+		assertEquals("foo/b=r/b&z/x%3F?a=b&x%3F%264=y%3Dz", url.toString());
 	}
 
 	/**
 	 * 
 	 */
+	@Test
 	public void testRender2()
 	{
 		String s = "/absolute/url";
@@ -184,6 +194,7 @@ public class UrlTest extends TestCase
 	/**
 	 * 
 	 */
+	@Test
 	public void testRender3()
 	{
 		String s = "//absolute/url";
@@ -194,6 +205,7 @@ public class UrlTest extends TestCase
 	/**
 	 * 
 	 */
+	@Test
 	public void testRender4()
 	{
 		String s = "/";
@@ -201,9 +213,26 @@ public class UrlTest extends TestCase
 		assertEquals(url.toString(), s);
 	}
 
+	@Test
+	public void render5()
+	{
+		Url url = Url.parse("https://www.domain.com/foo/bar?baz=ban");
+
+		// local string mode
+		assertEquals("/foo/bar?baz=ban", url.toString(StringMode.LOCAL));
+
+		// full string mode
+		assertEquals("https://www.domain.com/foo/bar?baz=ban", url.toString(StringMode.FULL));
+
+		// local is the default mode
+		assertEquals(url.toString(StringMode.LOCAL), url.toString());
+	}
+
+
 	/**
 	 * 
 	 */
+	@Test
 	public void testAbsolute1()
 	{
 		Url url = Url.parse("abc/efg");
@@ -213,6 +242,7 @@ public class UrlTest extends TestCase
 	/**
 	 * 
 	 */
+	@Test
 	public void testAbsolute2()
 	{
 		Url url = Url.parse("");
@@ -222,6 +252,7 @@ public class UrlTest extends TestCase
 	/**
 	 * 
 	 */
+	@Test
 	public void testAbsolute3()
 	{
 		Url url = Url.parse("/");
@@ -231,6 +262,7 @@ public class UrlTest extends TestCase
 	/**
 	 * 
 	 */
+	@Test
 	public void testAbsolute4()
 	{
 		Url url = Url.parse("/abc/efg");
@@ -240,6 +272,18 @@ public class UrlTest extends TestCase
 	/**
 	 * 
 	 */
+	@Test
+	public void absolute5()
+	{
+		Url url = Url.parse("http://www.domain.com");
+		assertTrue(url.isAbsolute());
+	}
+
+
+	/**
+	 * 
+	 */
+	@Test
 	public void testConcat1()
 	{
 		Url url = Url.parse("abc/efg");
@@ -250,6 +294,7 @@ public class UrlTest extends TestCase
 	/**
 	 * 
 	 */
+	@Test
 	public void testConcat2()
 	{
 		Url url = Url.parse("abc/efg");
@@ -260,6 +305,7 @@ public class UrlTest extends TestCase
 	/**
 	 * 
 	 */
+	@Test
 	public void testConcat3()
 	{
 		Url url = Url.parse("abc/efg");
@@ -270,6 +316,7 @@ public class UrlTest extends TestCase
 	/**
 	 * 
 	 */
+	@Test
 	public void testConcat4()
 	{
 		Url url = Url.parse("abc/efg");
@@ -280,6 +327,7 @@ public class UrlTest extends TestCase
 	/**
 	 * 
 	 */
+	@Test
 	public void testConcat5()
 	{
 		Url url = Url.parse("abc/efg/");
@@ -290,6 +338,7 @@ public class UrlTest extends TestCase
 	/**
 	 * 
 	 */
+	@Test
 	public void testConcat6()
 	{
 		Url url = Url.parse("abc/efg/");
@@ -300,6 +349,7 @@ public class UrlTest extends TestCase
 	/**
 	 * 
 	 */
+	@Test
 	public void testConcat7()
 	{
 		Url url = Url.parse("abc/efg/");
@@ -307,10 +357,10 @@ public class UrlTest extends TestCase
 		assertEquals(Url.parse(""), url);
 	}
 
-
 	/**
 	 * 
 	 */
+	@Test
 	public void testConcat8()
 	{
 		Url url = Url.parse("fff/abc/efg/xxx");
@@ -318,10 +368,10 @@ public class UrlTest extends TestCase
 		assertEquals(Url.parse("fff/abc/"), url);
 	}
 
-
 	/**
 	 * 
 	 */
+	@Test
 	public void testConcat9()
 	{
 		Url url = Url.parse("fff/abc/efg/xxx");
@@ -332,6 +382,7 @@ public class UrlTest extends TestCase
 	/**
 	 * @see <a href="https://issues.apache.org/jira/browse/WICKET-3363">WICKET-3363</a>
 	 */
+	@Test
 	public void testResolveRelative1()
 	{
 		Url relative = Url.parse("./a/b?p1=v1");
@@ -344,6 +395,7 @@ public class UrlTest extends TestCase
 	/**
 	 * @see <a href="https://issues.apache.org/jira/browse/WICKET-3363">WICKET-3363</a>
 	 */
+	@Test
 	public void testResolveRelative2()
 	{
 		Url relative = Url.parse("a/b?p1=v1");
@@ -356,6 +408,7 @@ public class UrlTest extends TestCase
 	/**
 	 * @see <a href="https://issues.apache.org/jira/browse/WICKET-3363">WICKET-3363</a>
 	 */
+	@Test
 	public void testResolveRelative3()
 	{
 		Url relative = Url.parse("../a/b?p1=v1");
@@ -368,6 +421,7 @@ public class UrlTest extends TestCase
 	/**
 	 * Tries to resolve a relative url against a base that has no segments
 	 */
+	@Test
 	public void testResolveRelative_NoSegmentsInBase()
 	{
 		Url relative = Url.parse("?a=b");
@@ -380,6 +434,7 @@ public class UrlTest extends TestCase
 	/**
 	 * Tries to resolve a relative url against a base that has no segments
 	 */
+	@Test
 	public void testResolveRelative_NoSegmentsInBase2()
 	{
 		Url relative = Url.parse("bar/baz?a=b");
@@ -392,6 +447,7 @@ public class UrlTest extends TestCase
 	/**
 	 * Tests that the default charset is UTF-8
 	 */
+	@Test
 	public void testCharset1()
 	{
 		Url url = new Url();
@@ -401,6 +457,7 @@ public class UrlTest extends TestCase
 	/**
 	 * Tests setting the charset explicitly in the constructor
 	 */
+	@Test
 	public void testCharset2()
 	{
 		Charset expected = Charset.forName("ISO-8859-2");
@@ -413,11 +470,12 @@ public class UrlTest extends TestCase
 	 * 
 	 * @throws Exception
 	 */
+	@Test
 	public void testCharset3() throws Exception
 	{
 		Charset expected = Charset.forName("ISO-8859-1");
 		Url url = new Url(expected);
-		Url clonedUrl = (Url)cloneObject(url);
+		Url clonedUrl = cloneObject(url);
 		assertEquals(expected, clonedUrl.getCharset());
 	}
 
@@ -430,6 +488,10 @@ public class UrlTest extends TestCase
 		return (Url)ois.readObject();
 	}
 
+	/**
+	 * 
+	 */
+	@Test
 	public void testParseRelativeUrl()
 	{
 		Url url = Url.parse("foo");
@@ -455,67 +517,71 @@ public class UrlTest extends TestCase
 		assertTrue(url.isAbsolute());
 	}
 
+	/**
+	 * 
+	 */
+	@Test
 	public void testParseAbsoluteUrl()
 	{
 		Url url = Url.parse("ftp://myhost:8081");
-		checkUrl(url, "ftp", "myhost", 8081);
-		assertFalse(url.isAbsolute());
-		assertEquals("ftp://myhost:8081", url.toAbsoluteString());
+		checkUrl(url, "ftp", "myhost", 8081, "", "");
+		assertTrue(url.isAbsolute());
+		assertEquals("ftp://myhost:8081/", url.toString(StringMode.FULL));
 
 		url = Url.parse("gopher://myhost:8081/foo");
 		checkUrl(url, "gopher", "myhost", 8081, "", "foo");
 		assertTrue(url.isAbsolute());
-		assertEquals("gopher://myhost:8081/foo", url.toAbsoluteString());
+		assertEquals("gopher://myhost:8081/foo", url.toString(StringMode.FULL));
 
 		url = Url.parse("http://myhost:80/foo");
 		checkUrl(url, "http", "myhost", 80, "", "foo");
 		assertTrue(url.isAbsolute());
-		assertEquals("http://myhost/foo", url.toAbsoluteString());
+		assertEquals("http://myhost/foo", url.toString(StringMode.FULL));
 
 		url = Url.parse("http://myhost:81/foo");
 		checkUrl(url, "http", "myhost", 81, "", "foo");
 		assertTrue(url.isAbsolute());
-		assertEquals("http://myhost:81/foo", url.toAbsoluteString());
+		assertEquals("http://myhost:81/foo", url.toString(StringMode.FULL));
 
 		url = Url.parse("http://myhost/foo");
 		checkUrl(url, "http", "myhost", 80, "", "foo");
 		assertTrue(url.isAbsolute());
-		assertEquals("http://myhost/foo", url.toAbsoluteString());
+		assertEquals("http://myhost/foo", url.toString(StringMode.FULL));
 
 		url = Url.parse("https://myhost:443/foo");
 		checkUrl(url, "https", "myhost", 443, "", "foo");
 		assertTrue(url.isAbsolute());
-		assertEquals("https://myhost/foo", url.toAbsoluteString());
+		assertEquals("https://myhost/foo", url.toString(StringMode.FULL));
 
 		url = Url.parse("HTTPS://myhost/foo:123");
 		checkUrl(url, "https", "myhost", 443, "", "foo:123");
 		assertTrue(url.isAbsolute());
-		assertEquals("https://myhost/foo:123", url.toAbsoluteString());
+		assertEquals("https://myhost/foo:123", url.toString(StringMode.FULL));
 
 		url = Url.parse("ftp://myhost/foo");
 		checkUrl(url, "ftp", "myhost", 21, "", "foo");
 		assertTrue(url.isAbsolute());
-		assertEquals("ftp://myhost/foo", url.toAbsoluteString());
+		assertEquals("ftp://myhost/foo", url.toString(StringMode.FULL));
 
 		url = Url.parse("ftp://myhost:21/foo");
 		checkUrl(url, "ftp", "myhost", 21, "", "foo");
 		assertTrue(url.isAbsolute());
-		assertEquals("ftp://myhost/foo", url.toAbsoluteString());
+		assertEquals("ftp://myhost/foo", url.toString(StringMode.FULL));
 
 		url = Url.parse("ftp://user:pass@myhost:21/foo");
 		checkUrl(url, "ftp", "user:pass@myhost", 21, "", "foo");
 		assertTrue(url.isAbsolute());
-		assertEquals("ftp://user:pass@myhost/foo", url.toAbsoluteString());
+		assertEquals("ftp://user:pass@myhost/foo", url.toString(StringMode.FULL));
 
 		url = Url.parse("FTp://myhost/foo");
 		checkUrl(url, "ftp", "myhost", 21, "", "foo");
 		assertTrue(url.isAbsolute());
-		assertEquals("ftp://myhost/foo", url.toAbsoluteString());
+		assertEquals("ftp://myhost/foo", url.toString(StringMode.FULL));
 
 		url = Url.parse("unknown://myhost/foo");
 		checkUrl(url, "unknown", "myhost", null, "", "foo");
 		assertTrue(url.isAbsolute());
-		assertEquals("unknown://myhost/foo", url.toAbsoluteString());
+		assertEquals("unknown://myhost/foo", url.toString(StringMode.FULL));
 	}
 
 	private void checkUrl(Url url, String protocol, String host, Integer port, String... segments)

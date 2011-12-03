@@ -16,8 +16,10 @@
  */
 package org.apache.wicket.request.handler;
 
+import org.apache.wicket.request.ILoggableRequestHandler;
 import org.apache.wicket.request.IRequestCycle;
 import org.apache.wicket.request.component.IRequestablePage;
+import org.apache.wicket.request.handler.logger.PageLogData;
 import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.apache.wicket.util.lang.Args;
 
@@ -27,9 +29,14 @@ import org.apache.wicket.util.lang.Args;
  * 
  * @author Matej Knopp
  */
-public class BookmarkablePageRequestHandler implements IPageClassRequestHandler
+public class BookmarkablePageRequestHandler
+	implements
+		IPageClassRequestHandler,
+		ILoggableRequestHandler
 {
 	private final IPageProvider pageProvider;
+
+	private PageLogData logData;
 
 	/**
 	 * Construct.
@@ -47,6 +54,7 @@ public class BookmarkablePageRequestHandler implements IPageClassRequestHandler
 	/**
 	 * @see org.apache.wicket.request.handler.IPageClassRequestHandler#getPageClass()
 	 */
+	@Override
 	public Class<? extends IRequestablePage> getPageClass()
 	{
 		return pageProvider.getPageClass();
@@ -55,6 +63,7 @@ public class BookmarkablePageRequestHandler implements IPageClassRequestHandler
 	/**
 	 * @see org.apache.wicket.request.handler.IPageClassRequestHandler#getPageParameters()
 	 */
+	@Override
 	public PageParameters getPageParameters()
 	{
 		return pageProvider.getPageParameters();
@@ -63,6 +72,7 @@ public class BookmarkablePageRequestHandler implements IPageClassRequestHandler
 	/**
 	 * @see org.apache.org.apache.wicket.request.IRequestHandler#respond(org.apache.wicket.request.cycle.RequestCycle)
 	 */
+	@Override
 	public void respond(IRequestCycle requestCycle)
 	{
 		// not used as BookmarkablePageRequestHandler is only used when generating URLs.
@@ -72,7 +82,17 @@ public class BookmarkablePageRequestHandler implements IPageClassRequestHandler
 	/**
 	 * @see org.apache.org.apache.wicket.request.IRequestHandler#detach(org.apache.wicket.request.cycle.RequestCycle)
 	 */
+	@Override
 	public void detach(IRequestCycle requestCycle)
 	{
+		if (logData == null)
+			logData = new PageLogData(pageProvider);
+	}
+
+	/** {@inheritDoc} */
+	@Override
+	public PageLogData getLogData()
+	{
+		return logData;
 	}
 }

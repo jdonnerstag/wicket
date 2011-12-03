@@ -31,6 +31,7 @@ import org.apache.wicket.request.Response;
 import org.apache.wicket.request.component.IRequestableComponent;
 import org.apache.wicket.util.string.Strings;
 import org.apache.wicket.util.tester.FormTester;
+import org.junit.Test;
 
 
 /**
@@ -48,7 +49,8 @@ public class InterceptTest extends WicketTestCase
 	/**
 	 * 
 	 */
-	public void testFormSubmit()
+	@Test
+	public void formSubmit()
 	{
 		// same as above but uses different technique to login
 		tester.startPage(tester.getApplication().getHomePage());
@@ -64,7 +66,8 @@ public class InterceptTest extends WicketTestCase
 	/**
 	 * 
 	 */
-	public void testClickLink()
+	@Test
+	public void clickLink()
 	{
 		tester.startPage(tester.getApplication().getHomePage());
 		MockLoginPage loginPage = (MockLoginPage)tester.getLastRenderedPage();
@@ -84,7 +87,8 @@ public class InterceptTest extends WicketTestCase
 	/**
 	 * 
 	 */
-	public void testClickLink2()
+	@Test
+	public void clickLink2()
 	{
 		// same as above but uses different technique to login
 		tester.startPage(tester.getApplication().getHomePage());
@@ -188,6 +192,7 @@ public class InterceptTest extends WicketTestCase
 		/**
 		 * @see org.apache.wicket.authorization.IAuthorizationStrategy#isInstantiationAuthorized(java.lang.Class)
 		 */
+		@Override
 		public <T extends IRequestableComponent> boolean isInstantiationAuthorized(
 			Class<T> componentClass)
 		{
@@ -203,6 +208,7 @@ public class InterceptTest extends WicketTestCase
 		 * @see org.apache.wicket.authorization.IAuthorizationStrategy#isActionAuthorized(org.apache.wicket.Component,
 		 *      org.apache.wicket.authorization.Action)
 		 */
+		@Override
 		public boolean isActionAuthorized(Component component, Action action)
 		{
 			return true;

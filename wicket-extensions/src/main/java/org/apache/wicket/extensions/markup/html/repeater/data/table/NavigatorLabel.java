@@ -47,8 +47,7 @@ public class NavigatorLabel extends Label
 	{
 		super(id);
 		setDefaultModel(new StringResourceModel("NavigatorLabel", this,
-			new Model<LabelModelObject>(new LabelModelObject(pageable)),
-			"Showing ${from} to ${to} of ${of}"));
+			new Model<LabelModelObject>(new LabelModelObject(pageable))));
 	}
 
 	private static class LabelModelObject implements IClusterable
@@ -69,7 +68,7 @@ public class NavigatorLabel extends Label
 		/**
 		 * @return "z" in "Showing x to y of z"
 		 */
-		public int getOf()
+		public long getOf()
 		{
 			return pageable.getItemCount();
 		}
@@ -77,7 +76,7 @@ public class NavigatorLabel extends Label
 		/**
 		 * @return "x" in "Showing x to y of z"
 		 */
-		public int getFrom()
+		public long getFrom()
 		{
 			if (getOf() == 0)
 			{
@@ -89,7 +88,7 @@ public class NavigatorLabel extends Label
 		/**
 		 * @return "y" in "Showing x to y of z"
 		 */
-		public int getTo()
+		public long getTo()
 		{
 			if (getOf() == 0)
 			{

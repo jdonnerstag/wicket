@@ -28,7 +28,6 @@ import org.apache.wicket.behavior.Behavior;
 import org.apache.wicket.request.RequestHandlerStack.ReplaceHandlerException;
 import org.apache.wicket.request.component.IRequestableComponent;
 import org.apache.wicket.request.handler.ListenerInvocationNotAllowedException;
-import org.apache.wicket.util.lang.Classes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -121,7 +120,7 @@ public class RequestListenerInterface
 		}
 
 		// Save short class name
-		name = Classes.simpleName(listenerInterfaceClass);
+		name = listenerInterfaceClass.getSimpleName();
 
 		// Register this listener
 		register();
@@ -204,7 +203,7 @@ public class RequestListenerInterface
 		// we are in Wicket core land
 		final Component component = (Component)rcomponent;
 
-		if (!component.canCallListenerInterface())
+		if (!component.canCallListenerInterface(method))
 		{
 			// just return so that we have a silent fail and just re-render the
 			// page
@@ -230,12 +229,12 @@ public class RequestListenerInterface
 		// we are in Wicket core land
 		final Component component = (Component)rcomponent;
 
-		if (!behavior.canCallListenerInterface(component))
+		if (!behavior.canCallListenerInterface(component, method))
 		{
 			log.warn("behavior not enabled; ignore call. Behavior {} at component {}", behavior,
 				component);
 			throw new ListenerInvocationNotAllowedException(this, component, behavior,
-				"Behavior rejected interface invocation");
+				"Behavior rejected interface invocation. ");
 		}
 
 		internalInvoke(component, behavior);

@@ -33,6 +33,7 @@ import org.apache.wicket.request.handler.PageProvider;
 import org.apache.wicket.request.handler.RenderPageRequestHandler;
 import org.apache.wicket.request.http.WebRequest;
 import org.apache.wicket.request.mapper.parameter.PageParameters;
+import org.junit.Test;
 
 /**
  * @author Matej Knopp
@@ -79,7 +80,8 @@ public class MountedMapperTest extends AbstractMapperTest
 	/**
 	 * 
 	 */
-	public void testDecode1()
+	@Test
+	public void decode1()
 	{
 		Url url = Url.parse("some/mount/path");
 		IRequestHandler handler = encoder.mapRequest(getRequest(url));
@@ -94,7 +96,8 @@ public class MountedMapperTest extends AbstractMapperTest
 	/**
 	 * 
 	 */
-	public void testDecode2()
+	@Test
+	public void decode2()
 	{
 		Url url = Url.parse("some/mount/path/indexed1?a=b&b=c");
 		IRequestHandler handler = encoder.mapRequest(getRequest(url));
@@ -114,7 +117,8 @@ public class MountedMapperTest extends AbstractMapperTest
 	/**
 	 * 
 	 */
-	public void testDecode3()
+	@Test
+	public void decode3()
 	{
 		Url url = Url.parse("some/mount/path?15");
 		IRequestHandler handler = encoder.mapRequest(getRequest(url));
@@ -127,7 +131,8 @@ public class MountedMapperTest extends AbstractMapperTest
 	/**
 	 * 
 	 */
-	public void testDecode4()
+	@Test
+	public void decode4()
 	{
 		Url url = Url.parse("some/mount/path/i1/i2?15&a=b&b=c");
 		IRequestHandler handler = encoder.mapRequest(getRequest(url));
@@ -137,19 +142,16 @@ public class MountedMapperTest extends AbstractMapperTest
 		checkPage(page, 15);
 
 		PageParameters p = page.getPageParameters();
-		assertEquals(2, p.getIndexedCount());
-		assertEquals("i1", p.get(0).toString());
-		assertEquals("i2", p.get(1).toString());
+		assertEquals(0, p.getIndexedCount());
 
-		assertEquals(2, p.getNamedKeys().size());
-		assertEquals("b", p.get("a").toString());
-		assertEquals("c", p.get("b").toString());
+		assertEquals(0, p.getNamedKeys().size());
 	}
 
 	/**
 	 * 
 	 */
-	public void testDecode5()
+	@Test
+	public void decode5()
 	{
 		Url url = Url.parse("some/mount/path?15-ILinkListener-foo-bar");
 		IRequestHandler handler = encoder.mapRequest(getRequest(url));
@@ -169,7 +171,8 @@ public class MountedMapperTest extends AbstractMapperTest
 	/**
 	 * 
 	 */
-	public void testDecode6()
+	@Test
+	public void decode6()
 	{
 		Url url = Url.parse("some/mount/path/i1/i2?15-ILinkListener-foo-bar&a=b&b=c");
 		IRequestHandler handler = encoder.mapRequest(getRequest(url));
@@ -184,19 +187,16 @@ public class MountedMapperTest extends AbstractMapperTest
 		assertEquals("foo:bar", h.getComponent().getPageRelativePath());
 
 		PageParameters p = page.getPageParameters();
-		assertEquals(2, p.getIndexedCount());
-		assertEquals("i1", p.get(0).toString());
-		assertEquals("i2", p.get(1).toString());
+		assertEquals(0, p.getIndexedCount());
 
-		assertEquals(2, p.getNamedKeys().size());
-		assertEquals("b", p.get("a").toString());
-		assertEquals("c", p.get("b").toString());
+		assertEquals(0, p.getNamedKeys().size());
 	}
 
 	/**
 	 * 
 	 */
-	public void testDecode7()
+	@Test
+	public void decode7()
 	{
 		Url url = Url.parse("some/mount/path?param1=value1&15-ILinkListener.4-foo-bar");
 		IRequestHandler handler = encoder.mapRequest(getRequest(url));
@@ -216,7 +216,8 @@ public class MountedMapperTest extends AbstractMapperTest
 	/**
 	 * 
 	 */
-	public void testDecode8()
+	@Test
+	public void decode8()
 	{
 		Url url = Url.parse("some/mmount/path?15-ILinkListener.4-foo-bar");
 		IRequestHandler handler = encoder.mapRequest(getRequest(url));
@@ -227,7 +228,8 @@ public class MountedMapperTest extends AbstractMapperTest
 	/**
 	 * 
 	 */
-	public void testDecode9()
+	@Test
+	public void decode9()
 	{
 		// capture the home page
 		Url url = Url.parse("");
@@ -238,7 +240,8 @@ public class MountedMapperTest extends AbstractMapperTest
 	/**
 	 * 
 	 */
-	public void testDecode10()
+	@Test
+	public void decode10()
 	{
 		Url url = Url.parse("some/mount/path?15-5.ILinkListener.4-foo-bar");
 		context.setNextPageRenderCount(5);
@@ -255,30 +258,22 @@ public class MountedMapperTest extends AbstractMapperTest
 	/**
 	 * 
 	 */
-	public void testDecode11()
+	@Test(expected = StalePageException.class)
+	public void decode11()
 	{
 		Url url = Url.parse("some/mount/path?15-5.ILinkListener.4-foo-bar");
 		context.setNextPageRenderCount(7);
 
-		try
-		{
-			IRequestHandler handler = encoder.mapRequest(getRequest(url));
+		IRequestHandler handler = encoder.mapRequest(getRequest(url));
 
-			((IPageRequestHandler)handler).getPage();
-
-			// should never get here
-			assertTrue(false);
-		}
-		catch (StalePageException e)
-		{
-
-		}
+		((IPageRequestHandler)handler).getPage();
 	}
 
 	/**
 	 * 
 	 */
-	public void testEncode1()
+	@Test
+	public void encode1()
 	{
 		PageProvider provider = new PageProvider(MockPage.class, new PageParameters());
 		provider.setPageSource(context);
@@ -290,7 +285,8 @@ public class MountedMapperTest extends AbstractMapperTest
 	/**
 	 * 
 	 */
-	public void testEncode2()
+	@Test
+	public void encode2()
 	{
 		PageParameters parameters = new PageParameters();
 		parameters.set(0, "i1");
@@ -307,7 +303,8 @@ public class MountedMapperTest extends AbstractMapperTest
 	/**
 	 * 
 	 */
-	public void testEncode3()
+	@Test
+	public void encode3()
 	{
 		PageParameters parameters = new PageParameters();
 		parameters.set(0, "i1");
@@ -326,7 +323,8 @@ public class MountedMapperTest extends AbstractMapperTest
 	/**
 	 * 
 	 */
-	public void testEncode4()
+	@Test
+	public void encode4()
 	{
 		MockPage page = new MockPage(15);
 		page.getPageParameters().set(0, "i1");
@@ -345,7 +343,8 @@ public class MountedMapperTest extends AbstractMapperTest
 	/**
 	 * 
 	 */
-	public void testEncode5()
+	@Test
+	public void encode5()
 	{
 		MockPage page = new MockPage(15);
 		page.getPageParameters().set(0, "i1");
@@ -369,7 +368,8 @@ public class MountedMapperTest extends AbstractMapperTest
 	/**
 	 * 
 	 */
-	public void testEncode6()
+	@Test
+	public void encode6()
 	{
 		MockPage page = new MockPage(15);
 		page.getPageParameters().set(0, "i1");
@@ -399,7 +399,8 @@ public class MountedMapperTest extends AbstractMapperTest
 	 * The difference with testEncode7 is that here ListenerInterfaceRequestHandler is used instead
 	 * of BookmarkableListenerInterfaceRequestHandler
 	 */
-	public void testEncode6_1()
+	@Test
+	public void encode6_1()
 	{
 		MockPage page = new MockPage(15);
 		page.getPageParameters().set(0, "i1");
@@ -431,7 +432,8 @@ public class MountedMapperTest extends AbstractMapperTest
 	/**
 	 * 
 	 */
-	public void testEncode7()
+	@Test
+	public void encode7()
 	{
 		MockPage page = new MockPage(15);
 		page.getPageParameters().set(0, "i1");
@@ -461,7 +463,8 @@ public class MountedMapperTest extends AbstractMapperTest
 	 * The difference with testEncode7 is that here ListenerInterfaceRequestHandler is used instead
 	 * of BookmarkableListenerInterfaceRequestHandler
 	 */
-	public void testEncode7_1()
+	@Test
+	public void encode7_1()
 	{
 		MockPage page = new MockPage(15);
 		page.getPageParameters().set(0, "i1");
@@ -488,7 +491,8 @@ public class MountedMapperTest extends AbstractMapperTest
 	/**
 	 * 
 	 */
-	public void testEncode8()
+	@Test
+	public void encode8()
 	{
 		MockPage page = new MockPage(15);
 		page.setBookmarkable(true);
@@ -506,25 +510,17 @@ public class MountedMapperTest extends AbstractMapperTest
 	/**
 	 * 
 	 */
-	public void testConstruct1()
+	@Test(expected = IllegalArgumentException.class)
+	public void construct1()
 	{
-		try
-		{
-			IRequestMapper e = new MountedMapper("", MockPage.class);
-
-			// should never get here
-			assertFalse(true);
-		}
-		catch (IllegalArgumentException e)
-		{
-			// ok
-		}
+		IRequestMapper e = new MountedMapper("", MockPage.class);
 	}
 
 	/**
 	 * Overriding mounting on '/' (see HomePageMapper) should be possible
 	 */
-	public void testConstruct2()
+	@Test
+	public void construct2()
 	{
 		IRequestMapper homePageMapper = new MountedMapper("/", MockPage.class);
 		assertNotNull(homePageMapper);
@@ -533,7 +529,8 @@ public class MountedMapperTest extends AbstractMapperTest
 	/**
 	 *
 	 */
-	public void testPlaceholderDecode1()
+	@Test
+	public void placeholderDecode1()
 	{
 		Url url = Url.parse("some/p1/path/p2");
 		IRequestHandler handler = placeholderEncoder.mapRequest(getRequest(url));
@@ -550,7 +547,8 @@ public class MountedMapperTest extends AbstractMapperTest
 	/**
 	 * 
 	 */
-	public void testPlaceholderDecode2()
+	@Test
+	public void placeholderDecode2()
 	{
 		Url url = Url.parse("some/p1/path/p2/indexed1?a=b&b=c");
 		IRequestHandler handler = placeholderEncoder.mapRequest(getRequest(url));
@@ -570,7 +568,8 @@ public class MountedMapperTest extends AbstractMapperTest
 	}
 
 	/**	 */
-	public void testPlaceholderDecodeWithIndexedParameters()
+	@Test
+	public void placeholderDecodeWithIndexedParameters()
 	{
 		Url url = Url.parse("some/p1/path/p2/p3/p4");
 		IRequestHandler handler = placeholderEncoder.mapRequest(getRequest(url));
@@ -589,7 +588,8 @@ public class MountedMapperTest extends AbstractMapperTest
 	/**
 	 * 
 	 */
-	public void testPlaceholderEncode2()
+	@Test
+	public void placeholderEncode2()
 	{
 		PageParameters parameters = new PageParameters();
 		parameters.set(0, "i1");
@@ -611,7 +611,8 @@ public class MountedMapperTest extends AbstractMapperTest
 	 * Test Url creation with {@link RenderPageRequestHandler}. Cheat that the page instance is not
 	 * new, this way the produced Url has version '1' in the page info parameter
 	 */
-	public void testPlaceholderEncode3()
+	@Test
+	public void placeholderEncode3()
 	{
 		PageParameters parameters = new PageParameters();
 		parameters.set(0, "i1");
@@ -636,7 +637,8 @@ public class MountedMapperTest extends AbstractMapperTest
 	}
 
 	/** */
-	public void testOptionPlaceholderDecode1()
+	@Test
+	public void optionPlaceholderDecode1()
 	{
 		Url url = Url.parse("some/p1/path/p2/p3");
 		IRequestHandler handler = optionPlaceholderEncoder.mapRequest(getRequest(url));
@@ -652,7 +654,8 @@ public class MountedMapperTest extends AbstractMapperTest
 	}
 
 	/** */
-	public void testOptionPlaceholderDecodeEagerMatchParameters()
+	@Test
+	public void optionPlaceholderDecodeEagerMatchParameters()
 	{
 		Url url = Url.parse("some/path/path/path");
 		IRequestHandler handler = optionPlaceholderEncoder.mapRequest(getRequest(url));
@@ -669,7 +672,8 @@ public class MountedMapperTest extends AbstractMapperTest
 	}
 
 	/** */
-	public void testOptionPlaceholderDecode2()
+	@Test
+	public void optionPlaceholderDecode2()
 	{
 		Url url = Url.parse("some/p1/path/p2");
 		IRequestHandler handler = optionPlaceholderEncoder.mapRequest(getRequest(url));
@@ -686,7 +690,8 @@ public class MountedMapperTest extends AbstractMapperTest
 	}
 
 	/** */
-	public void testOptionPlaceholderDecode3()
+	@Test
+	public void optionPlaceholderDecode3()
 	{
 		Url url = Url.parse("some/path/p2");
 		IRequestHandler handler = optionPlaceholderEncoder.mapRequest(getRequest(url));
@@ -704,7 +709,8 @@ public class MountedMapperTest extends AbstractMapperTest
 	}
 
 	/** */
-	public void testOptionPlaceholderDecodeWithIndexParams()
+	@Test
+	public void optionPlaceholderDecodeWithIndexParams()
 	{
 		Url url = Url.parse("some/path/p2/p3/p4");
 		IRequestHandler handler = optionPlaceholderEncoder.mapRequest(getRequest(url));
@@ -722,7 +728,8 @@ public class MountedMapperTest extends AbstractMapperTest
 	}
 
 	/** */
-	public void testOptionPlaceholderEncode1()
+	@Test
+	public void optionPlaceholderEncode1()
 	{
 		PageParameters parameters = new PageParameters();
 		parameters.set(0, "i1");
@@ -741,7 +748,8 @@ public class MountedMapperTest extends AbstractMapperTest
 	}
 
 	/** */
-	public void testOptionPlaceholderEncode2()
+	@Test
+	public void optionPlaceholderEncode2()
 	{
 		PageParameters parameters = new PageParameters();
 		parameters.set(0, "i1");

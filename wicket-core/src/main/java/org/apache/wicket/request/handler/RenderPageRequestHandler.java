@@ -17,13 +17,17 @@
 package org.apache.wicket.request.handler;
 
 import org.apache.wicket.Application;
+import org.apache.wicket.request.ILoggableRequestHandler;
 import org.apache.wicket.request.IRequestCycle;
 import org.apache.wicket.request.IRequestHandler;
 import org.apache.wicket.request.component.IRequestablePage;
 import org.apache.wicket.request.cycle.RequestCycle;
+import org.apache.wicket.request.handler.logger.PageLogData;
 import org.apache.wicket.request.handler.render.PageRenderer;
 import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.apache.wicket.util.lang.Args;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * {@link IRequestHandler} that renders page instance. Depending on the <code>redirectPolicy</code>
@@ -33,11 +37,19 @@ import org.apache.wicket.util.lang.Args;
  * 
  * @author Matej Knopp
  */
-public class RenderPageRequestHandler implements IPageRequestHandler, IPageClassRequestHandler
+public class RenderPageRequestHandler
+	implements
+		IPageRequestHandler,
+		IPageClassRequestHandler,
+		ILoggableRequestHandler
 {
+	private static final Logger logger = LoggerFactory.getLogger(RenderPageRequestHandler.class);
+
 	private final IPageProvider pageProvider;
 
 	private final RedirectPolicy redirectPolicy;
+
+	private PageLogData logData;
 
 	/**
 	 * Determines whether Wicket does a redirect when rendering a page
@@ -109,6 +121,7 @@ public class RenderPageRequestHandler implements IPageRequestHandler, IPageClass
 	}
 
 	/** {@inheritDoc} */
+	@Override
 	public Class<? extends IRequestablePage> getPageClass()
 	{
 		return pageProvider.getPageClass();
@@ -117,41 +130,57 @@ public class RenderPageRequestHandler implements IPageRequestHandler, IPageClass
 	/**
 	 * @see org.apache.wicket.request.handler.IPageRequestHandler#getPageId()
 	 */
+	@Override
 	public Integer getPageId()
 	{
 		return pageProvider.getPageId();
 	}
 
 	/** {@inheritDoc} */
+	@Override
 	public PageParameters getPageParameters()
 	{
 		return pageProvider.getPageParameters();
 	}
 
 	/** {@inheritDoc} */
+	@Override
 	public void detach(IRequestCycle requestCycle)
 	{
+		if (logData == null)
+			logData = new PageLogData(pageProvider);
 		pageProvider.detach();
 	}
 
 	/** {@inheritDoc} */
+	@Override
+	public PageLogData getLogData()
+	{
+		return logData;
+	}
+
+	/** {@inheritDoc} */
+	@Override
 	public IRequestablePage getPage()
 	{
 		return pageProvider.getPageInstance();
 	}
 
 	/** {@inheritDoc} */
+	@Override
 	public void respond(IRequestCycle requestCycle)
 	{
 		PageRenderer renderer = Application.get().getPageRendererProvider().get(this);
 		renderer.respond((RequestCycle)requestCycle);
 	}
 
+	@Override
 	public final boolean isPageInstanceCreated()
 	{
-		return !pageProvider.isNewPageInstance();
+		return pageProvider.hasPageInstance();
 	}
 
+	@Override
 	public final Integer getRenderCount()
 	{
 		return pageProvider.getRenderCount();

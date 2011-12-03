@@ -16,16 +16,21 @@
  */
 package org.apache.wicket.request.handler;
 
+import org.apache.wicket.Page;
 import org.apache.wicket.RequestListenerInterface;
 import org.apache.wicket.WicketRuntimeException;
 import org.apache.wicket.behavior.Behavior;
+import org.apache.wicket.request.ILoggableRequestHandler;
 import org.apache.wicket.request.IRequestCycle;
 import org.apache.wicket.request.component.IRequestableComponent;
 import org.apache.wicket.request.component.IRequestablePage;
 import org.apache.wicket.request.handler.RenderPageRequestHandler.RedirectPolicy;
+import org.apache.wicket.request.handler.logger.ListenerInterfaceLogData;
 import org.apache.wicket.request.http.WebRequest;
 import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.apache.wicket.util.lang.Args;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Request handler that invokes the listener interface on component and renders page afterwards.
@@ -35,13 +40,19 @@ import org.apache.wicket.util.lang.Args;
 public class ListenerInterfaceRequestHandler
 	implements
 		IPageRequestHandler,
-		IComponentRequestHandler
+		IComponentRequestHandler,
+		ILoggableRequestHandler
 {
+
+	private static final Logger LOG = LoggerFactory.getLogger(ListenerInterfaceRequestHandler.class);
+
 	private final IPageAndComponentProvider pageComponentProvider;
 
 	private final RequestListenerInterface listenerInterface;
 
 	private final Integer behaviorId;
+
+	private ListenerInterfaceLogData logData;
 
 	/**
 	 * Construct.
@@ -76,6 +87,7 @@ public class ListenerInterfaceRequestHandler
 	/**
 	 * @see org.apache.wicket.request.handler.IComponentRequestHandler#getComponent()
 	 */
+	@Override
 	public IRequestableComponent getComponent()
 	{
 		return pageComponentProvider.getComponent();
@@ -84,6 +96,7 @@ public class ListenerInterfaceRequestHandler
 	/**
 	 * @see org.apache.wicket.request.handler.IPageRequestHandler#getPage()
 	 */
+	@Override
 	public IRequestablePage getPage()
 	{
 		return pageComponentProvider.getPageInstance();
@@ -92,6 +105,7 @@ public class ListenerInterfaceRequestHandler
 	/**
 	 * @see org.apache.wicket.request.handler.IPageClassRequestHandler#getPageClass()
 	 */
+	@Override
 	public Class<? extends IRequestablePage> getPageClass()
 	{
 		return pageComponentProvider.getPageClass();
@@ -100,6 +114,7 @@ public class ListenerInterfaceRequestHandler
 	/**
 	 * @see org.apache.wicket.request.handler.IPageRequestHandler#getPageId()
 	 */
+	@Override
 	public Integer getPageId()
 	{
 		return pageComponentProvider.getPageId();
@@ -108,6 +123,7 @@ public class ListenerInterfaceRequestHandler
 	/**
 	 * @see org.apache.wicket.request.handler.IPageClassRequestHandler#getPageParameters()
 	 */
+	@Override
 	public PageParameters getPageParameters()
 	{
 		return pageComponentProvider.getPageParameters();
@@ -116,8 +132,14 @@ public class ListenerInterfaceRequestHandler
 	/**
 	 * @see org.apache.wicket.request.IRequestHandler#detach(org.apache.wicket.request.IRequestCycle)
 	 */
+	@Override
 	public void detach(IRequestCycle requestCycle)
 	{
+		if (logData == null)
+		{
+			logData = new ListenerInterfaceLogData(pageComponentProvider, listenerInterface,
+				behaviorId);
+		}
 		pageComponentProvider.detach();
 	}
 
@@ -144,21 +166,74 @@ public class ListenerInterfaceRequestHandler
 	/**
 	 * @see org.apache.wicket.request.IRequestHandler#respond(org.apache.wicket.request.IRequestCycle)
 	 */
+	@Override
 	public void respond(final IRequestCycle requestCycle)
 	{
 		final IRequestablePage page = getPage();
-		if (getComponent().getPage() == page)
+		final boolean freshPage = pageComponentProvider.isPageInstanceFresh();
+		final boolean isAjax = ((WebRequest)requestCycle.getRequest()).isAjax();
+
+		IRequestableComponent component = null;
+		try
 		{
-			boolean isAjax = ((WebRequest)requestCycle.getRequest()).isAjax();
+			component = getComponent();
+		}
+		catch (ComponentNotFoundException e)
+		{
+			// either the page is stateless and the component we are looking for is not added in the
+			// constructor
+			// or the page is stateful+stale and a new instances was created by pageprovider
+			// we denote this by setting component to null
+			component = null;
+		}
+
+		if ((component == null && freshPage) ||
+			(component != null && getComponent().getPage() == page))
+		{
+			if (page instanceof Page)
+			{
+				// initialize the page to be able to check whether it is stateless
+				((Page)page).internalInitialize();
+			}
+			final boolean isStateless = page.isPageStateless();
+
+			RedirectPolicy policy = isStateless ? RedirectPolicy.NEVER_REDIRECT
+				: RedirectPolicy.AUTO_REDIRECT;
+			final IPageProvider pageProvider = new PageProvider(page);
+
+			if (freshPage && isStateless == false)
+			{
+				// A listener interface is invoked on an expired page.
+
+				// If the page is stateful then we cannot assume that the listener interface is
+				// invoked on its initial state (right after page initialization) and that its
+				// component and/or behavior will be available. That's why the listener interface
+				// should be ignored and the best we can do is to re-paint the newly constructed
+				// page.
+
+				if (LOG.isDebugEnabled())
+				{
+					LOG.debug(
+						"A ListenerInterface '{}' assigned to '{}' is executed on an expired stateful page. "
+							+ "Scheduling re-create of the page and ignoring the listener interface...",
+						listenerInterface, getComponentPath());
+				}
+
+				if (isAjax)
+				{
+					policy = RedirectPolicy.ALWAYS_REDIRECT;
+				}
+
+				requestCycle.scheduleRequestHandlerAfterCurrent(new RenderPageRequestHandler(
+					pageProvider, policy));
+				return;
+			}
+
 			if (isAjax == false && listenerInterface.isRenderPageAfterInvocation())
 			{
 				// schedule page render after current request handler is done. this can be
 				// overridden during invocation of listener
 				// method (i.e. by calling RequestCycle#setResponsePage)
-				final IPageProvider pageProvider = new PageProvider(page);
-				final RedirectPolicy policy = page.isPageStateless()
-					? RedirectPolicy.NEVER_REDIRECT : RedirectPolicy.AUTO_REDIRECT;
-
 				requestCycle.scheduleRequestHandlerAfterCurrent(new RenderPageRequestHandler(
 					pageProvider, policy));
 			}
@@ -194,18 +269,28 @@ public class ListenerInterfaceRequestHandler
 		}
 	}
 
+	@Override
 	public final boolean isPageInstanceCreated()
 	{
-		return !pageComponentProvider.isNewPageInstance();
+		return pageComponentProvider.hasPageInstance();
 	}
 
+	@Override
 	public final String getComponentPath()
 	{
 		return pageComponentProvider.getComponentPath();
 	}
 
+	@Override
 	public final Integer getRenderCount()
 	{
 		return pageComponentProvider.getRenderCount();
+	}
+
+	/** {@inheritDoc} */
+	@Override
+	public ListenerInterfaceLogData getLogData()
+	{
+		return logData;
 	}
 }

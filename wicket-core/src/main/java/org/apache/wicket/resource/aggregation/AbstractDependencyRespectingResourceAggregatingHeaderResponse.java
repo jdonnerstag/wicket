@@ -28,7 +28,7 @@ import org.apache.wicket.resource.dependencies.AbstractResourceDependentResource
  * An implementation of AbstractResourceAggregatingHeaderResponse that renders references in the
  * correct order if they are {@link AbstractResourceDependentResourceReference} references, ensuring
  * that dependencies are rendered in the proper order before their parent (even if they do not
- * appear in the same group as the parent of the depdencies).
+ * appear in the same group as the parent of the dependencies).
  * 
  * @author Jeremy Thomerson
  * @param <R>
@@ -80,10 +80,12 @@ public abstract class AbstractDependencyRespectingResourceAggregatingHeaderRespo
 	}
 
 	private static ResourceReferenceAndStringData toData(
-		AbstractResourceDependentResourceReference child)
+		AbstractResourceDependentResourceReference reference)
 	{
-		boolean css = ResourceType.CSS.equals(child.getResourceType());
-		String string = css ? child.getMedia() : child.getUniqueId();
-		return new ResourceReferenceAndStringData(child, string, css);
+		boolean css = ResourceType.CSS.equals(reference.getResourceType());
+		String string = css ? reference.getMedia() : reference.getUniqueId();
+
+		return new ResourceReferenceAndStringData(reference, null, null, string,
+			reference.getResourceType(), false, null, null);
 	}
 }

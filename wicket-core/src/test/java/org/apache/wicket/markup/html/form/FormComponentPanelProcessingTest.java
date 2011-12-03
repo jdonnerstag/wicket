@@ -27,6 +27,7 @@ import org.apache.wicket.model.Model;
 import org.apache.wicket.util.resource.IResourceStream;
 import org.apache.wicket.util.resource.StringResourceStream;
 import org.apache.wicket.util.tester.FormTester;
+import org.junit.Test;
 
 /**
  * Test form component panel related form processing
@@ -40,7 +41,8 @@ public class FormComponentPanelProcessingTest extends WicketTestCase
 	 * Test processing order of form component panel and its containing children. The children
 	 * should be processed first.
 	 */
-	public void testProcessingOrder()
+	@Test
+	public void processingOrder()
 	{
 		tester.startPage(new TestPage());
 		tester.assertRenderedPage(TestPage.class);
@@ -110,6 +112,7 @@ public class FormComponentPanelProcessingTest extends WicketTestCase
 			super.updateModel();
 		}
 
+		@Override
 		public IResourceStream getMarkupResourceStream(MarkupContainer container,
 			Class<?> containerClass)
 		{
@@ -117,7 +120,6 @@ public class FormComponentPanelProcessingTest extends WicketTestCase
 				"<wicket:panel><input wicket:id='text' type='text'/></wicket:panel>");
 		}
 	}
-
 
 	private static class TestPage extends WebPage implements IMarkupResourceStreamProvider
 	{
@@ -130,6 +132,7 @@ public class FormComponentPanelProcessingTest extends WicketTestCase
 			form.add(new TestFormComponentPanel("panel", new Model<Serializable>()));
 		}
 
+		@Override
 		public IResourceStream getMarkupResourceStream(MarkupContainer container,
 			Class<?> containerClass)
 		{

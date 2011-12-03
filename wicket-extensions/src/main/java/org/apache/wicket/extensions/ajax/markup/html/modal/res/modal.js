@@ -302,7 +302,7 @@ Wicket.Window.prototype = {
 		
 			title: null, /* window title. if null and window content is iframe, title of iframe document will be used. */
 		
-			onCloseButton: function() {				
+			onCloseButton: Wicket.bind(function() {				
 				/* On firefox on Linux, at least, we need to blur() textfields, etc.
 				 * to get it to update its DOM model. Otherwise you'll lose any changes
 				 * made to the current form component you're editing.
@@ -311,7 +311,7 @@ Wicket.Window.prototype = {
 				this.caption.getElementsByTagName("a")[0].blur();
 				this.close();
 				return false;
-			}.bind(this), /* called when close button is clicked */
+			}, this), /* called when close button is clicked */
 			
 			onClose: function() { }, /* called when window is closed */
 		
@@ -354,7 +354,7 @@ Wicket.Window.prototype = {
 		var element = document.createElement("div");
 		element.id = idWindow;
 		document.body.appendChild(element);		
-		Wicket.replaceOuterHtml(element, markup);
+		Wicket.DOM.replace(element, markup);
 				
 		var _ = function(name) { return document.getElementById(name); }
 		
@@ -409,7 +409,7 @@ Wicket.Window.prototype = {
 	 * Binds the handler to the drag event on given element.
 	 */
 	bind: function(element, handler) {
-		Wicket.Drag.init(element, this.onBegin.bind(this), this.onEnd.bind(this), handler.bind(this)); 
+		Wicket.Drag.init(element, Wicket.bind(this.onBegin, this), Wicket.bind(this.onEnd, this), Wicket.bind(handler, this)); 
 	},
 
 	/**
@@ -445,7 +445,7 @@ Wicket.Window.prototype = {
 			this.bind(this.top, this.onMove);
 		}	
 				
-		this.caption.getElementsByTagName("a")[0].onclick = this.settings.onCloseButton.bind(this);
+		this.caption.getElementsByTagName("a")[0].onclick = Wicket.bind(this.settings.onCloseButton, this);
 	},
 
 	/**
@@ -617,13 +617,13 @@ Wicket.Window.prototype = {
 	 */
 	load: function() {
 		if (this.settings.title == null)
-			this.update = window.setInterval(this.updateTitle.bind(this), 100);
+			this.update = window.setInterval(Wicket.bind(this.updateTitle, this), 100);
 		
 		// opera seems to have problem accessing contentWindow here
 		if (Wicket.Browser.isOpera()) {
-			this.content.onload = function() {
+			this.content.onload = Wicket.bind(function() {
 				this.content.contentWindow.name = this.settings.iframeName;
-			}.bind(this);
+			}, this);
 		} else {
 			this.content.contentWindow.name = this.settings.iframeName;
 		}
@@ -698,11 +698,11 @@ Wicket.Window.prototype = {
 		// load position from cookie
 		this.loadPosition();
 
-		var doShow = function() {
+		var doShow = Wicket.bind(function() {
 			this.adjustOpenWindowZIndexesOnShow();
 			this.window.style.visibility="visible";
 			
-		}.bind(this);
+		}, this);
 				
 		this.adjustOpenWindowsStatusOnShow();
 
@@ -726,11 +726,11 @@ Wicket.Window.prototype = {
 		this.old_onunload = window.onunload;
 		
 		// new unload handler - close the window to prevent memory leaks in ie
-		window.onunload = function() {
+		window.onunload = Wicket.bind(function() {
 			this.close(true);
 			if (this.old_onunload != null)
 				return this.old_onunload();
-		}.bind(this);
+		}, this);
 		
 		// preserve old beforeunload handler
 		this.old_onbeforeunload = window.onbeforeunload;
@@ -892,7 +892,7 @@ Wicket.Window.prototype = {
 					// konqueror doesn't refresh caption text properly
 					if (Wicket.Browser.isKHTML()) {
 						this.captionText.style.display = 'none';
-						window.setTimeout(function() { this.captionText.style.display="block";}.bind(this), 0);
+						window.setTimeout(Wicket.bind(function() { this.captionText.style.display="block";}, this), 0);
 					}
 
 				}
@@ -907,7 +907,7 @@ Wicket.Window.prototype = {
 	 * Called when dragging has started. 
 	 */
 	onBegin: function(object) {
-		if (this.isIframe() && (Wicket.Browser.isGecko() || Wicket.Browser.isIE())) {
+		if (this.isIframe() && (Wicket.Browser.isGecko() || Wicket.Browser.isIE() || Wicket.Browser.isSafari())) {
 			this.revertList = new Array();				
 			Wicket.Iframe.documentFix(document, this.revertList);
 		}			 			 			
@@ -922,7 +922,7 @@ Wicket.Window.prototype = {
 			this.revertList = null;
 			if (Wicket.Browser.isKHTML() || this.content.style.visibility=='hidden') {			
 				this.content.style.visibility='hidden';
-				window.setTimeout(function() { this.content.style.visibility='visible'; }.bind(this),  0 );
+				window.setTimeout(Wicket.bind(function() { this.content.style.visibility='visible'; }, this),  0 );
 			}
 			this.revertList = null;
 		}
@@ -1186,7 +1186,7 @@ Wicket.Window.getMarkup = function(idWindow, idClassElement, idCaption, idConten
 				"<div class=\"w_left\" id='"+idLeft+"'>"+
 					"<div class=\"w_right_1\">"+
 						"<div class=\"w_right\" id='"+idRight+"'>"+
-							"<div class=\"w_content_1\" onmousedown=\"if (Wicket.Browser.isSafari()) { event.ignore = true; }  else { Wicket.stopEvent(event); } \">"+																			
+							"<div class=\"w_content_1\" onmousedown=\"if (Wicket.Browser.isSafari()) { event.ignore = true; }  else { Wicket.Event.stop(event); } \">"+																			
 								"<div class=\"w_caption\"  id=\""+idCaption+"\">"+
 									"<a class=\"w_close\" style=\"z-index:1\" href=\"#\"></a>"+									
 									"<h3 id=\""+idCaptionText+"\" class=\"w_captionText\"></h3>"+
@@ -1307,8 +1307,8 @@ Wicket.Window.Mask.prototype = {
 			this.old_onresize = window.onresize;
 			
 			// set new handlers
-			window.onscroll = this.onScrollResize.bind(this);
-			window.onresize = this.onScrollResize.bind(this);
+			window.onscroll = Wicket.bind(this.onScrollResize, this);
+			window.onresize = Wicket.bind(this.onScrollResize, this);
 			
 			// fix the mask position
 			this.onScrollResize(true);
@@ -1367,7 +1367,7 @@ Wicket.Window.Mask.prototype = {
 	
 	tasks: [],
 	startTask: function (fn, delay) {
-		var taskId=setTimeout(function() { fn(); this.clearTask(taskId); }.bind(this), delay);
+		var taskId=setTimeout(Wicket.bind(function() { fn(); this.clearTask(taskId); }, this), delay);
 		this.tasks.push(taskId);
 	},
 	clearTask: function (taskId) {
@@ -1391,9 +1391,9 @@ Wicket.Window.Mask.prototype = {
 	// disable user interaction for content that is covered by the mask inside the given document, taking into consideration that this modal window is or not in an iframe
 	// and has the given content
 	doDisable: function(doc, win) {
-		this.startTask(function() {this.hideSelectBoxes(doc, win)}.bind(this), 300);
-		this.startTask(function() {this.disableTabs(doc, win)}.bind(this), 400);
-		this.startTask(function() {this.disableFocus(doc, win)}.bind(this), 1000);
+		this.startTask(Wicket.bind(function() {this.hideSelectBoxes(doc, win)}, this), 300);
+		this.startTask(Wicket.bind(function() {this.disableTabs(doc, win)}, this), 400);
+		this.startTask(Wicket.bind(function() {this.disableFocus(doc, win)}, this), 1000);
 	},
 	
 	// reenable user interaction for content that was covered by the mask

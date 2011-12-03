@@ -80,6 +80,7 @@ import org.apache.wicket.response.filter.EmptySrcAttributeCheckFilter;
 import org.apache.wicket.session.DefaultPageFactory;
 import org.apache.wicket.session.ISessionStore;
 import org.apache.wicket.session.ISessionStore.UnboundListener;
+import org.apache.wicket.settings.IAjaxSettings;
 import org.apache.wicket.settings.IApplicationSettings;
 import org.apache.wicket.settings.IDebugSettings;
 import org.apache.wicket.settings.IExceptionSettings;
@@ -92,6 +93,7 @@ import org.apache.wicket.settings.IResourceSettings;
 import org.apache.wicket.settings.ISecuritySettings;
 import org.apache.wicket.settings.ISessionSettings;
 import org.apache.wicket.settings.IStoreSettings;
+import org.apache.wicket.settings.def.AjaxSettings;
 import org.apache.wicket.settings.def.ApplicationSettings;
 import org.apache.wicket.settings.def.DebugSettings;
 import org.apache.wicket.settings.def.ExceptionSettings;
@@ -272,6 +274,7 @@ public abstract class Application implements UnboundListener, IEventSink
 			/**
 			 * @see org.apache.wicket.application.IComponentInstantiationListener#onInstantiation(org.apache.wicket.Component)
 			 */
+			@Override
 			public void onInstantiation(final Component component)
 			{
 				final Class<? extends Component> cl = component.getClass();
@@ -469,6 +472,7 @@ public abstract class Application implements UnboundListener, IEventSink
 	/**
 	 * @see org.apache.wicket.session.ISessionStore.UnboundListener#sessionUnbound(java.lang.String)
 	 */
+	@Override
 	public void sessionUnbound(final String sessionId)
 	{
 		internalGetPageManager().sessionExpired(sessionId);
@@ -512,7 +516,7 @@ public abstract class Application implements UnboundListener, IEventSink
 		}
 
 		// now call any initializers we read
-		callInitializers();
+		initInitializers();
 	}
 
 	/**
@@ -582,10 +586,10 @@ public abstract class Application implements UnboundListener, IEventSink
 	}
 
 	/**
-	 * Iterate initializers list, calling any {@link org.apache.wicket.IDestroyer} instances found
-	 * in it.
+	 * Iterate initializers list, calling {@link IInitializer#destroy(Application)} on any instances
+	 * found in it.
 	 */
-	private void callDestroyers()
+	private void destroyInitializers()
 	{
 		for (IInitializer initializer : initializers)
 		{
@@ -595,9 +599,10 @@ public abstract class Application implements UnboundListener, IEventSink
 	}
 
 	/**
-	 * Iterate initializers list, calling any instances found in it.
+	 * Iterate initializers list, calling {@link IInitializer#init(Application)} on any instances
+	 * found in it.
 	 */
-	private void callInitializers()
+	private void initInitializers()
 	{
 		for (IInitializer initializer : initializers)
 		{
@@ -636,6 +641,8 @@ public abstract class Application implements UnboundListener, IEventSink
 	 */
 	public void internalDestroy()
 	{
+		applicationListeners.onBeforeDestroyed(this);
+
 		// destroy detach listener
 		final IDetachListener detachListener = getFrameworkSettings().getDetachListener();
 		if (detachListener != null)
@@ -655,7 +662,7 @@ public abstract class Application implements UnboundListener, IEventSink
 
 		onDestroy();
 
-		callDestroyers();
+		destroyInitializers();
 
 		internalGetPageManager().destroy();
 		getSessionStore().destroy();
@@ -804,6 +811,7 @@ public abstract class Application implements UnboundListener, IEventSink
 		internalInit();
 		init();
 		initializeComponents();
+		applicationListeners.onAfterInitialized(this);
 
 		validateInit();
 	}
@@ -867,6 +875,7 @@ public abstract class Application implements UnboundListener, IEventSink
 	}
 
 	/** {@inheritDoc} */
+	@Override
 	public void onEvent(final IEvent<?> event)
 	{
 	}
@@ -891,6 +900,10 @@ public abstract class Application implements UnboundListener, IEventSink
 	/** */
 	private final RequestCycleListenerCollection requestCycleListeners = new RequestCycleListenerCollection();
 
+	private final ApplicationListenerCollection applicationListeners = new ApplicationListenerCollection();
+
+	private final SessionListenerCollection sessionListeners = new SessionListenerCollection();
+
 	/** list of {@link IComponentInstantiationListener}s. */
 	private final ComponentInstantiationListenerCollection componentInstantiationListeners = new ComponentInstantiationListenerCollection();
 
@@ -900,6 +913,8 @@ public abstract class Application implements UnboundListener, IEventSink
 	/** list of {@link IHeaderContributor}s. */
 	private final HeaderContributorListenerCollection headerContributorListenerCollection = new HeaderContributorListenerCollection();
 
+	private final BehaviorInstantiationListenerCollection behaviorInstantiationListeners = new BehaviorInstantiationListenerCollection();
+
 	/**
 	 * @return Gets the application's {@link HeaderContributorListenerCollection}
 	 */
@@ -907,6 +922,39 @@ public abstract class Application implements UnboundListener, IEventSink
 	{
 		return headerContributorListenerCollection;
 	}
+
+	/**
+	 * @return collection of initializers
+	 */
+	public final List<IInitializer> getInitializers()
+	{
+		return Collections.unmodifiableList(initializers);
+	}
+
+	/**
+	 * @return collection of application listeners
+	 */
+	public final ApplicationListenerCollection getApplicationListeners()
+	{
+		return applicationListeners;
+	}
+
+	/**
+	 * @return collection of session listeners
+	 */
+	public final SessionListenerCollection getSessionListeners()
+	{
+		return sessionListeners;
+	}
+
+	/**
+	 * @return collection of behavior instantiation listeners
+	 */
+	public final BehaviorInstantiationListenerCollection getBehaviorInstantiationListeners()
+	{
+		return behaviorInstantiationListeners;
+	}
+
 
 	/**
 	 * @return Gets the application's ComponentInstantiationListenerCollection
@@ -969,6 +1017,9 @@ public abstract class Application implements UnboundListener, IEventSink
 	/** Application settings */
 	private IApplicationSettings applicationSettings;
 
+	/** Ajax settings */
+	private IAjaxSettings ajaxSettings;
+
 	/** Debug Settings */
 	private IDebugSettings debugSettings;
 
@@ -1026,6 +1077,29 @@ public abstract class Application implements UnboundListener, IEventSink
 	public final void setApplicationSettings(final IApplicationSettings applicationSettings)
 	{
 		this.applicationSettings = applicationSettings;
+	}
+
+	/**
+	 * @return Application's Ajax settings
+	 * @since 6.0
+	 */
+	public final IAjaxSettings getAjaxSettings()
+	{
+		checkSettingsAvailable();
+		if (ajaxSettings == null)
+		{
+			ajaxSettings = new AjaxSettings();
+		}
+		return ajaxSettings;
+	}
+
+	/**
+	 * 
+	 * @param ajaxSettings
+	 */
+	public final void setAjaxSettings(final IAjaxSettings ajaxSettings)
+	{
+		this.ajaxSettings = ajaxSettings;
 	}
 
 	/**
@@ -1487,6 +1561,7 @@ public abstract class Application implements UnboundListener, IEventSink
 			session = newSession(requestCycle.getRequest(), requestCycle.getResponse());
 			ThreadContext.setSession(session);
 			internalGetPageManager().newSessionCreated();
+			sessionListeners.onCreated(session);
 		}
 		else
 		{
@@ -1499,7 +1574,7 @@ public abstract class Application implements UnboundListener, IEventSink
 	 * 
 	 * @return RequestCycleProvider
 	 */
-	public IRequestCycleProvider getRequestCycleProvider()
+	public final IRequestCycleProvider getRequestCycleProvider()
 	{
 		return requestCycleProvider;
 	}
@@ -1508,13 +1583,14 @@ public abstract class Application implements UnboundListener, IEventSink
 	 * 
 	 * @param requestCycleProvider
 	 */
-	public void setRequestCycleProvider(final IRequestCycleProvider requestCycleProvider)
+	public final void setRequestCycleProvider(final IRequestCycleProvider requestCycleProvider)
 	{
 		this.requestCycleProvider = requestCycleProvider;
 	}
 
 	private static class DefaultExceptionMapperProvider implements IProvider<IExceptionMapper>
 	{
+		@Override
 		public IExceptionMapper get()
 		{
 			return new DefaultExceptionMapper();
@@ -1526,6 +1602,7 @@ public abstract class Application implements UnboundListener, IEventSink
 	 */
 	private static class DefaultRequestCycleProvider implements IRequestCycleProvider
 	{
+		@Override
 		public RequestCycle get(final RequestCycleContext context)
 		{
 			return new RequestCycle(context);
@@ -1544,6 +1621,7 @@ public abstract class Application implements UnboundListener, IEventSink
 			getRootRequestMapper(), getExceptionMapperProvider().get());
 
 		RequestCycle requestCycle = getRequestCycleProvider().get(context);
+		requestCycle.getListeners().add(requestCycleListeners);
 		requestCycle.getListeners().add(new AbstractRequestCycleListener()
 		{
 			@Override
@@ -1565,7 +1643,6 @@ public abstract class Application implements UnboundListener, IEventSink
 				}
 			}
 		});
-		requestCycle.getListeners().add(requestCycleListeners);
 		return requestCycle;
 	}
 
@@ -1576,7 +1653,8 @@ public abstract class Application implements UnboundListener, IEventSink
 	 * @param headerResponseDecorator
 	 *            your custom decorator
 	 */
-	public void setHeaderResponseDecorator(final IHeaderResponseDecorator headerResponseDecorator)
+	public final void setHeaderResponseDecorator(
+		final IHeaderResponseDecorator headerResponseDecorator)
 	{
 		this.headerResponseDecorator = headerResponseDecorator;
 	}

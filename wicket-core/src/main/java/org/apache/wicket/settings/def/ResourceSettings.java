@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.wicket.Application;
+import org.apache.wicket.Component;
 import org.apache.wicket.IResourceFactory;
 import org.apache.wicket.Localizer;
 import org.apache.wicket.css.ICssCompressor;
@@ -39,6 +40,7 @@ import org.apache.wicket.resource.PropertiesFactory;
 import org.apache.wicket.resource.loader.ClassStringResourceLoader;
 import org.apache.wicket.resource.loader.ComponentStringResourceLoader;
 import org.apache.wicket.resource.loader.IStringResourceLoader;
+import org.apache.wicket.resource.loader.InitializerStringResourceLoader;
 import org.apache.wicket.resource.loader.PackageStringResourceLoader;
 import org.apache.wicket.resource.loader.ValidatorStringResourceLoader;
 import org.apache.wicket.settings.IResourceSettings;
@@ -118,7 +120,7 @@ public class ResourceSettings implements IResourceSettings
 	private ICssCompressor cssCompressor;
 
 	/** escape string for '..' within resource keys */
-	private String parentFolderPlaceholder = null;
+	private String parentFolderPlaceholder = "::";
 
 	// resource caching strategy
 	private IResourceCachingStrategy resourceCachingStrategy;
@@ -127,7 +129,43 @@ public class ResourceSettings implements IResourceSettings
 	private final Application application;
 
 	/**
-	 * Construct
+	 * Configures Wicket's default ResourceLoaders.<br>
+	 * For an example in {@code FooApplication} let {@code bar.Foo} extend {@link Component}, this
+	 * results in the following ordering:
+	 * <dl>
+	 * <dt>component specific</dt>
+	 * <dd>
+	 * <ul>
+	 * <li>bar/Foo.properties</li>
+	 * <li>org/apache/wicket/Component.properties</li>
+	 * </ul>
+	 * </dd>
+	 * <dt>package specific</dt>
+	 * <dd>
+	 * <ul>
+	 * <li>bar/package.properties</li>
+	 * <li>package.properties (on Foo's class loader)</li>
+	 * <li>org/apache/wicket/package.properties</li>
+	 * <li>org/apache/package.properties</li>
+	 * <li>org/package.properties</li>
+	 * <li>package.properties (on Component's class loader)</li>
+	 * </ul>
+	 * </dd>
+	 * <dt>application specific</dt>
+	 * <dd>
+	 * <ul>
+	 * <li>FooApplication.properties</li>
+	 * <li>Application.properties</li>
+	 * </ul>
+	 * </dd>
+	 * <dt>validator specific</dt>
+	 * <dt>Initializer specific</dt>
+	 * <dd>
+	 * <ul>
+	 * <li>bar.Foo.properties (Foo implementing IInitializer)</li>
+	 * </ul>
+	 * </dd>
+	 * </dl>
 	 * 
 	 * @param application
 	 */
@@ -138,12 +176,14 @@ public class ResourceSettings implements IResourceSettings
 		stringResourceLoaders.add(new PackageStringResourceLoader());
 		stringResourceLoaders.add(new ClassStringResourceLoader(application.getClass()));
 		stringResourceLoaders.add(new ValidatorStringResourceLoader());
+		stringResourceLoaders.add(new InitializerStringResourceLoader(application.getInitializers()));
 	}
 
 	/**
 	 * @see org.apache.wicket.settings.IResourceSettings#addResourceFactory(java.lang.String,
 	 *      org.apache.wicket.IResourceFactory)
 	 */
+	@Override
 	public void addResourceFactory(final String name, IResourceFactory resourceFactory)
 	{
 		nameToResourceFactory.put(name, resourceFactory);
@@ -152,6 +192,7 @@ public class ResourceSettings implements IResourceSettings
 	/**
 	 * @see org.apache.wicket.settings.IResourceSettings#addResourceFolder(java.lang.String)
 	 */
+	@Override
 	public void addResourceFolder(final String resourceFolder)
 	{
 		// Get resource finder
@@ -172,6 +213,7 @@ public class ResourceSettings implements IResourceSettings
 	/**
 	 * @see org.apache.wicket.settings.IResourceSettings#getLocalizer()
 	 */
+	@Override
 	public Localizer getLocalizer()
 	{
 		if (localizer == null)
@@ -184,6 +226,7 @@ public class ResourceSettings implements IResourceSettings
 	/**
 	 * @see org.apache.wicket.settings.IResourceSettings#getPackageResourceGuard()
 	 */
+	@Override
 	public IPackageResourceGuard getPackageResourceGuard()
 	{
 		return packageResourceGuard;
@@ -192,6 +235,7 @@ public class ResourceSettings implements IResourceSettings
 	/**
 	 * @see org.apache.wicket.settings.IResourceSettings#getPropertiesFactory()
 	 */
+	@Override
 	public org.apache.wicket.resource.IPropertiesFactory getPropertiesFactory()
 	{
 		if (propertiesFactory == null)
@@ -204,6 +248,7 @@ public class ResourceSettings implements IResourceSettings
 	/**
 	 * @see org.apache.wicket.settings.IResourceSettings#getResourceFactory(java.lang.String)
 	 */
+	@Override
 	public IResourceFactory getResourceFactory(final String name)
 	{
 		return nameToResourceFactory.get(name);
@@ -212,6 +257,7 @@ public class ResourceSettings implements IResourceSettings
 	/**
 	 * @see org.apache.wicket.settings.IResourceSettings#getResourceFinder()
 	 */
+	@Override
 	public IResourceFinder getResourceFinder()
 	{
 		return resourceFinder;
@@ -220,6 +266,7 @@ public class ResourceSettings implements IResourceSettings
 	/**
 	 * @see org.apache.wicket.settings.IResourceSettings#getResourcePollFrequency()
 	 */
+	@Override
 	public Duration getResourcePollFrequency()
 	{
 		return resourcePollFrequency;
@@ -228,6 +275,7 @@ public class ResourceSettings implements IResourceSettings
 	/**
 	 * @see org.apache.wicket.settings.IResourceSettings#getResourceStreamLocator()
 	 */
+	@Override
 	public IResourceStreamLocator getResourceStreamLocator()
 	{
 		if (resourceStreamLocator == null)
@@ -243,6 +291,7 @@ public class ResourceSettings implements IResourceSettings
 	/**
 	 * @see org.apache.wicket.settings.IResourceSettings#getResourceWatcher(boolean)
 	 */
+	@Override
 	public IModificationWatcher getResourceWatcher(boolean start)
 	{
 		if (resourceWatcher == null && start)
@@ -259,16 +308,19 @@ public class ResourceSettings implements IResourceSettings
 	/**
 	 * @see org.apache.wicket.settings.IResourceSettings#setResourceWatcher(org.apache.wicket.util.watch.IModificationWatcher)
 	 */
+	@Override
 	public void setResourceWatcher(IModificationWatcher watcher)
 	{
 		resourceWatcher = watcher;
 	}
 
+	@Override
 	public IFileCleaner getFileCleaner()
 	{
 		return fileCleaner;
 	}
 
+	@Override
 	public void setFileCleaner(IFileCleaner fileUploadCleaner)
 	{
 		fileCleaner = fileUploadCleaner;
@@ -277,6 +329,7 @@ public class ResourceSettings implements IResourceSettings
 	/**
 	 * @see org.apache.wicket.settings.IResourceSettings#getStringResourceLoaders()
 	 */
+	@Override
 	public List<IStringResourceLoader> getStringResourceLoaders()
 	{
 		return stringResourceLoaders;
@@ -285,6 +338,7 @@ public class ResourceSettings implements IResourceSettings
 	/**
 	 * @see org.apache.wicket.settings.IResourceSettings#getThrowExceptionOnMissingResource()
 	 */
+	@Override
 	public boolean getThrowExceptionOnMissingResource()
 	{
 		return throwExceptionOnMissingResource;
@@ -293,6 +347,7 @@ public class ResourceSettings implements IResourceSettings
 	/**
 	 * @see org.apache.wicket.settings.IResourceSettings#getUseDefaultOnMissingResource()
 	 */
+	@Override
 	public boolean getUseDefaultOnMissingResource()
 	{
 		return useDefaultOnMissingResource;
@@ -301,6 +356,7 @@ public class ResourceSettings implements IResourceSettings
 	/**
 	 * @see org.apache.wicket.settings.IResourceSettings#setLocalizer(org.apache.wicket.Localizer)
 	 */
+	@Override
 	public void setLocalizer(final Localizer localizer)
 	{
 		this.localizer = localizer;
@@ -309,6 +365,7 @@ public class ResourceSettings implements IResourceSettings
 	/**
 	 * @see org.apache.wicket.settings.IResourceSettings#setPackageResourceGuard(org.apache.wicket.markup.html.IPackageResourceGuard)
 	 */
+	@Override
 	public void setPackageResourceGuard(IPackageResourceGuard packageResourceGuard)
 	{
 		if (packageResourceGuard == null)
@@ -321,6 +378,7 @@ public class ResourceSettings implements IResourceSettings
 	/**
 	 * @see IResourceSettings#setPropertiesFactory(org.apache.wicket.resource.IPropertiesFactory)
 	 */
+	@Override
 	public void setPropertiesFactory(org.apache.wicket.resource.IPropertiesFactory factory)
 	{
 		propertiesFactory = factory;
@@ -329,6 +387,7 @@ public class ResourceSettings implements IResourceSettings
 	/**
 	 * @see org.apache.wicket.settings.IResourceSettings#setResourceFinder(org.apache.wicket.util.file.IResourceFinder)
 	 */
+	@Override
 	public void setResourceFinder(final IResourceFinder resourceFinder)
 	{
 		this.resourceFinder = resourceFinder;
@@ -340,6 +399,7 @@ public class ResourceSettings implements IResourceSettings
 	/**
 	 * @see org.apache.wicket.settings.IResourceSettings#setResourcePollFrequency(org.apache.wicket.util.time.Duration)
 	 */
+	@Override
 	public void setResourcePollFrequency(final Duration resourcePollFrequency)
 	{
 		this.resourcePollFrequency = resourcePollFrequency;
@@ -354,6 +414,7 @@ public class ResourceSettings implements IResourceSettings
 	 * 
 	 * @see #getResourceStreamLocator()
 	 */
+	@Override
 	public void setResourceStreamLocator(IResourceStreamLocator resourceStreamLocator)
 	{
 		this.resourceStreamLocator = resourceStreamLocator;
@@ -362,6 +423,7 @@ public class ResourceSettings implements IResourceSettings
 	/**
 	 * @see org.apache.wicket.settings.IResourceSettings#setThrowExceptionOnMissingResource(boolean)
 	 */
+	@Override
 	public void setThrowExceptionOnMissingResource(final boolean throwExceptionOnMissingResource)
 	{
 		this.throwExceptionOnMissingResource = throwExceptionOnMissingResource;
@@ -370,6 +432,7 @@ public class ResourceSettings implements IResourceSettings
 	/**
 	 * @see org.apache.wicket.settings.IResourceSettings#setUseDefaultOnMissingResource(boolean)
 	 */
+	@Override
 	public void setUseDefaultOnMissingResource(final boolean useDefaultOnMissingResource)
 	{
 		this.useDefaultOnMissingResource = useDefaultOnMissingResource;
@@ -378,6 +441,7 @@ public class ResourceSettings implements IResourceSettings
 	/**
 	 * @see org.apache.wicket.settings.IResourceSettings#getDefaultCacheDuration()
 	 */
+	@Override
 	public final Duration getDefaultCacheDuration()
 	{
 		return defaultCacheDuration;
@@ -386,17 +450,20 @@ public class ResourceSettings implements IResourceSettings
 	/**
 	 * @see org.apache.wicket.settings.IResourceSettings#setDefaultCacheDuration(org.apache.wicket.util.time.Duration)
 	 */
+	@Override
 	public final void setDefaultCacheDuration(Duration duration)
 	{
 		Args.notNull(duration, "duration");
 		defaultCacheDuration = duration;
 	}
 
+	@Override
 	public IJavaScriptCompressor getJavaScriptCompressor()
 	{
 		return javascriptCompressor;
 	}
 
+	@Override
 	public IJavaScriptCompressor setJavaScriptCompressor(IJavaScriptCompressor compressor)
 	{
 		IJavaScriptCompressor old = javascriptCompressor;
@@ -404,11 +471,13 @@ public class ResourceSettings implements IResourceSettings
 		return old;
 	}
 
+	@Override
 	public ICssCompressor getCssCompressor()
 	{
 		return cssCompressor;
 	}
 
+	@Override
 	public ICssCompressor setCssCompressor(ICssCompressor compressor)
 	{
 		ICssCompressor old = cssCompressor;
@@ -420,6 +489,7 @@ public class ResourceSettings implements IResourceSettings
 	/**
 	 * @see org.apache.wicket.settings.IResourceSettings#getParentFolderPlaceholder()
 	 */
+	@Override
 	public String getParentFolderPlaceholder()
 	{
 		return parentFolderPlaceholder;
@@ -428,6 +498,7 @@ public class ResourceSettings implements IResourceSettings
 	/**
 	 * @see org.apache.wicket.settings.IResourceSettings#setParentFolderPlaceholder(String)
 	 */
+	@Override
 	public void setParentFolderPlaceholder(final String sequence)
 	{
 		parentFolderPlaceholder = sequence;
@@ -436,6 +507,7 @@ public class ResourceSettings implements IResourceSettings
 	/**
 	 * @see IResourceSettings#getCachingStrategy()
 	 */
+	@Override
 	public IResourceCachingStrategy getCachingStrategy()
 	{
 		if (resourceCachingStrategy == null)
@@ -467,6 +539,7 @@ public class ResourceSettings implements IResourceSettings
 	/**
 	 * @see org.apache.wicket.settings.IResourceSettings#setCachingStrategy(org.apache.wicket.request.resource.caching.IResourceCachingStrategy)
 	 */
+	@Override
 	public void setCachingStrategy(IResourceCachingStrategy strategy)
 	{
 		if (strategy == null)

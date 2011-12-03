@@ -129,7 +129,7 @@ public abstract class AjaxFormSubmitBehavior extends AjaxEventBehavior
 		final String formId = getForm().getMarkupId();
 		final CharSequence url = getCallbackUrl();
 
-		AppendingStringBuffer call = new AppendingStringBuffer("wicketSubmitFormById('").append(
+		AppendingStringBuffer call = new AppendingStringBuffer("Wicket.Ajax.submitForm('").append(
 			formId)
 			.append("', '")
 			.append(url)
@@ -157,21 +157,25 @@ public abstract class AjaxFormSubmitBehavior extends AjaxEventBehavior
 	{
 		getForm().getRootForm().onFormSubmitted(new IFormSubmitter()
 		{
+			@Override
 			public Form<?> getForm()
 			{
 				return AjaxFormSubmitBehavior.this.getForm();
 			}
 
+			@Override
 			public boolean getDefaultFormProcessing()
 			{
 				return AjaxFormSubmitBehavior.this.getDefaultProcessing();
 			}
 
+			@Override
 			public void onSubmit()
 			{
 				AjaxFormSubmitBehavior.this.onSubmit(target);
 			}
 
+			@Override
 			public void onError()
 			{
 				AjaxFormSubmitBehavior.this.onError(target);
@@ -200,7 +204,7 @@ public abstract class AjaxFormSubmitBehavior extends AjaxEventBehavior
 	@Override
 	protected CharSequence getPreconditionScript()
 	{
-		return "return Wicket.$$(this)&&Wicket.$$('" + getForm().getMarkupId() + "')";
+		return "return Wicket.$$(this) && Wicket.$$('" + getForm().getMarkupId() + "')";
 	}
 
 	/**

@@ -22,6 +22,7 @@ import org.apache.wicket.markup.html.navigation.paging.IPageable;
 import org.apache.wicket.markup.repeater.AbstractPageableView;
 import org.apache.wicket.markup.repeater.RefreshingView;
 import org.apache.wicket.model.IModel;
+import org.apache.wicket.util.lang.Args;
 
 
 /**
@@ -54,11 +55,8 @@ public abstract class DataViewBase<T> extends AbstractPageableView<T>
 	public DataViewBase(String id, IDataProvider<T> dataProvider)
 	{
 		super(id);
-		if (dataProvider == null)
-		{
-			throw new IllegalArgumentException("argument [dataProvider] cannot be null");
-		}
-		this.dataProvider = dataProvider;
+
+		this.dataProvider = Args.notNull(dataProvider, "dataProvider");
 	}
 
 	/**
@@ -71,7 +69,7 @@ public abstract class DataViewBase<T> extends AbstractPageableView<T>
 
 
 	@Override
-	protected final Iterator<IModel<T>> getItemModels(int offset, int count)
+	protected final Iterator<IModel<T>> getItemModels(long offset, long count)
 	{
 		return new ModelIterator<T>(internalGetDataProvider(), offset, count);
 	}
@@ -88,8 +86,8 @@ public abstract class DataViewBase<T> extends AbstractPageableView<T>
 	{
 		private final Iterator<? extends T> items;
 		private final IDataProvider<T> dataProvider;
-		private final int max;
-		private int index;
+		private final long max;
+		private long index;
 
 		/**
 		 * Constructor
@@ -101,7 +99,7 @@ public abstract class DataViewBase<T> extends AbstractPageableView<T>
 		 * @param count
 		 *            max number of items to return
 		 */
-		public ModelIterator(IDataProvider<T> dataProvider, int offset, int count)
+		public ModelIterator(IDataProvider<T> dataProvider, long offset, long count)
 		{
 			this.dataProvider = dataProvider;
 			max = count;
@@ -112,6 +110,7 @@ public abstract class DataViewBase<T> extends AbstractPageableView<T>
 		/**
 		 * @see java.util.Iterator#remove()
 		 */
+		@Override
 		public void remove()
 		{
 			throw new UnsupportedOperationException();
@@ -120,6 +119,7 @@ public abstract class DataViewBase<T> extends AbstractPageableView<T>
 		/**
 		 * @see java.util.Iterator#hasNext()
 		 */
+		@Override
 		public boolean hasNext()
 		{
 			return items != null && items.hasNext() && (index < max);
@@ -128,6 +128,7 @@ public abstract class DataViewBase<T> extends AbstractPageableView<T>
 		/**
 		 * @see java.util.Iterator#next()
 		 */
+		@Override
 		public IModel<T> next()
 		{
 			index++;
@@ -136,7 +137,7 @@ public abstract class DataViewBase<T> extends AbstractPageableView<T>
 	}
 
 	@Override
-	protected final int internalGetItemCount()
+	protected final long internalGetItemCount()
 	{
 		return internalGetDataProvider().size();
 	}

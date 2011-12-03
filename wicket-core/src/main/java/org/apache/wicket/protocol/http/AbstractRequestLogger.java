@@ -50,7 +50,7 @@ import org.slf4j.LoggerFactory;
  * implementation: currently Wicket supports two formats: a {@link RequestLogger legacy, log4j
  * compatible format}, and a {@link JsonRequestLogger JSON format}.
  */
-public abstract class AbstractRequestLogger implements IRequestLogger
+public abstract class AbstractRequestLogger implements IStagedRequestLogger
 {
 	private static final Logger LOG = LoggerFactory.getLogger(AbstractRequestLogger.class);
 
@@ -115,16 +115,19 @@ public abstract class AbstractRequestLogger implements IRequestLogger
 		liveSessions = new ConcurrentHashMap<String, SessionData>();
 	}
 
+	@Override
 	public int getCurrentActiveRequestCount()
 	{
 		return activeRequests.get();
 	}
 
+	@Override
 	public int getPeakActiveRequestCount()
 	{
 		return peakActiveRequests.get();
 	}
 
+	@Override
 	public SessionData[] getLiveSessions()
 	{
 		final SessionData[] sessions = liveSessions.values().toArray(
@@ -133,11 +136,13 @@ public abstract class AbstractRequestLogger implements IRequestLogger
 		return sessions;
 	}
 
+	@Override
 	public int getPeakSessions()
 	{
 		return peakSessions.get();
 	}
 
+	@Override
 	public List<RequestData> getRequests()
 	{
 		synchronized (requestWindow)
@@ -158,8 +163,6 @@ public abstract class AbstractRequestLogger implements IRequestLogger
 	 */
 	private void copyRequestsInOrder(RequestData[] copy)
 	{
-		Args.isTrue(copy.length >= requestWindow.length, "copy.length must be at least {}",
-			requestWindow.length);
 		if (hasBufferRolledOver())
 		{
 			// first copy the oldest requests stored behind the cursor into the copy
@@ -184,23 +187,28 @@ public abstract class AbstractRequestLogger implements IRequestLogger
 		return requestWindow[requestWindow.length - 1] != null;
 	}
 
+	@Override
 	public int getTotalCreatedSessions()
 	{
 		return totalCreatedSessions.get();
 	}
 
+	@Override
 	public void objectCreated(Object value)
 	{
 	}
 
+	@Override
 	public void objectRemoved(Object value)
 	{
 	}
 
+	@Override
 	public void objectUpdated(Object value)
 	{
 	}
 
+	@Override
 	public void requestTime(long timeTaken)
 	{
 		RequestData requestdata = RequestCycle.get().getMetaData(REQUEST_DATA);
@@ -260,13 +268,13 @@ public abstract class AbstractRequestLogger implements IRequestLogger
 					sessiondata.setSessionInfo(sessionInfo);
 					sessiondata.setSessionSize(sizeInBytes);
 					sessiondata.addTimeTaken(timeTaken);
+					RequestCycle.get().setMetaData(SESSION_DATA, sessiondata);
 				}
 			}
-			// log the request- and sessiondata (the latter can be null)
-			log(requestdata, sessiondata);
 		}
 	}
 
+	@Override
 	public void sessionCreated(String sessionId)
 	{
 		liveSessions.put(sessionId, new SessionData(sessionId));
@@ -277,6 +285,7 @@ public abstract class AbstractRequestLogger implements IRequestLogger
 		totalCreatedSessions.incrementAndGet();
 	}
 
+	@Override
 	public void sessionDestroyed(String sessionId)
 	{
 		RequestCycle requestCycle = RequestCycle.get();
@@ -301,6 +310,18 @@ public abstract class AbstractRequestLogger implements IRequestLogger
 			}
 		}
 		return rd;
+	}
+
+	@Override
+	public void performLogging()
+	{
+		RequestData requestdata = RequestCycle.get().getMetaData(REQUEST_DATA);
+		SessionData sessiondata = RequestCycle.get().getMetaData(SESSION_DATA);
+		if (requestdata != null)
+		{
+			// log the request- and sessiondata (the latter can be null)
+			log(requestdata, sessiondata);
+		}
 	}
 
 	protected abstract void log(RequestData rd, SessionData sd);
@@ -359,6 +380,7 @@ public abstract class AbstractRequestLogger implements IRequestLogger
 		}
 	}
 
+	@Override
 	public long getAverageRequestTime()
 	{
 		synchronized (requestWindow)
@@ -370,6 +392,7 @@ public abstract class AbstractRequestLogger implements IRequestLogger
 		}
 	}
 
+	@Override
 	public long getRequestsPerMinute()
 	{
 		synchronized (requestWindow)
@@ -384,6 +407,7 @@ public abstract class AbstractRequestLogger implements IRequestLogger
 		}
 	}
 
+	@Override
 	public void logEventTarget(IRequestHandler requestHandler)
 	{
 		RequestData requestData = getCurrentRequest();
@@ -393,11 +417,13 @@ public abstract class AbstractRequestLogger implements IRequestLogger
 		}
 	}
 
+	@Override
 	public void logRequestedUrl(String url)
 	{
 		getCurrentRequest().setRequestedUrl(url);
 	}
 
+	@Override
 	public void logResponseTarget(IRequestHandler requestHandler)
 	{
 		RequestData requestData = getCurrentRequest();

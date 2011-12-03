@@ -20,8 +20,10 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URLConnection;
 
 import org.apache.wicket.util.file.File;
+import org.apache.wicket.util.lang.Args;
 import org.apache.wicket.util.lang.Bytes;
 import org.apache.wicket.util.time.Time;
 
@@ -53,6 +55,7 @@ public class FileResourceStream extends AbstractResourceStream
 	 */
 	public FileResourceStream(final File file)
 	{
+		Args.notNull(file, "file");
 		this.file = file;
 	}
 
@@ -84,8 +87,12 @@ public class FileResourceStream extends AbstractResourceStream
 	@Override
 	public String getContentType()
 	{
-		// Let ResourceStreamRequestTarget handle content-type automatically
-		return null;
+		String contentType = null;
+		if (file != null)
+		{
+			contentType = URLConnection.getFileNameMap().getContentTypeFor(file.getName());
+		}
+		return contentType;
 	}
 
 	/**

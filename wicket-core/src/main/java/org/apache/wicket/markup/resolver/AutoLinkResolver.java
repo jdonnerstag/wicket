@@ -190,6 +190,7 @@ public final class AutoLinkResolver implements IComponentResolver
 		 * @see org.apache.wicket.markup.resolver.IComponentResolver#resolve(org.apache.wicket.MarkupContainer,
 		 *      org.apache.wicket.markup.MarkupStream, org.apache.wicket.markup.ComponentTag)
 		 */
+		@Override
 		public Component resolve(final MarkupContainer container, final MarkupStream markupStream,
 			ComponentTag tag)
 		{
@@ -401,6 +402,7 @@ public final class AutoLinkResolver implements IComponentResolver
 		 * @see org.apache.wicket.markup.resolver.AutoLinkResolver.IAutolinkResolverDelegate#newAutoComponent(org.apache.wicket.MarkupContainer,
 		 *      java.lang.String, org.apache.wicket.markup.resolver.AutoLinkResolver.PathInfo)
 		 */
+		@Override
 		@SuppressWarnings("unchecked")
 		public Component newAutoComponent(final MarkupContainer container, final String autoId,
 			PathInfo pathInfo)
@@ -516,6 +518,7 @@ public final class AutoLinkResolver implements IComponentResolver
 		 * @see org.apache.wicket.markup.resolver.IComponentResolver#resolve(org.apache.wicket.MarkupContainer,
 		 *      org.apache.wicket.markup.MarkupStream, org.apache.wicket.markup.ComponentTag)
 		 */
+		@Override
 		public Component resolve(MarkupContainer container, MarkupStream markupStream,
 			ComponentTag tag)
 		{
@@ -573,19 +576,24 @@ public final class AutoLinkResolver implements IComponentResolver
 
 			this.parent = parent;
 			this.attribute = attribute;
+			ResourceReference reference = null;
 			// Check whether it is a valid resource reference
-			if (PackageResource.exists(clazz, href, getLocale(), getStyle(), getVariation()))
+			Class<?> cursor = clazz;
+			// iterate all parents because the auto linked resource may come from
+			// inherited markup
+			while (cursor != null && cursor != Object.class)
 			{
-				// Create the component implementing the link
-				resourceReference = new PackageResourceReference(clazz, href, getLocale(),
-					getStyle(), getVariation());
+				if (PackageResource.exists(cursor, href, getLocale(), getStyle(), getVariation()))
+				{
+					// Create the component implementing the link
+					reference = new PackageResourceReference(cursor, href, getLocale(), getStyle(),
+						getVariation());
+					break;
+				}
+				cursor = cursor.getSuperclass();
+
 			}
-			else
-			{
-				// The resource does not exist. Set to null and ignore when
-				// rendering.
-				resourceReference = null;
-			}
+			resourceReference = reference;
 		}
 
 		/**
@@ -634,6 +642,7 @@ public final class AutoLinkResolver implements IComponentResolver
 		 * @see org.apache.wicket.markup.resolver.IComponentResolver#resolve(org.apache.wicket.MarkupContainer,
 		 *      org.apache.wicket.markup.MarkupStream, org.apache.wicket.markup.ComponentTag)
 		 */
+		@Override
 		public Component resolve(MarkupContainer container, MarkupStream markupStream,
 			ComponentTag tag)
 		{
@@ -664,6 +673,7 @@ public final class AutoLinkResolver implements IComponentResolver
 		 * @see org.apache.wicket.markup.resolver.AutoLinkResolver.IAutolinkResolverDelegate#newAutoComponent(org.apache.wicket.MarkupContainer,
 		 *      java.lang.String, org.apache.wicket.markup.resolver.AutoLinkResolver.PathInfo)
 		 */
+		@Override
 		public Component newAutoComponent(final MarkupContainer container, final String autoId,
 			final PathInfo pathInfo)
 		{
@@ -699,6 +709,7 @@ public final class AutoLinkResolver implements IComponentResolver
 		 *            The component tag. Not for modification.
 		 * @return the tag value that constitutes the reference
 		 */
+		@Override
 		public String getReference(final ComponentTag tag)
 		{
 			return tag.getAttributes().getString(attribute);
@@ -791,6 +802,7 @@ public final class AutoLinkResolver implements IComponentResolver
 	 * @see org.apache.wicket.markup.resolver.IComponentResolver#resolve(org.apache.wicket.MarkupContainer,
 	 *      org.apache.wicket.markup.MarkupStream, org.apache.wicket.markup.ComponentTag)
 	 */
+	@Override
 	public final Component resolve(final MarkupContainer container,
 		final MarkupStream markupStream, final ComponentTag tag)
 	{

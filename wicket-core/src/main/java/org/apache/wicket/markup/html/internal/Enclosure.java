@@ -28,6 +28,7 @@ import org.apache.wicket.markup.parser.filter.EnclosureHandler;
 import org.apache.wicket.markup.resolver.ComponentResolvers;
 import org.apache.wicket.markup.resolver.ComponentResolvers.ResolverFilter;
 import org.apache.wicket.markup.resolver.IComponentResolver;
+import org.apache.wicket.util.string.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,12 +65,17 @@ import org.slf4j.LoggerFactory;
  *       }
  *    }
  * </pre>
- * 
+ * <p>
  * Please note that since a transparent auto-component is created for the tag, the markup and the
  * component hierarchy will not be in sync which leads to subtle differences if your code relies on
  * onBeforeRender() and validate() being called for the children inside the enclosure tag. E.g. it
  * might happen that onBeforeRender() and validate() gets called on invisible components. In doubt,
  * please fall back to {@link EnclosureContainer}.
+ * </p>
+ * <p>
+ * Additionally due to the reason above it is not possible to assert that children in Enclosure are
+ * not visible to WicketTester.
+ * </p>
  * 
  * @see EnclosureResolver
  * @see EnclosureHandler
@@ -171,7 +177,9 @@ public class Enclosure extends WebMarkupContainer implements IComponentResolver
 	private Component getChildComponent(final MarkupStream markupStream,
 		MarkupContainer enclosureParent)
 	{
-		Component controller = enclosureParent.get(getChildId());
+		String fullChildId = getChildId();
+
+		Component controller = enclosureParent.get(fullChildId);
 		if (controller == null)
 		{
 			int orgIndex = markupStream.getCurrentIndex();
@@ -185,11 +193,17 @@ public class Enclosure extends WebMarkupContainer implements IComponentResolver
 						ComponentTag tag = markupStream.getTag();
 						if ((tag != null) && (tag.isOpen() || tag.isOpenClose()))
 						{
-							if (childId.equals(tag.getId()))
+							String tagId = tag.getId();
+
+							if (fullChildId.equals(tagId))
 							{
+								ComponentTag fullComponentTag = new ComponentTag(tag);
+								fullComponentTag.setId(childId.toString());
+
 								controller = ComponentResolvers.resolve(enclosureParent,
-									markupStream, tag, new ResolverFilter()
+									markupStream, fullComponentTag, new ResolverFilter()
 									{
+										@Override
 										public boolean ignoreResolver(
 											final IComponentResolver resolver)
 										{
@@ -197,6 +211,10 @@ public class Enclosure extends WebMarkupContainer implements IComponentResolver
 										}
 									});
 								break;
+							}
+							else if (fullChildId.startsWith(tagId + PATH_SEPARATOR))
+							{
+								fullChildId = Strings.afterFirst(fullChildId, PATH_SEPARATOR);
 							}
 						}
 					}
@@ -212,6 +230,7 @@ public class Enclosure extends WebMarkupContainer implements IComponentResolver
 		return controller;
 	}
 
+	@Override
 	public Component resolve(MarkupContainer container, MarkupStream markupStream, ComponentTag tag)
 	{
 		if (childId.equals(tag.getId()))

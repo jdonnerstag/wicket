@@ -16,6 +16,7 @@
  */
 package org.apache.wicket.request.cycle;
 
+import org.apache.wicket.Application;
 import org.apache.wicket.MetaDataEntry;
 import org.apache.wicket.MetaDataKey;
 import org.apache.wicket.Page;
@@ -23,6 +24,8 @@ import org.apache.wicket.Session;
 import org.apache.wicket.ThreadContext;
 import org.apache.wicket.event.IEvent;
 import org.apache.wicket.event.IEventSink;
+import org.apache.wicket.protocol.http.IRequestLogger;
+import org.apache.wicket.protocol.http.IStagedRequestLogger;
 import org.apache.wicket.request.IExceptionMapper;
 import org.apache.wicket.request.IRequestCycle;
 import org.apache.wicket.request.IRequestHandler;
@@ -50,11 +53,10 @@ import org.slf4j.LoggerFactory;
  * <li>Resolve request handler
  * <li>Execute request handler
  * </ol>
- * During {@link IRequestHandler} execution the handler can execute other {@link IRequestHandler}s,
- * schedule another {@link IRequestHandler} or replace all {@link IRequestHandler}s on stack with
- * another {@link IRequestHandler}.
+ * During {@link IRequestHandler} execution the handler can schedule another {@link IRequestHandler}
+ * to run after it is done, or replace all {@link IRequestHandler}s on stack with another
+ * {@link IRequestHandler}.
  * 
- * @see #execute(IRequestHandler)
  * @see #scheduleRequestHandlerAfterCurrent(IRequestHandler)
  * @see #replaceAllRequestHandlers(IRequestHandler)
  * 
@@ -160,6 +162,7 @@ public class RequestCycle implements IRequestCycle, IEventSink
 	 * 
 	 * @return UrlRenderer instance.
 	 */
+	@Override
 	public final UrlRenderer getUrlRenderer()
 	{
 		if (urlRenderer == null)
@@ -204,9 +207,7 @@ public class RequestCycle implements IRequestCycle, IEventSink
 			IRequestHandler handler = resolveRequestHandler();
 			if (handler != null)
 			{
-				listeners.onRequestHandlerResolved(this, handler);
-				requestHandlerExecutor.execute(handler);
-				listeners.onRequestHandlerExecuted(this, handler);
+				execute(handler);
 				return true;
 			}
 
@@ -235,6 +236,35 @@ public class RequestCycle implements IRequestCycle, IEventSink
 			set(null);
 		}
 		return false;
+	}
+
+	/**
+	 * Executes a request handler and fires pre/post listener methods
+	 * 
+	 * @param handler
+	 */
+	private void execute(IRequestHandler handler)
+	{
+		Args.notNull(handler, "handler");
+
+		try
+		{
+			listeners.onRequestHandlerResolved(this, handler);
+			requestHandlerExecutor.execute(handler);
+			listeners.onRequestHandlerExecuted(this, handler);
+		}
+		catch (RuntimeException e)
+		{
+			IRequestHandler replacement = requestHandlerExecutor.resolveHandler(e);
+			if (replacement != null)
+			{
+				execute(replacement);
+			}
+			else
+			{
+				throw e;
+			}
+		}
 	}
 
 	/**
@@ -276,7 +306,7 @@ public class RequestCycle implements IRequestCycle, IEventSink
 			if (retryCount > 0)
 			{
 				IRequestHandler next = handleException(e);
-				if (handler != null)
+				if (next != null)
 				{
 					executeExceptionRequestHandler(next, retryCount - 1);
 					return;
@@ -305,6 +335,7 @@ public class RequestCycle implements IRequestCycle, IEventSink
 	/**
 	 * @return current request
 	 */
+	@Override
 	public Request getRequest()
 	{
 		return request;
@@ -497,6 +528,15 @@ public class RequestCycle implements IRequestCycle, IEventSink
 		{
 			Session.get().internalDetach();
 		}
+
+		if (Application.exists())
+		{
+			IRequestLogger requestLogger = Application.get().getRequestLogger();
+			if (requestLogger instanceof IStagedRequestLogger)
+			{
+				((IStagedRequestLogger)requestLogger).performLogging();
+			}
+		}
 	}
 
 	/**
@@ -563,7 +603,7 @@ public class RequestCycle implements IRequestCycle, IEventSink
 	{
 		IPageProvider provider = new PageProvider(pageClass, null);
 		scheduleRequestHandlerAfterCurrent(new RenderPageRequestHandler(provider,
-			RenderPageRequestHandler.RedirectPolicy.AUTO_REDIRECT));
+			RenderPageRequestHandler.RedirectPolicy.ALWAYS_REDIRECT));
 	}
 
 
@@ -578,7 +618,7 @@ public class RequestCycle implements IRequestCycle, IEventSink
 	{
 		IPageProvider provider = new PageProvider(pageClass, parameters);
 		scheduleRequestHandlerAfterCurrent(new RenderPageRequestHandler(provider,
-			RenderPageRequestHandler.RedirectPolicy.AUTO_REDIRECT));
+			RenderPageRequestHandler.RedirectPolicy.ALWAYS_REDIRECT));
 	}
 
 	/**
@@ -611,6 +651,7 @@ public class RequestCycle implements IRequestCycle, IEventSink
 	}
 
 	/** {@inheritDoc} */
+	@Override
 	public void onEvent(IEvent<?> event)
 	{
 	}
@@ -640,6 +681,7 @@ public class RequestCycle implements IRequestCycle, IEventSink
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public Response getResponse()
 	{
 		return activeResponse;
@@ -648,6 +690,7 @@ public class RequestCycle implements IRequestCycle, IEventSink
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public Response setResponse(final Response response)
 	{
 		Response current = activeResponse;
@@ -658,6 +701,7 @@ public class RequestCycle implements IRequestCycle, IEventSink
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void scheduleRequestHandlerAfterCurrent(IRequestHandler handler)
 	{
 		// just delegating the call to {@link IRequestHandlerExecutor} and invoking listeners

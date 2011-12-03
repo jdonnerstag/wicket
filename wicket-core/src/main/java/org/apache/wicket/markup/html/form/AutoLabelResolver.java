@@ -64,6 +64,7 @@ public class AutoLabelResolver implements IComponentResolver
 
 	static final String WICKET_FOR = "wicket:for";
 
+	@Override
 	public Component resolve(final MarkupContainer container, final MarkupStream markupStream,
 		final ComponentTag tag)
 	{
@@ -90,7 +91,7 @@ public class AutoLabelResolver implements IComponentResolver
 		if (!component.getOutputMarkupId())
 		{
 			component.setOutputMarkupId(true);
-			if (!component.hasBeenRendered())
+			if (component.hasBeenRendered())
 			{
 				logger.warn(
 					"Component: {} is referenced via a wicket:for attribute but does not have its outputMarkupId property set to true",
@@ -125,6 +126,7 @@ public class AutoLabelResolver implements IComponentResolver
 			component = container.visitChildren(Component.class,
 				new IVisitor<Component, Component>()
 				{
+					@Override
 					public void component(Component child, IVisit<Component> visit)
 					{
 						if (child == searched[0])

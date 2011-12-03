@@ -47,6 +47,7 @@ public class ResponseFilterTest extends WicketTestCase
 	{
 		final IResponseFilter responseFilter = new IResponseFilter()
 		{
+			@Override
 			public AppendingStringBuffer filter(AppendingStringBuffer responseBuffer)
 			{
 				counter.getAndIncrement();
@@ -81,7 +82,7 @@ public class ResponseFilterTest extends WicketTestCase
 	 * WICKET-3620
 	 */
 	@Test
-	public void testFilterAddCommentFilter()
+	public void filterAddCommentFilter()
 	{
 		tester.startPage(DummyHomePage.class);
 		Assert.assertTrue(tester.getLastResponseAsString().contains(AppendCommentFilter.COMMENT));
@@ -91,7 +92,7 @@ public class ResponseFilterTest extends WicketTestCase
 	 * WICKET-3620
 	 */
 	@Test
-	public void testAddCommentFilterInAjaxResponse()
+	public void addCommentFilterInAjaxResponse()
 	{
 		DummyHomePage testPage = new DummyHomePage();
 		testPage.getTestPageLink().add(new AjaxEventBehavior("event")
@@ -111,6 +112,7 @@ public class ResponseFilterTest extends WicketTestCase
 		static final AppendCommentFilter INSTANCE = new AppendCommentFilter();
 		static final String COMMENT = "<!-- comment -->";
 
+		@Override
 		public AppendingStringBuffer filter(AppendingStringBuffer responseBuffer)
 		{
 			return new AppendingStringBuffer(responseBuffer).append(COMMENT);

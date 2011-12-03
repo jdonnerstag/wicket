@@ -115,4 +115,31 @@ public interface IExceptionSettings
 		/** invoke client side failure handler */
 		INVOKE_FAILURE_HANDLER
 	}
+
+	/**
+	 * Which threads' stacktrace to dump when a page lock timeout occurs
+	 * 
+	 * @author papegaaij
+	 */
+	enum ThreadDumpStrategy {
+		/** Do not dump any stacktraces */
+		NO_THREADS,
+		/** Dump the stacktrace of the thread holding the lock */
+		THREAD_HOLDING_LOCK,
+		/** Dump stacktraces of all threads of the application */
+		ALL_THREADS
+	}
+
+	/**
+	 * Sets the strategy to use for dumping stack traces of live threads in the JVM.
+	 * 
+	 * @param strategy
+	 */
+	void setThreadDumpStrategy(ThreadDumpStrategy strategy);
+
+	/**
+	 * @return strategy to use for dumping stack traces of live threads in the JVM.
+	 */
+	ThreadDumpStrategy getThreadDumpStrategy();
+
 }

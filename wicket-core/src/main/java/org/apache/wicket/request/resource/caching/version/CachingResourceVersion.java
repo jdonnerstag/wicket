@@ -93,6 +93,7 @@ public class CachingResourceVersion implements IResourceVersion
 			new MostRecentlyUsedMap<Serializable, String>(maxEntries));
 	}
 
+	@Override
 	public String getVersion(IStaticCacheableResource resource)
 	{
 		// get unique cache key for resource reference
@@ -131,5 +132,23 @@ public class CachingResourceVersion implements IResourceVersion
 		
 		// return version string
 		return version;
+	}
+
+	/**
+	 * remove cacheable resource from cache
+	 * 
+	 * @param resource 
+	 *           cacheable resource
+	 */
+	public void invalidate(IStaticCacheableResource resource)
+	{   
+		// get cache key for resource reference
+		final Serializable key = Args.notNull(resource, "resource").getCacheKey();
+
+		// if key is available purge cache entry
+		if(key != null)
+		{
+			cache.remove(key);
+		}
 	}
 }

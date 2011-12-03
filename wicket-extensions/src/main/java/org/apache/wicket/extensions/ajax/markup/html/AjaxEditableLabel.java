@@ -30,6 +30,7 @@ import org.apache.wicket.markup.html.form.FormComponent;
 import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.IModel;
+import org.apache.wicket.model.IObjectClassAwareModel;
 import org.apache.wicket.request.cycle.RequestCycle;
 import org.apache.wicket.util.convert.IConverter;
 import org.apache.wicket.util.string.JavaScriptUtils;
@@ -97,17 +98,22 @@ public class AjaxEditableLabel<T> extends Panel
 		protected void onComponentTag(final ComponentTag tag)
 		{
 			super.onComponentTag(tag);
+
+			String callbackUrl = getCallbackUrl().toString();
+			char separator = (callbackUrl != null && callbackUrl.indexOf('?') > -1) ? '&' : '?';
+
 			final String saveCall = "{" +
-				generateCallbackScript("wicketAjaxGet('" + getCallbackUrl() +
-					"&save=true&'+this.name+'='+wicketEncode(this.value)") + "; return false;}";
+				generateCallbackScript("Wicket.Ajax.get('" + callbackUrl + separator +
+					"save=true&'+this.name+'='+wicketEncode(this.value)") + "; return false;}";
+
 
 			final String cancelCall = "{" +
-				generateCallbackScript("wicketAjaxGet('" + getCallbackUrl() + "&save=false'") +
-				"; return false;}";
+				generateCallbackScript("Wicket.Ajax.get('" + callbackUrl + separator +
+					"save=false'") + "; return false;}";
 
 
-			final String keypress = "var kc=wicketKeyCode(event); if (kc==27) " + cancelCall +
-				" else if (kc!=13) { return true; } else " + saveCall;
+			final String keypress = "var kc=Wicket.Event.keyCode(event); if (kc==27) " +
+				cancelCall + " else if (kc!=13) { return true; } else " + saveCall;
 
 			tag.put("onblur", saveCall);
 			tag.put("onkeypress", "if (Wicket.Browser.isSafari()) { return; }; " + keypress);
@@ -386,7 +392,7 @@ public class AjaxEditableLabel<T> extends Panel
 	{
 		if (editor == null)
 		{
-			initLabelAndEditor(getDelegatingParentModel());
+			initLabelAndEditor(new WrapperModel());
 		}
 		return editor;
 	}
@@ -400,7 +406,7 @@ public class AjaxEditableLabel<T> extends Panel
 	{
 		if (label == null)
 		{
-			initLabelAndEditor(getDelegatingParentModel());
+			initLabelAndEditor(new WrapperModel());
 		}
 		return label;
 	}
@@ -415,7 +421,7 @@ public class AjaxEditableLabel<T> extends Panel
 		// lazily add label and editor
 		if (editor == null)
 		{
-			initLabelAndEditor(getDelegatingParentModel());
+			initLabelAndEditor(new WrapperModel());
 		}
 		// obsolete with WICKET-1919
 		// label.setEnabled(isEnabledInHierarchy());
@@ -448,7 +454,7 @@ public class AjaxEditableLabel<T> extends Panel
 		target.add(AjaxEditableLabel.this);
 		// put focus on the textfield and stupid explorer hack to move the
 		// caret to the end
-		target.appendJavaScript("{ var el=wicketGet('" + editor.getMarkupId() + "');" +
+		target.appendJavaScript("{ var el=Wicket.$('" + editor.getMarkupId() + "');" +
 			"   if (el.createTextRange) { " +
 			"     var v = el.value; var r = el.createTextRange(); " +
 			"     r.moveStart('character', v.length); r.select(); } }");
@@ -469,7 +475,7 @@ public class AjaxEditableLabel<T> extends Panel
 			target.appendJavaScript("window.status='" +
 				JavaScriptUtils.escapeQuotes(errorMessage.toString()) + "';");
 		}
-		target.appendJavaScript("{var el=wicketGet('" + editor.getMarkupId() +
+		target.appendJavaScript("{var el=Wicket.$('" + editor.getMarkupId() +
 			"'); el.select(); el.focus();}");
 	}
 
@@ -505,34 +511,40 @@ public class AjaxEditableLabel<T> extends Panel
 	}
 
 	/**
-	 * get a model that accesses the parent model lazily. this is required since we eventually
-	 * request the parents model before the component is added to the parent.
-	 * 
-	 * @return model
+	 * Model that accesses the parent model lazily. this is required since we eventually request the
+	 * parents model before the component is added to the parent.
 	 */
-	private IModel<T> getDelegatingParentModel()
+	private class WrapperModel implements IModel<T>, IObjectClassAwareModel<T>
 	{
-		return new IModel<T>()
+
+		public T getObject()
 		{
-			private static final long serialVersionUID = 1L;
+			return getParentModel().getObject();
+		}
 
-			public T getObject()
-			{
-				return getParentModel().getObject();
-			}
+		public void setObject(final T object)
+		{
+			getParentModel().setObject(object);
+		}
 
-			public void setObject(final T object)
-			{
-				getParentModel().setObject(object);
-			}
+		public void detach()
+		{
+			getParentModel().detach();
 
-			public void detach()
+		}
+
+		public Class<T> getObjectClass()
+		{
+			if (getParentModel() instanceof IObjectClassAwareModel)
 			{
-				getParentModel().detach();
+				return ((IObjectClassAwareModel)getParentModel()).getObjectClass();
 			}
-		};
+			else
+			{
+				return null;
+			}
+		}
 	}
-
 
 	/**
 	 * @return Gets the parent model in case no explicit model was specified.

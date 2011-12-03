@@ -16,7 +16,6 @@
  */
 package org.apache.wicket.extensions.yui.calendar;
 
-import java.lang.reflect.Method;
 import java.text.DateFormatSymbols;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -74,21 +73,6 @@ import org.joda.time.DateTime;
  */
 public class DatePicker extends Behavior
 {
-	private static Method GETINSTANCEMETHOD = null;
-
-	static
-	{
-		try
-		{
-			// try to use JDK 6 DateFormatSymbols.getInstance(Locale)
-			GETINSTANCEMETHOD = DateFormatSymbols.class.getMethod("getInstance",
-				new Class[] { Locale.class });
-		}
-		catch (Exception e)
-		{
-			// ignore
-		}
-	}
 
 	/**
 	 * Exception thrown when the bound component does not produce a format this date picker can work
@@ -229,6 +213,8 @@ public class DatePicker extends Behavior
 	@Override
 	public void renderHead(Component component, IHeaderResponse response)
 	{
+		super.renderHead(component, response);
+
 		if (includeYUILibraries())
 		{
 			YuiLib.load(response);
@@ -292,7 +278,7 @@ public class DatePicker extends Behavior
 				escapedComponentMarkupId + "DpJs.destroy(); delete YAHOO.wicket." +
 				escapedComponentMarkupId + "DpJs;}";
 
-			response.renderJavaScript(javascript, null);
+			AjaxRequestTarget.get().prependJavaScript(javascript);
 		}
 	}
 
@@ -314,7 +300,7 @@ public class DatePicker extends Behavior
 		Map<String, Object> variables = new HashMap<String, Object>();
 		variables.put("basePath",
 			Strings.stripJSessionId(RequestCycle.get().urlFor(YUI, null).toString()) + "/");
-		variables.put("wicketDatePath", RequestCycle.get().urlFor(WICKET_DATE, null));
+		variables.put("Wicket.DateTimeInit.DatePath", RequestCycle.get().urlFor(WICKET_DATE, null));
 
 		if (Application.get().usesDevelopmentConfig())
 		{
@@ -578,7 +564,7 @@ public class DatePicker extends Behavior
 		Map<String, Object> initVariables)
 	{
 		Locale locale = getLocale();
-		String key = "wicketCalendarI18n[\"" + locale.toString() + "\"]";
+		String key = "Wicket.DateTimeInit.CalendarI18n[\"" + locale.toString() + "\"]";
 		initVariables.put("i18n", key);
 
 		if (response.wasRendered(key))
@@ -586,19 +572,7 @@ public class DatePicker extends Behavior
 			return;
 		}
 
-		DateFormatSymbols dfSymbols = null;
-		if (GETINSTANCEMETHOD != null)
-		{
-			// try to use JDK 6 DateFormatSymbols.getInstance(Locale)
-			try
-			{
-				dfSymbols = (DateFormatSymbols)GETINSTANCEMETHOD.invoke(null, locale);
-			}
-			catch (Exception e)
-			{
-				// ignore
-			}
-		}
+		DateFormatSymbols dfSymbols = DateFormatSymbols.getInstance(locale);
 		if (dfSymbols == null)
 		{
 			dfSymbols = new DateFormatSymbols(locale);

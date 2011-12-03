@@ -25,6 +25,7 @@ import org.apache.wicket.request.Request;
 import org.apache.wicket.request.Url;
 import org.apache.wicket.util.IProvider;
 import org.apache.wicket.util.crypt.ICrypt;
+import org.apache.wicket.util.lang.Args;
 import org.apache.wicket.util.string.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,15 +77,17 @@ public class CryptoMapper implements IRequestMapper
 	 */
 	public CryptoMapper(final IRequestMapper wrappedMapper, final IProvider<ICrypt> cryptProvider)
 	{
-		this.wrappedMapper = wrappedMapper;
-		this.cryptProvider = cryptProvider;
+		this.wrappedMapper = Args.notNull(wrappedMapper, "wrappedMapper");
+		this.cryptProvider = Args.notNull(cryptProvider, "cryptProvider");
 	}
 
+	@Override
 	public int getCompatibilityScore(final Request request)
 	{
 		return 0;
 	}
 
+	@Override
 	public Url mapHandler(final IRequestHandler requestHandler)
 	{
 		final Url url = wrappedMapper.mapHandler(requestHandler);
@@ -97,6 +100,7 @@ public class CryptoMapper implements IRequestMapper
 		return encryptUrl(url);
 	}
 
+	@Override
 	public IRequestHandler mapRequest(final Request request)
 	{
 		Url url = decryptUrl(request, request.getUrl());
@@ -109,9 +113,21 @@ public class CryptoMapper implements IRequestMapper
 		return wrappedMapper.mapRequest(request.cloneWithUrl(url));
 	}
 
-	private ICrypt getCrypt()
+	/**
+	 * @return the {@link ICrypt} implementation that may be used to encrypt/decrypt {@link Url}'s
+	 *         segments and/or query string
+	 */
+	protected final ICrypt getCrypt()
 	{
 		return cryptProvider.get();
+	}
+
+	/**
+	 * @return the wrapped root request mapper
+	 */
+	protected final IRequestMapper getWrappedMapper()
+	{
+		return wrappedMapper;
 	}
 
 	private Url encryptUrl(final Url url)
@@ -157,6 +173,10 @@ public class CryptoMapper implements IRequestMapper
 			}
 
 			String decryptedUrl = getCrypt().decryptUrlSafe(encryptedUrlString);
+			if (decryptedUrl == null)
+			{
+				return null;
+			}
 			Url originalUrl = Url.parse(decryptedUrl, request.getCharset());
 
 			int originalNumberOfSegments = originalUrl.getSegments().size();
@@ -201,6 +221,7 @@ public class CryptoMapper implements IRequestMapper
 			this.application = application;
 		}
 
+		@Override
 		public ICrypt get()
 		{
 			return application.getSecuritySettings().getCryptFactory().newCrypt();

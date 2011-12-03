@@ -100,6 +100,7 @@ public class DiskDataStore implements IDataStore
 	/**
 	 * @see org.apache.wicket.pageStore.IDataStore#destroy()
 	 */
+	@Override
 	public void destroy()
 	{
 		log.debug("Destroying...");
@@ -110,6 +111,7 @@ public class DiskDataStore implements IDataStore
 	/**
 	 * @see org.apache.wicket.pageStore.IDataStore#getData(java.lang.String, int)
 	 */
+	@Override
 	public byte[] getData(final String sessionId, final int id)
 	{
 		byte[] pageData = null;
@@ -127,6 +129,7 @@ public class DiskDataStore implements IDataStore
 	/**
 	 * @see org.apache.wicket.pageStore.IDataStore#isReplicated()
 	 */
+	@Override
 	public boolean isReplicated()
 	{
 		return false;
@@ -135,6 +138,7 @@ public class DiskDataStore implements IDataStore
 	/**
 	 * @see org.apache.wicket.pageStore.IDataStore#removeData(java.lang.String, int)
 	 */
+	@Override
 	public void removeData(final String sessionId, final int id)
 	{
 		SessionEntry sessionEntry = getSessionEntry(sessionId, false);
@@ -149,6 +153,7 @@ public class DiskDataStore implements IDataStore
 	/**
 	 * @see org.apache.wicket.pageStore.IDataStore#removeData(java.lang.String)
 	 */
+	@Override
 	public void removeData(final String sessionId)
 	{
 		SessionEntry sessionEntry = getSessionEntry(sessionId, false);
@@ -166,6 +171,7 @@ public class DiskDataStore implements IDataStore
 	/**
 	 * @see org.apache.wicket.pageStore.IDataStore#storeData(java.lang.String, int, byte[])
 	 */
+	@Override
 	public void storeData(final String sessionId, final int id, final byte[] data)
 	{
 		SessionEntry sessionEntry = getSessionEntry(sessionId, true);
@@ -326,18 +332,27 @@ public class DiskDataStore implements IDataStore
 				PageWindow window = getManager().createPageWindow(pageId, data.length);
 
 				FileChannel channel = getFileChannel(true);
-				try
+				if (channel != null)
 				{
-					// write the content
-					channel.write(ByteBuffer.wrap(data), window.getFilePartOffset());
+					try
+					{
+						// write the content
+						channel.write(ByteBuffer.wrap(data), window.getFilePartOffset());
+					}
+					catch (IOException e)
+					{
+						log.error("Error writing to a channel " + channel, e);
+					}
+					finally
+					{
+						IOUtils.closeQuietly(channel);
+					}
 				}
-				catch (IOException e)
+				else
 				{
-					log.error("Error writing to a channel " + channel, e);
-				}
-				finally
-				{
-					IOUtils.closeQuietly(channel);
+					log.warn(
+						"Cannot save page with id '{}' because the data file cannot be opened.",
+						pageId);
 				}
 			}
 		}
@@ -403,7 +418,7 @@ public class DiskDataStore implements IDataStore
 				}
 				catch (FileNotFoundException fnfx)
 				{
-					// should not happen. we check explicitly earlier
+					// can happen if the file is locked. WICKET-4176
 					log.error(fnfx.getMessage(), fnfx);
 				}
 			}
@@ -493,4 +508,9 @@ public class DiskDataStore implements IDataStore
 		return sessionFolder;
 	}
 
+	@Override
+	public boolean canBeAsynchronous()
+	{
+		return true;
+	}
 }

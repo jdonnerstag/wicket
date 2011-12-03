@@ -66,6 +66,8 @@ public class ServletWebRequest extends WebRequest
 
 	private final ErrorAttributes errorAttributes;
 
+	private final ForwardAttributes forwardAttributes;
+
 	/**
 	 * Construct.
 	 * 
@@ -96,28 +98,29 @@ public class ServletWebRequest extends WebRequest
 
 		errorAttributes = ErrorAttributes.of(httpServletRequest);
 
+		forwardAttributes = ForwardAttributes.of(httpServletRequest);
+
 		if (url != null)
 		{
 			this.url = url;
 		}
 		else
 		{
-			this.url = getUrl(httpServletRequest, filterPrefix);
+			this.url = getContextRelativeUrl(httpServletRequest.getRequestURI(), filterPrefix);
 		}
 	}
 
 	/**
 	 * Returns base url without context or filter mapping.
-	 * 
+	 * <p>
 	 * Example: if current url is
 	 * 
 	 * <pre>
 	 * http://localhost:8080/context/filter/mapping/wicket/bookmarkable/com.foo.Page?1&id=2
 	 * </pre>
 	 * 
-	 * the base url is wicket/bookmarkable/com.foo.Page
-	 * 
-	 * <pre>
+	 * the base url is <em>wicket/bookmarkable/com.foo.Page</em>
+	 * </p>
 	 * 
 	 * @see org.apache.wicket.request.Request#getClientUrl()
 	 */
@@ -126,11 +129,19 @@ public class ServletWebRequest extends WebRequest
 	{
 		if (errorAttributes != null && !Strings.isEmpty(errorAttributes.getRequestUri()))
 		{
-			return setParameters(Url.parse(errorAttributes.getRequestUri(), getCharset()));
+			String problematicURI = Url.parse(errorAttributes.getRequestUri(), getCharset())
+				.toString();
+			return getContextRelativeUrl(problematicURI, filterPrefix);
+		}
+		else if (forwardAttributes != null && !Strings.isEmpty(forwardAttributes.getRequestUri()))
+		{
+			String forwardURI = Url.parse(forwardAttributes.getRequestUri(), getCharset())
+				.toString();
+			return getContextRelativeUrl(forwardURI, filterPrefix);
 		}
 		else if (!isAjax())
 		{
-			return getUrl(httpServletRequest, filterPrefix);
+			return getContextRelativeUrl(httpServletRequest.getRequestURI(), filterPrefix);
 		}
 		else
 		{
@@ -157,21 +168,20 @@ public class ServletWebRequest extends WebRequest
 		return url;
 	}
 
-	private Url getUrl(HttpServletRequest request, String filterPrefix)
+	private Url getContextRelativeUrl(String uri, String filterPrefix)
 	{
 		if (filterPrefix.length() > 0 && !filterPrefix.endsWith("/"))
 		{
 			filterPrefix += "/";
 		}
 		StringBuilder url = new StringBuilder();
-		String uri = request.getRequestURI();
 		uri = Strings.stripJSessionId(uri);
-		final int start = request.getContextPath().length() + filterPrefix.length() + 1;
+		final int start = httpServletRequest.getContextPath().length() + filterPrefix.length() + 1;
 		url.append(uri.substring(start));
 
 		if (errorAttributes == null)
 		{
-			String query = request.getQueryString();
+			String query = httpServletRequest.getQueryString();
 			if (!Strings.isEmpty(query))
 			{
 				url.append('?');
@@ -317,21 +327,25 @@ public class ServletWebRequest extends WebRequest
 
 	private final IRequestParameters postRequestParameters = new IWritableRequestParameters()
 	{
+		@Override
 		public void reset()
 		{
 			getPostRequestParameters().clear();
 		}
 
+		@Override
 		public void setParameterValues(String key, List<StringValue> values)
 		{
 			getPostRequestParameters().put(key, values);
 		}
 
+		@Override
 		public Set<String> getParameterNames()
 		{
 			return Collections.unmodifiableSet(getPostRequestParameters().keySet());
 		}
 
+		@Override
 		public StringValue getParameterValue(String name)
 		{
 			List<StringValue> values = getPostRequestParameters().get(name);
@@ -345,6 +359,7 @@ public class ServletWebRequest extends WebRequest
 			}
 		}
 
+		@Override
 		public List<StringValue> getParameterValues(String name)
 		{
 			List<StringValue> values = getPostRequestParameters().get(name);
@@ -456,6 +471,7 @@ public class ServletWebRequest extends WebRequest
 	@Override
 	public boolean shouldPreserveClientUrl()
 	{
-		return errorAttributes != null && !Strings.isEmpty(errorAttributes.getRequestUri());
+		return (errorAttributes != null && !Strings.isEmpty(errorAttributes.getRequestUri()) || forwardAttributes != null &&
+			!Strings.isEmpty(forwardAttributes.getRequestUri()));
 	}
 }

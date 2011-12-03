@@ -34,7 +34,6 @@ import org.apache.wicket.Session;
 import org.apache.wicket.WicketTestCase;
 import org.apache.wicket.ajax.AjaxEventBehavior;
 import org.apache.wicket.ajax.AjaxRequestTarget;
-import org.apache.wicket.ajax.WicketAjaxReference;
 import org.apache.wicket.ajax.markup.html.AjaxLink;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.Button;
@@ -63,6 +62,7 @@ import org.apache.wicket.util.tester.apps_1.SuccessPage;
 import org.apache.wicket.util.tester.apps_1.ViewBook;
 import org.apache.wicket.util.tester.apps_6.LinkPage;
 import org.apache.wicket.util.tester.apps_6.ResultPage;
+import org.junit.Before;
 import org.junit.Test;
 
 /**
@@ -73,11 +73,12 @@ public class WicketTesterTest extends WicketTestCase
 {
 	private boolean eventExecuted;
 
-	@Override
-	protected void setUp() throws Exception
+	/**
+	 * @throws Exception
+	 */
+	@Before
+	public void before() throws Exception
 	{
-		super.setUp();
-
 		eventExecuted = false;
 	}
 
@@ -91,7 +92,8 @@ public class WicketTesterTest extends WicketTestCase
 	 * 
 	 * @throws Exception
 	 */
-	public void testViewBook() throws Exception
+	@Test
+	public void viewBook() throws Exception
 	{
 		Book mockBook = new Book("xxId", "xxName");
 		Page page = new ViewBook(mockBook);
@@ -107,7 +109,8 @@ public class WicketTesterTest extends WicketTestCase
 	 * 
 	 * @throws Exception
 	 */
-	public void testCreateBook_validateFail() throws Exception
+	@Test
+	public void createBook_validateFail() throws Exception
 	{
 		Session.get().setLocale(Locale.US); // fix locale
 		tester.startPage(CreateBook.class);
@@ -128,7 +131,8 @@ public class WicketTesterTest extends WicketTestCase
 	 * 
 	 * @throws Exception
 	 */
-	public void testCreateBook_validatePass() throws Exception
+	@Test
+	public void createBook_validatePass() throws Exception
 	{
 		tester.startPage(CreateBook.class);
 
@@ -151,7 +155,8 @@ public class WicketTesterTest extends WicketTestCase
 	/**
 	 * @throws Exception
 	 */
-	public void testBookmarkableLink() throws Exception
+	@Test
+	public void bookmarkableLink() throws Exception
 	{
 		// for WebPage without default constructor, I define a TestPageSource to
 		// let the page be instatiated lately.
@@ -167,7 +172,8 @@ public class WicketTesterTest extends WicketTestCase
 	/**
 	 * @throws Exception
 	 */
-	public void testClickLink_setResponsePageClass() throws Exception
+	@Test
+	public void clickLink_setResponsePageClass() throws Exception
 	{
 		tester.startPage(LinkPage.class);
 		tester.assertRenderedPage(LinkPage.class);
@@ -181,7 +187,8 @@ public class WicketTesterTest extends WicketTestCase
 	/**
 	 * @throws Exception
 	 */
-	public void testClickLink_setResponsePage() throws Exception
+	@Test
+	public void clickLink_setResponsePage() throws Exception
 	{
 		tester.startPage(LinkPage.class);
 		tester.assertRenderedPage(LinkPage.class);
@@ -195,7 +202,8 @@ public class WicketTesterTest extends WicketTestCase
 	/**
 	 * @throws Exception
 	 */
-	public void testClickLink_ajaxLink_setResponsePageClass() throws Exception
+	@Test
+	public void clickLink_ajaxLink_setResponsePageClass() throws Exception
 	{
 		tester.startPage(LinkPage.class);
 		tester.assertRenderedPage(LinkPage.class);
@@ -211,7 +219,8 @@ public class WicketTesterTest extends WicketTestCase
 	 * 
 	 * @throws Exception
 	 */
-	public void testClickLink_ajaxLink_notEnabled() throws Exception
+	@Test
+	public void clickLink_ajaxLink_notEnabled() throws Exception
 	{
 		tester.startPage(LinkPage.class);
 		tester.assertRenderedPage(LinkPage.class);
@@ -234,7 +243,8 @@ public class WicketTesterTest extends WicketTestCase
 	 * 
 	 * @throws Exception
 	 */
-	public void testExecuteAjaxEvent_componentNotEnabled() throws Exception
+	@Test
+	public void executeAjaxEvent_componentNotEnabled() throws Exception
 	{
 		tester.startPage(LinkPage.class);
 		tester.assertRenderedPage(LinkPage.class);
@@ -257,7 +267,8 @@ public class WicketTesterTest extends WicketTestCase
 	 * 
 	 * @throws Exception
 	 */
-	public void testAssertEnabled() throws Exception
+	@Test
+	public void assertEnabled() throws Exception
 	{
 		tester.startPage(LinkPage.class);
 		tester.assertRenderedPage(LinkPage.class);
@@ -280,7 +291,8 @@ public class WicketTesterTest extends WicketTestCase
 	 * 
 	 * @throws Exception
 	 */
-	public void testAssertDisabled() throws Exception
+	@Test
+	public void assertDisabled() throws Exception
 	{
 		tester.startPage(LinkPage.class);
 		tester.assertRenderedPage(LinkPage.class);
@@ -303,7 +315,8 @@ public class WicketTesterTest extends WicketTestCase
 	 * 
 	 * @throws Exception
 	 */
-	public void testAssertRequired() throws Exception
+	@Test
+	public void assertRequired() throws Exception
 	{
 		tester.startPage(CreateBook.class);
 		tester.assertRenderedPage(CreateBook.class);
@@ -338,7 +351,8 @@ public class WicketTesterTest extends WicketTestCase
 	/**
 	 * @throws Exception
 	 */
-	public void testClickLink_ajaxLink_setResponsePage() throws Exception
+	@Test
+	public void clickLink_ajaxLink_setResponsePage() throws Exception
 	{
 		tester.startPage(LinkPage.class);
 		tester.assertRenderedPage(LinkPage.class);
@@ -352,7 +366,8 @@ public class WicketTesterTest extends WicketTestCase
 	/**
 	 * @throws Exception
 	 */
-	public void testClickLink_ajaxFallbackLink_setResponsePageClass() throws Exception
+	@Test
+	public void clickLink_ajaxFallbackLink_setResponsePageClass() throws Exception
 	{
 		tester.startPage(LinkPage.class);
 		tester.assertRenderedPage(LinkPage.class);
@@ -366,7 +381,8 @@ public class WicketTesterTest extends WicketTestCase
 	/**
 	 * @throws Exception
 	 */
-	public void testClickLink_ajaxFallbackLink_setResponsePage() throws Exception
+	@Test
+	public void clickLink_ajaxFallbackLink_setResponsePage() throws Exception
 	{
 		tester.startPage(LinkPage.class);
 		tester.assertRenderedPage(LinkPage.class);
@@ -380,7 +396,8 @@ public class WicketTesterTest extends WicketTestCase
 	/**
 	 * @throws Exception
 	 */
-	public void testClickLink_ajaxSubmitLink_setResponsePage() throws Exception
+	@Test
+	public void clickLink_ajaxSubmitLink_setResponsePage() throws Exception
 	{
 		tester.startPage(LinkPage.class);
 		tester.assertRenderedPage(LinkPage.class);
@@ -394,7 +411,8 @@ public class WicketTesterTest extends WicketTestCase
 	/**
 	 * @throws Exception
 	 */
-	public void testPageConstructor() throws Exception
+	@Test
+	public void pageConstructor() throws Exception
 	{
 		Book mockBook = new Book("xxId", "xxName");
 		Page page = new ViewBook(mockBook);
@@ -411,7 +429,8 @@ public class WicketTesterTest extends WicketTestCase
 	 * 
 	 * @throws Exception
 	 */
-	public void testConstructorAndInnerPage() throws Exception
+	@Test
+	public void constructorAndInnerPage() throws Exception
 	{
 		tester.startPage(new MockInnerClassPage());
 
@@ -424,7 +443,8 @@ public class WicketTesterTest extends WicketTestCase
 	/**
 	 * 
 	 */
-	public void testAssertComponentOnAjaxResponse()
+	@Test
+	public void assertComponentOnAjaxResponse()
 	{
 		final Page page = new MockPageWithLink();
 		AjaxLink<Void> ajaxLink = new AjaxLink<Void>(MockPageWithLink.LINK_ID)
@@ -473,7 +493,8 @@ public class WicketTesterTest extends WicketTestCase
 	 * Test that testing if a component is on the ajax response can handle if the response is
 	 * encoded.
 	 */
-	public void testAssertComponentOnAjaxResponse_encoding()
+	@Test
+	public void assertComponentOnAjaxResponse_encoding()
 	{
 		final IModel<String> labelModel = new IModel<String>()
 		{
@@ -481,16 +502,19 @@ public class WicketTesterTest extends WicketTestCase
 
 			private String value;
 
+			@Override
 			public String getObject()
 			{
 				return value;
 			}
 
+			@Override
 			public void setObject(String object)
 			{
 				value = object;
 			}
 
+			@Override
 			public void detach()
 			{
 			}
@@ -534,7 +558,8 @@ public class WicketTesterTest extends WicketTestCase
 	/**
 	 * Test that the executeAjaxEvent on the WicketTester works.
 	 */
-	public void testExecuteAjaxEvent()
+	@Test
+	public void executeAjaxEvent()
 	{
 		// Setup mocks
 		final MockPageWithOneComponent page = new MockPageWithOneComponent();
@@ -566,7 +591,8 @@ public class WicketTesterTest extends WicketTestCase
 	/**
 	 * Test that the clickLink works when submitting a form with a checkgroup inside.
 	 */
-	public void testClickLink_ajaxSubmitLink_checkGroup()
+	@Test
+	public void clickLink_ajaxSubmitLink_checkGroup()
 	{
 		tester.startPage(MockPageWithFormAndCheckGroup.class);
 
@@ -578,7 +604,8 @@ public class WicketTesterTest extends WicketTestCase
 	 * Test that the clickLink on AjaxSubmitLink will re-submit/preserve the values for all form
 	 * components WICKET-3053
 	 */
-	public void testClickLink_ajaxSubmitLink_preservesFormComponentValues()
+	@Test
+	public void clickLink_ajaxSubmitLink_preservesFormComponentValues()
 	{
 		tester.startPage(MockPageAjaxSubmitLinkSubmitsWholeForm.class);
 
@@ -614,7 +641,8 @@ public class WicketTesterTest extends WicketTestCase
 	/**
 	 * Test that the executeAjaxEvent "submits" the form if the event is a AjaxFormSubmitBehavior.
 	 */
-	public void testExecuteAjaxEvent_ajaxFormSubmitLink()
+	@Test
+	public void executeAjaxEvent_ajaxFormSubmitLink()
 	{
 		tester.startPage(MockPageWithFormAndAjaxFormSubmitBehavior.class);
 
@@ -652,7 +680,8 @@ public class WicketTesterTest extends WicketTestCase
 	/**
 	 * 
 	 */
-	public void testSubmittingFormWithAjaxEventSubmitsFormValues()
+	@Test
+	public void submittingFormWithAjaxEventSubmitsFormValues()
 	{
 		tester.startPage(MockPageWithFormAndAjaxFormSubmitBehavior.class);
 		FormTester form = tester.newFormTester("form");
@@ -668,7 +697,8 @@ public class WicketTesterTest extends WicketTestCase
 	/**
 	 * 
 	 */
-	public void testRedirectWithPageParameters()
+	@Test
+	public void redirectWithPageParameters()
 	{
 		tester.startPage(MockPageParameterPage.class);
 
@@ -687,7 +717,8 @@ public class WicketTesterTest extends WicketTestCase
 	 * Asserting that parameters set by user in request make part of the processed request
 	 * parameters
 	 */
-	public void testSetQueryParameter()
+	@Test
+	public void setQueryParameter()
 	{
 		tester.getRequest().setParameter("p1", "v1");
 
@@ -701,7 +732,8 @@ public class WicketTesterTest extends WicketTestCase
 	 * Asserting that parameters set in request get processed, even if the request URL already has
 	 * query parameters
 	 */
-	public void testSetQueryParameterWhenRequestHasAnQueryUrl()
+	@Test
+	public void setQueryParameterWhenRequestHasAnQueryUrl()
 	{
 		PageParameters parameters = new PageParameters();
 		parameters.set("q_1", "q_1_value");
@@ -721,7 +753,8 @@ public class WicketTesterTest extends WicketTestCase
 	/**
 	 * Asserting that multiple parameters added in request and PageParameters get processed
 	 */
-	public void testSetMultiValueQueryParameter()
+	@Test
+	public void setMultiValueQueryParameter()
 	{
 		PageParameters parameters = new PageParameters();
 		parameters.add("q_1", "q_1_value_1");
@@ -748,7 +781,8 @@ public class WicketTesterTest extends WicketTestCase
 	/**
 	 * Asserting the parameters set by user in request get processed when submitting a form
 	 */
-	public void testParametersOnFormSubmit()
+	@Test
+	public void parametersOnFormSubmit()
 	{
 		tester.startPage(MockPageParametersAware.class);
 
@@ -768,7 +802,8 @@ public class WicketTesterTest extends WicketTestCase
 	/**
 	 * Asserting the parameters set by user on request get processed when submitting a form
 	 */
-	public void testMultiValueParametersOnFormSubmit()
+	@Test
+	public void multiValueParametersOnFormSubmit()
 	{
 		tester.startPage(MockPageParametersAware.class);
 
@@ -792,7 +827,8 @@ public class WicketTesterTest extends WicketTestCase
 	 * See also WICKET-280 Allow to access html resources
 	 * </p>
 	 */
-	public void testClickResourceLink()
+	@Test
+	public void clickResourceLink()
 	{
 		try
 		{
@@ -829,7 +865,8 @@ public class WicketTesterTest extends WicketTestCase
 	/**
 	 * Toggle submit button to disabled state.
 	 */
-	public void testToggleButtonEnabledState()
+	@Test
+	public void toggleButtonEnabledState()
 	{
 		tester.startPage(MockFormPage.class);
 		Component submit = tester.getComponentFromLastRenderedPage("form:submit");
@@ -841,7 +878,8 @@ public class WicketTesterTest extends WicketTestCase
 	/**
 	 * Toggle submit button to enabled when text field validates.
 	 */
-	public void testToggleAjaxFormButton()
+	@Test
+	public void toggleAjaxFormButton()
 	{
 		tester.startPage(new MockAjaxFormPage());
 		Button submit = getSubmitButton();
@@ -862,7 +900,8 @@ public class WicketTesterTest extends WicketTestCase
 	/**
 	 * 
 	 */
-	public void testCookieIsFoundWhenAddedToRequest()
+	@Test
+	public void cookieIsFoundWhenAddedToRequest()
 	{
 		tester.getRequest().addCookie(new Cookie("name", "value"));
 		assertEquals("value", tester.getRequest().getCookie("name").getValue());
@@ -871,7 +910,8 @@ public class WicketTesterTest extends WicketTestCase
 	/**
 	 * 
 	 */
-	public void testCookieIsFoundWhenAddedToResponse()
+	@Test
+	public void cookieIsFoundWhenAddedToResponse()
 	{
 		tester.startPage(CreateBook.class);
 		tester.getLastResponse().addCookie(new Cookie("name", "value"));
@@ -882,7 +922,8 @@ public class WicketTesterTest extends WicketTestCase
 	/**
 	 * 
 	 */
-	public void testCookieIsFoundOnNextRequestWhenAddedToResponse()
+	@Test
+	public void cookieIsFoundOnNextRequestWhenAddedToResponse()
 	{
 		// Test that maxAge == -1 (Default) works properly
 		tester.startPage(CreateBook.class);
@@ -909,7 +950,8 @@ public class WicketTesterTest extends WicketTestCase
 	/**
 	 * Test for WICKET-3123
 	 */
-	public void testSessionBinding()
+	@Test
+	public void sessionBinding()
 	{
 		Session session = tester.getSession();
 		assertTrue(session.isTemporary());
@@ -934,20 +976,27 @@ public class WicketTesterTest extends WicketTestCase
 	 * <a href="https://issues.apache.org/jira/browse/WICKET-3543">WICKET-3543</a>
 	 */
 	@Test
-	public void testStartResourceReference()
+	public void startResourceReference()
 	{
-		tester.startResourceReference(WicketAjaxReference.INSTANCE);
-		tester.assertContains("wicketAjaxGet()");
+		tester.startResourceReference(tester.getApplication()
+			.getAjaxSettings()
+			.getWicketAjaxReference());
+		// verify that a random string from that resource is in the response
+		tester.assertContains("getAjaxBaseUrl");
 	}
 
 	/**
 	 * <a href="https://issues.apache.org/jira/browse/WICKET-3543">WICKET-3543</a>
 	 */
 	@Test
-	public void testStartResource()
+	public void startResource()
 	{
-		tester.startResource(WicketAjaxReference.INSTANCE.getResource());
-		tester.assertContains("wicketAjaxGet()");
+		tester.startResource(tester.getApplication()
+			.getAjaxSettings()
+			.getWicketAjaxReference()
+			.getResource());
+		// verify that a random string from that resource is in the response
+		tester.assertContains("getAjaxBaseUrl");
 	}
 
 	/**
@@ -956,7 +1005,7 @@ public class WicketTesterTest extends WicketTestCase
 	 * @throws Exception
 	 */
 	@Test
-	public void testAssertRenderedPageErrorMessage() throws Exception
+	public void assertRenderedPageErrorMessage() throws Exception
 	{
 		tester.startPage(MockPageParametersAware.class);
 		tester.assertRenderedPage(MockPageParametersAware.class);
@@ -970,17 +1019,19 @@ public class WicketTesterTest extends WicketTestCase
 	 * https://issues.apache.org/jira/browse/WICKET-3913
 	 */
 	@Test
-	public void testStartPanelGoesToAnotherPage()
+	public void startPanelGoesToAnotherPage()
 	{
 		tester.startComponentInPage(new MockPanelWithLink("testPanel")
 		{
+			private static final long serialVersionUID = 1L;
+
 			@Override
 			protected void onLinkClick(AjaxRequestTarget target)
 			{
 				setResponsePage(DummyHomePage.class);
 			}
 		});
-		tester.clickLink("link");
+		tester.clickLink("testPanel:link");
 
 		tester.assertRenderedPage(DummyHomePage.class);
 		tester.assertComponent("testPage", TestLink.class);
@@ -990,7 +1041,7 @@ public class WicketTesterTest extends WicketTestCase
 	 * https://issues.apache.org/jira/browse/WICKET-3940
 	 */
 	@Test
-	public void testRerenderComponentInPage()
+	public void rerenderComponentInPage()
 	{
 		tester.startComponentInPage(new Label("testLabel"));
 		tester.startPage(tester.getLastRenderedPage());

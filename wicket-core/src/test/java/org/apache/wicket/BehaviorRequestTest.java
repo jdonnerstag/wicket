@@ -40,11 +40,12 @@ public class BehaviorRequestTest extends WicketTestCase
 {
 	private TestPage page;
 
-	@Override
+	/**
+	 * 
+	 */
 	@Before
-	public void setUp() throws Exception
+	public void before()
 	{
-		super.setUp();
 		page = new TestPage();
 		tester.startPage(page);
 	}
@@ -112,6 +113,7 @@ public class BehaviorRequestTest extends WicketTestCase
 			add(container);
 		}
 
+		@Override
 		public IResourceStream getMarkupResourceStream(MarkupContainer container,
 			Class<?> containerClass)
 		{
@@ -135,6 +137,7 @@ public class BehaviorRequestTest extends WicketTestCase
 			tag.put("href", component.urlFor(this, IBehaviorListener.INTERFACE));
 		}
 
+		@Override
 		public void onRequest()
 		{
 			called = true;

@@ -55,6 +55,7 @@ public class DecoratingHeaderResponseTest extends WicketTestCase
 	{
 		tester.getApplication().setHeaderResponseDecorator(new IHeaderResponseDecorator()
 		{
+			@Override
 			public IHeaderResponse decorate(IHeaderResponse response)
 			{
 				return new DecoratingHeaderResponse(response)
@@ -104,6 +105,7 @@ public class DecoratingHeaderResponseTest extends WicketTestCase
 		tester.getApplication().setHeaderResponseDecorator(new IHeaderResponseDecorator()
 		{
 
+			@Override
 			public IHeaderResponse decorate(IHeaderResponse response)
 			{
 				return new AbstractResourceAggregatingHeaderResponse<ResourceReferenceCollection, Integer>(
@@ -112,7 +114,7 @@ public class DecoratingHeaderResponseTest extends WicketTestCase
 					@Override
 					protected Integer newGroupingKey(ResourceReferenceAndStringData ref)
 					{
-						return Integer.parseInt(ref.getString()) % 2;
+						return Integer.parseInt(ref.getIdOrMedia()) % 2;
 					}
 				};
 			}
@@ -158,6 +160,7 @@ public class DecoratingHeaderResponseTest extends WicketTestCase
 			}
 		}
 
+		@Override
 		public IResourceStream getMarkupResourceStream(MarkupContainer container,
 			Class<?> containerClass)
 		{

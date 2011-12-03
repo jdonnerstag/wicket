@@ -42,7 +42,6 @@ import org.apache.wicket.model.Model;
 import org.apache.wicket.util.convert.ConversionException;
 import org.apache.wicket.util.convert.IConverter;
 import org.apache.wicket.util.lang.Args;
-import org.apache.wicket.util.lang.Classes;
 import org.apache.wicket.util.lang.WicketObjects;
 import org.apache.wicket.util.string.StringList;
 import org.apache.wicket.util.string.StringValue;
@@ -115,6 +114,7 @@ public abstract class FormComponent<T> extends LabeledWebMarkupContainer
 		/**
 		 * @see org.apache.wicket.validation.IErrorMessageSource#getMessage(java.lang.String)
 		 */
+		@Override
 		public String getMessage(String key)
 		{
 			final FormComponent<T> formComponent = FormComponent.this;
@@ -198,6 +198,7 @@ public abstract class FormComponent<T> extends LabeledWebMarkupContainer
 		 * @see org.apache.wicket.validation.IErrorMessageSource#substitute(java.lang.String,
 		 *      java.util.Map)
 		 */
+		@Override
 		public String substitute(String string, Map<String, Object> vars)
 			throws IllegalStateException
 		{
@@ -283,6 +284,7 @@ public abstract class FormComponent<T> extends LabeledWebMarkupContainer
 		/**
 		 * @see org.apache.wicket.validation.IValidatable#error(org.apache.wicket.validation.IValidationError)
 		 */
+		@Override
 		public void error(IValidationError error)
 		{
 			FormComponent.this.error(error);
@@ -291,6 +293,7 @@ public abstract class FormComponent<T> extends LabeledWebMarkupContainer
 		/**
 		 * @see org.apache.wicket.validation.IValidatable#getValue()
 		 */
+		@Override
 		public T getValue()
 		{
 			return getConvertedInput();
@@ -299,11 +302,13 @@ public abstract class FormComponent<T> extends LabeledWebMarkupContainer
 		/**
 		 * @see org.apache.wicket.validation.IValidatable#isValid()
 		 */
+		@Override
 		public boolean isValid()
 		{
 			return FormComponent.this.isValid();
 		}
 
+		@Override
 		public IModel<T> getModel()
 		{
 			return FormComponent.this.getModel();
@@ -349,6 +354,7 @@ public abstract class FormComponent<T> extends LabeledWebMarkupContainer
 		return Visits.visitPostOrder(component, visitor, new IVisitFilter()
 		{
 
+			@Override
 			public boolean visitChildren(Object object)
 			{
 				if (object instanceof IFormVisitorParticipant)
@@ -358,6 +364,7 @@ public abstract class FormComponent<T> extends LabeledWebMarkupContainer
 				return true;
 			}
 
+			@Override
 			public boolean visitObject(Object object)
 			{
 				return (object instanceof FormComponent<?>);
@@ -387,11 +394,13 @@ public abstract class FormComponent<T> extends LabeledWebMarkupContainer
 
 		return Visits.visitPostOrder(component, visitor, new IVisitFilter()
 		{
+			@Override
 			public boolean visitObject(Object object)
 			{
 				return true;
 			}
 
+			@Override
 			public boolean visitChildren(Object object)
 			{
 				if (object instanceof IFormVisitorParticipant)
@@ -626,7 +635,7 @@ public abstract class FormComponent<T> extends LabeledWebMarkupContainer
 		{
 			StringBuilder buffer = new StringBuilder();
 			buffer.append("Could not locate error message for component: ");
-			buffer.append(Classes.simpleName(getClass()));
+			buffer.append(getClass().getSimpleName());
 			buffer.append("@");
 			buffer.append(getPageRelativePath());
 			buffer.append(" and error: ");
@@ -934,6 +943,7 @@ public abstract class FormComponent<T> extends LabeledWebMarkupContainer
 	{
 		class IsValidVisitor implements IVisitor<FormComponent<?>, Boolean>
 		{
+			@Override
 			public void component(final FormComponent<?> formComponent, final IVisit<Boolean> visit)
 			{
 				if (formComponent.hasErrorMessage())
@@ -950,6 +960,7 @@ public abstract class FormComponent<T> extends LabeledWebMarkupContainer
 	/**
 	 * @see IFormVisitorParticipant#processChildren()
 	 */
+	@Override
 	public boolean processChildren()
 	{
 		return true;
@@ -984,9 +995,10 @@ public abstract class FormComponent<T> extends LabeledWebMarkupContainer
 	 * @param labelModel
 	 * @return this for chaining
 	 */
+	@Override
 	public FormComponent<T> setLabel(IModel<String> labelModel)
 	{
-		setLabelInternal(labelModel);
+		super.setLabel(labelModel);
 		return this;
 	}
 
@@ -1054,6 +1066,7 @@ public abstract class FormComponent<T> extends LabeledWebMarkupContainer
 	 * DO NOT CALL THIS METHOD DIRECTLY UNLESS YOU ARE SURE WHAT YOU ARE DOING. USUALLY UPDATING
 	 * YOUR MODEL IS HANDLED BY THE FORM, NOT DIRECTLY BY YOU.
 	 */
+	@Override
 	public void updateModel()
 	{
 		setModelObject(getConvertedInput());
@@ -1122,13 +1135,13 @@ public abstract class FormComponent<T> extends LabeledWebMarkupContainer
 				ValidationError error = new ValidationError();
 				if (e.getResourceKey() != null)
 				{
-					error.addMessageKey(e.getResourceKey());
+					error.addKey(e.getResourceKey());
 				}
 				if (e.getTargetType() != null)
 				{
-					error.addMessageKey("ConversionError." + Classes.simpleName(e.getTargetType()));
+					error.addKey("ConversionError." + e.getTargetType().getSimpleName());
 				}
-				error.addMessageKey("ConversionError");
+				error.addKey("ConversionError");
 				reportValidationError(e, error);
 			}
 		}
@@ -1145,11 +1158,11 @@ public abstract class FormComponent<T> extends LabeledWebMarkupContainer
 				ValidationError error = new ValidationError();
 				if (e.getResourceKey() != null)
 				{
-					error.addMessageKey(e.getResourceKey());
+					error.addKey(e.getResourceKey());
 				}
-				String simpleName = Classes.simpleName(getType());
-				error.addMessageKey("IConverter." + simpleName);
-				error.addMessageKey("IConverter");
+				String simpleName = getType().getSimpleName();
+				error.addKey("IConverter." + simpleName);
+				error.addKey("IConverter");
 				error.setVariable("type", simpleName);
 				reportValidationError(e, error);
 			}
@@ -1393,7 +1406,7 @@ public abstract class FormComponent<T> extends LabeledWebMarkupContainer
 	 */
 	private void reportRequiredError()
 	{
-		error(new ValidationError().addMessageKey("Required"));
+		error(new ValidationError().addKey("Required"));
 	}
 
 	/**

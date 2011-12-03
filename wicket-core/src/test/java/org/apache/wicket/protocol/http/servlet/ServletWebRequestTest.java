@@ -16,15 +16,26 @@
  */
 package org.apache.wicket.protocol.http.servlet;
 
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.wicket.MarkupContainer;
+import org.apache.wicket.Page;
+import org.apache.wicket.markup.IMarkupResourceStreamProvider;
+import org.apache.wicket.markup.html.WebPage;
+import org.apache.wicket.protocol.http.WebApplication;
 import org.apache.wicket.protocol.http.mock.MockHttpServletRequest;
 import org.apache.wicket.request.Url;
+import org.apache.wicket.request.http.WebRequest;
+import org.apache.wicket.util.resource.IResourceStream;
+import org.apache.wicket.util.resource.StringResourceStream;
+import org.apache.wicket.util.tester.WicketTester;
 import org.junit.Assert;
 import org.junit.Test;
 
 /**
  * Tests for {@link ServletWebRequest}
  */
-public class ServletWebRequestTest
+public class ServletWebRequestTest extends Assert
 {
 
 	/**
@@ -41,13 +52,109 @@ public class ServletWebRequestTest
 
 		ServletWebRequest webRequest = new ServletWebRequest(httpRequest, "/");
 		Url clientUrl = webRequest.getClientUrl();
-		Assert.assertEquals("request/Uri?some=parameter", clientUrl.toString());
+		assertEquals("request/Uri?some=parameter", clientUrl.toString());
 
-		// error dispatched
-		httpRequest.setAttribute("javax.servlet.error.request_uri", "/some/error/url");
+		// simulates a request that has errors metadata
+		httpRequest.setAttribute("javax.servlet.error.request_uri",
+			"/" + httpRequest.getContextPath() + "/any/source/of/error");
 		ServletWebRequest errorWebRequest = new ServletWebRequest(httpRequest, "/");
 		Url errorClientUrl = errorWebRequest.getClientUrl();
 
-		Assert.assertEquals("/some/error/url", errorClientUrl.toString());
+		assertEquals("any/source/of/error", errorClientUrl.toString());
+	}
+
+	/**
+	 * <a href="https://issues.apache.org/jira/browse/WICKET-4168">WICKET-4168</a>
+	 */
+	@Test
+	public void testClientURLIsContextRelativeInErrorResponses()
+	{
+		MockHttpServletRequest httpRequest = new MockHttpServletRequest(null, null, null);
+		httpRequest.setURL(httpRequest.getContextPath() + "/request/Uri");
+
+		String problematiURI = httpRequest.getContextPath() + "/any/source/of/error";
+
+		httpRequest.setAttribute("javax.servlet.error.request_uri", problematiURI);
+
+		ServletWebRequest errorWebRequest = new ServletWebRequest(httpRequest, "");
+
+		Url errorClientUrl = errorWebRequest.getClientUrl();
+
+		assertEquals("any/source/of/error", errorClientUrl.toString());
+
+	}
+
+	/**
+	 * https://issues.apache.org/jira/browse/WICKET-4138
+	 * 
+	 * Relative Urls should be calculated against 'javax.servlet.forward.request_uri'
+	 */
+	@Test
+	public void parseForwardAttributes()
+	{
+		MockHttpServletRequest httpRequest = new MockHttpServletRequest(null, null, null);
+		httpRequest.setURL(httpRequest.getContextPath() + "/request/Uri");
+
+		String forwardedURI = httpRequest.getContextPath() + "/some/forwarded/url";
+
+		httpRequest.setAttribute("javax.servlet.forward.request_uri", forwardedURI);
+
+		ServletWebRequest forwardWebRequest = new ServletWebRequest(httpRequest, "");
+
+		Url forwardClientUrl = forwardWebRequest.getClientUrl();
+
+		assertEquals("some/forwarded/url", forwardClientUrl.toString());
+
+
+	}
+
+	/**
+	 * https://issues.apache.org/jira/browse/WICKET-4123
+	 */
+	@Test
+	public void useCustomServletWebRequest()
+	{
+		WebApplication application = new WebApplication()
+		{
+			@Override
+			public Class<? extends Page> getHomePage()
+			{
+				return CustomRequestPage.class;
+			}
+
+			@Override
+			public WebRequest newWebRequest(HttpServletRequest servletRequest, String filterPath)
+			{
+				return new CustomServletWebRequest(servletRequest, filterPath);
+			}
+		};
+
+		WicketTester tester = new WicketTester(application);
+		tester.startPage(new CustomRequestPage());
+	}
+
+	private static class CustomRequestPage extends WebPage implements IMarkupResourceStreamProvider
+	{
+		private static final long serialVersionUID = 1L;
+
+		private CustomRequestPage()
+		{
+			assertTrue(getRequest() instanceof CustomServletWebRequest);
+		}
+
+		@Override
+		public IResourceStream getMarkupResourceStream(MarkupContainer container,
+			Class<?> containerClass)
+		{
+			return new StringResourceStream("<html></html>");
+		}
+	}
+
+	private static class CustomServletWebRequest extends ServletWebRequest
+	{
+		public CustomServletWebRequest(HttpServletRequest httpServletRequest, String filterPrefix)
+		{
+			super(httpServletRequest, filterPrefix);
+		}
 	}
 }

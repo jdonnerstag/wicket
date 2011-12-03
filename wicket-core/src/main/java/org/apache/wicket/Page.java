@@ -38,7 +38,6 @@ import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.apache.wicket.session.ISessionStore;
 import org.apache.wicket.settings.IDebugSettings;
 import org.apache.wicket.settings.IRequestCycleSettings.RenderStrategy;
-import org.apache.wicket.util.lang.Classes;
 import org.apache.wicket.util.lang.Generics;
 import org.apache.wicket.util.lang.WicketObjects;
 import org.apache.wicket.util.string.StringValue;
@@ -127,7 +126,7 @@ public abstract class Page extends MarkupContainer implements IRedirectListener,
 	/** True if the page should try to be stateless */
 	private static final int FLAG_STATELESS_HINT = FLAG_RESERVED5;
 
-	/** TODO WICKET-NG JAVADOC */
+	/** Flag that indicates if the page was created using one of its bookmarkable constructors */
 	private static final int FLAG_WAS_CREATED_BOOKMARKABLE = FLAG_RESERVED8;
 
 	/** Log. */
@@ -222,6 +221,7 @@ public abstract class Page extends MarkupContainer implements IRedirectListener,
 	 * 
 	 * @return {@link PageParameters} The construction page parameter
 	 */
+	@Override
 	public PageParameters getPageParameters()
 	{
 		return pageParameters;
@@ -289,6 +289,7 @@ public abstract class Page extends MarkupContainer implements IRedirectListener,
 	}
 
 	/** {@inheritDoc} */
+	@Override
 	public boolean setFreezePageId(boolean freeze)
 	{
 		boolean frozen = getFlag(FLAG_PREVENT_DIRTY);
@@ -409,6 +410,7 @@ public abstract class Page extends MarkupContainer implements IRedirectListener,
 		buffer.append("Page ").append(getId());
 		visitChildren(new IVisitor<Component, Void>()
 		{
+			@Override
 			public void component(final Component component, final IVisit<Void> visit)
 			{
 				int levels = 0;
@@ -419,7 +421,7 @@ public abstract class Page extends MarkupContainer implements IRedirectListener,
 				buffer.append(StringValue.repeat(levels, "	"))
 					.append(component.getPageRelativePath())
 					.append(":")
-					.append(Classes.simpleName(component.getClass()));
+					.append(component.getClass().getSimpleName());
 			}
 		});
 		return buffer.toString();
@@ -430,6 +432,7 @@ public abstract class Page extends MarkupContainer implements IRedirectListener,
 	 * 
 	 * @return Returns true if the page is bookmarkable.
 	 */
+	@Override
 	public boolean isBookmarkable()
 	{
 		return getApplication().getPageFactory().isBookmarkable(getClass());
@@ -466,6 +469,7 @@ public abstract class Page extends MarkupContainer implements IRedirectListener,
 	 * 
 	 * @return Whether this page is stateless
 	 */
+	@Override
 	public final boolean isPageStateless()
 	{
 		if (isBookmarkable() == false)
@@ -496,6 +500,7 @@ public abstract class Page extends MarkupContainer implements IRedirectListener,
 			Component statefulComponent = visitChildren(Component.class,
 				new IVisitor<Component, Component>()
 				{
+					@Override
 					public void component(final Component component, final IVisit<Component> visit)
 					{
 						if (!component.isStateless())
@@ -523,6 +528,7 @@ public abstract class Page extends MarkupContainer implements IRedirectListener,
 	 * 
 	 * @see org.apache.wicket.IRedirectListener#onRedirect()
 	 */
+	@Override
 	public final void onRedirect()
 	{
 	}
@@ -603,6 +609,7 @@ public abstract class Page extends MarkupContainer implements IRedirectListener,
 			final StringBuilder buffer = new StringBuilder();
 			renderedContainer.visitChildren(new IVisitor<Component, Void>()
 			{
+				@Override
 				public void component(final Component component, final IVisit<Void> visit)
 				{
 					// If component never rendered
@@ -783,6 +790,7 @@ public abstract class Page extends MarkupContainer implements IRedirectListener,
 	{
 		visitChildren(new IVisitor<Component, Void>()
 		{
+			@Override
 			public void component(final Component component, final IVisit<Void> visit)
 			{
 				// If form component is using form model
@@ -847,6 +855,7 @@ public abstract class Page extends MarkupContainer implements IRedirectListener,
 		{
 			visitChildren(new IVisitor<Component, Void>()
 			{
+				@Override
 				public void component(final Component component, final IVisit<Void> visit)
 				{
 					component.setMetaData(Component.CONSTRUCTED_AT_KEY, null);
@@ -990,6 +999,7 @@ public abstract class Page extends MarkupContainer implements IRedirectListener,
 	/**
 	 * @see org.apache.wicket.page.IManageablePage#getPageId()
 	 */
+	@Override
 	public int getPageId()
 	{
 		return numericId;
@@ -998,13 +1008,15 @@ public abstract class Page extends MarkupContainer implements IRedirectListener,
 	/**
 	 * @see org.apache.wicket.request.component.IRequestablePage#getRenderCount()
 	 */
+	@Override
 	public int getRenderCount()
 	{
 		return renderCount;
 	}
 
 	/**
-	 * TODO WICKET-NG javadoc
+	 * Sets the flag that determins whether or not this page was created using one of its
+	 * bookmarkable constructors
 	 * 
 	 * @param wasCreatedBookmarkable
 	 */
@@ -1013,7 +1025,12 @@ public abstract class Page extends MarkupContainer implements IRedirectListener,
 		setFlag(FLAG_WAS_CREATED_BOOKMARKABLE, wasCreatedBookmarkable);
 	}
 
-	/** TODO WICKET-NG javadoc */
+	/**
+	 * Checks if this page was created using one of its bookmarkable constructors
+	 * 
+	 * @see org.apache.wicket.request.component.IRequestablePage#wasCreatedBookmarkable()
+	 */
+	@Override
 	public final boolean wasCreatedBookmarkable()
 	{
 		return getFlag(FLAG_WAS_CREATED_BOOKMARKABLE);
@@ -1022,6 +1039,7 @@ public abstract class Page extends MarkupContainer implements IRedirectListener,
 	/**
 	 * @see org.apache.wicket.request.component.IRequestablePage#renderPage()
 	 */
+	@Override
 	public void renderPage()
 	{
 		if (getApplication().getRequestCycleSettings().getRenderStrategy() != RenderStrategy.REDIRECT_TO_BUFFER)

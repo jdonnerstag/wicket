@@ -124,7 +124,6 @@ import org.apache.wicket.request.resource.ResourceReference;
 import org.apache.wicket.session.ISessionStore.UnboundListener;
 import org.apache.wicket.settings.IRequestCycleSettings.RenderStrategy;
 import org.apache.wicket.util.lang.Args;
-import org.apache.wicket.util.lang.Classes;
 import org.apache.wicket.util.lang.Generics;
 import org.apache.wicket.util.resource.ResourceStreamNotFoundException;
 import org.apache.wicket.util.resource.StringResourceStream;
@@ -193,9 +192,7 @@ public class BaseWicketTester
 	// Simulates the cookies maintained by the browser
 	private final List<Cookie> browserCookies = Generics.newArrayList();
 
-	// The root component used for the start. Usually the Page, but can also be a Panel
-	// see https://issues.apache.org/jira/browse/WICKET-1214
-	private Component startComponent;
+	private ComponentInPage componentInPage;
 
 	// User may provide request header value any time. They get applied (and reset) upon next
 	// invocation of processRequest()
@@ -314,6 +311,7 @@ public class BaseWicketTester
 		// create a new session when the old one is invalidated
 		application.getSessionStore().registerUnboundListener(new UnboundListener()
 		{
+			@Override
 			public void sessionUnbound(String sessionId)
 			{
 				newSession();
@@ -396,11 +394,12 @@ public class BaseWicketTester
 	}
 
 	/**
-	 * @return servlet web request
+	 * @return the configured in the user's application web request
 	 */
 	private ServletWebRequest newServletWebRequest()
 	{
-		return new ServletWebRequest(request, request.getFilterPrefix());
+
+		return (ServletWebRequest)application.newWebRequest(request, request.getFilterPrefix());
 	}
 
 	/**
@@ -715,7 +714,7 @@ public class BaseWicketTester
 	public Page startPage(final IPageProvider pageProvider)
 	{
 		// should be null for Pages
-		startComponent = null;
+		componentInPage = null;
 
 		// prepare request
 		request = new MockHttpServletRequest(application, httpSession, servletContext);
@@ -822,13 +821,13 @@ public class BaseWicketTester
 		String response = lastResponse.getDocument();
 
 		// null, if a Page was rendered last
-		if (startComponent == null)
+		if (componentInPage == null)
 		{
 			return response;
 		}
 
 		// remove the markup for the auto-generated page. leave just component's markup body
-		String componentId = startComponent.getId();
+		String componentId = componentInPage.component.getId();
 		String before = "wicket:id=\"" + componentId + "\">";
 		Matcher matcher = pattern.matcher(response);
 		if (matcher.matches())
@@ -1115,7 +1114,7 @@ public class BaseWicketTester
 		Args.notNull(pageClass, "pageClass");
 
 		// must be null for Pages
-		startComponent = null;
+		componentInPage = null;
 
 		// prepare the request
 		request.setUrl(application.getRootRequestMapper().mapHandler(
@@ -1250,7 +1249,10 @@ public class BaseWicketTester
 		try
 		{
 			Constructor<C> c = componentClass.getConstructor(String.class);
-			comp = c.newInstance("testObject");
+			comp = c.newInstance(ComponentInPage.ID);
+			componentInPage = new ComponentInPage();
+			componentInPage.component = comp;
+			componentInPage.isInstantiated = true;
 		}
 		catch (Exception e)
 		{
@@ -1333,12 +1335,22 @@ public class BaseWicketTester
 		// Add the child component
 		page.add(component);
 
+		// Preserve 'componentInPage' because #startPage() needs to null-fy it
+		ComponentInPage oldComponentInPage = componentInPage;
+
 		// Process the page
 		startPage(page);
 
 		// Remember the "root" component processes and return it
-		startComponent = component;
-
+		if (oldComponentInPage != null)
+		{
+			componentInPage = oldComponentInPage;
+		}
+		else
+		{
+			componentInPage = new ComponentInPage();
+			componentInPage.component = component;
+		}
 		return component;
 	}
 
@@ -1450,16 +1462,16 @@ public class BaseWicketTester
 	public Component getComponentFromLastRenderedPage(String path,
 		final boolean wantVisibleInHierarchy)
 	{
-		if (startComponent != null)
+		if (componentInPage != null && componentInPage.isInstantiated)
 		{
-			path = startComponent.getId() + ":" + path;
+			path = componentInPage.component.getId() + ":" + path;
 		}
 
 		Component component = getLastRenderedPage().get(path);
 		if (component == null)
 		{
 			fail("path: '" + path + "' does not exist for page: " +
-				Classes.simpleName(getLastRenderedPage().getClass()));
+				getLastRenderedPage().getClass().getSimpleName());
 			return null;
 		}
 
@@ -1521,8 +1533,8 @@ public class BaseWicketTester
 			return Result.fail("Component not found: " + path);
 		}
 
-		return isTrue("component '" + Classes.simpleName(component.getClass()) + "' is not type:" +
-			Classes.simpleName(expectedComponentClass),
+		return isTrue("component '" + component.getClass().getSimpleName() + "' is not type:" +
+			expectedComponentClass.getSimpleName(),
 			expectedComponentClass.isAssignableFrom(component.getClass()));
 	}
 
@@ -1541,7 +1553,7 @@ public class BaseWicketTester
 		if (component == null)
 		{
 			result = Result.fail("path: '" + path + "' does no exist for page: " +
-				Classes.simpleName(getLastRenderedPage().getClass()));
+				getLastRenderedPage().getClass().getSimpleName());
 		}
 		else
 		{
@@ -1567,7 +1579,7 @@ public class BaseWicketTester
 		if (component == null)
 		{
 			result = Result.fail("path: '" + path + "' does no exist for page: " +
-				Classes.simpleName(getLastRenderedPage().getClass()));
+				getLastRenderedPage().getClass().getSimpleName());
 		}
 		else
 		{
@@ -1591,7 +1603,7 @@ public class BaseWicketTester
 		if (component == null)
 		{
 			fail("path: '" + path + "' does no exist for page: " +
-				Classes.simpleName(getLastRenderedPage().getClass()));
+				getLastRenderedPage().getClass().getSimpleName());
 		}
 
 		return isTrue("component '" + path + "' is disabled", component.isEnabledInHierarchy());
@@ -1610,7 +1622,7 @@ public class BaseWicketTester
 		if (component == null)
 		{
 			fail("path: '" + path + "' does no exist for page: " +
-				Classes.simpleName(getLastRenderedPage().getClass()));
+				getLastRenderedPage().getClass().getSimpleName());
 		}
 
 		return isFalse("component '" + path + "' is enabled", component.isEnabledInHierarchy());
@@ -1629,7 +1641,7 @@ public class BaseWicketTester
 		if (component == null)
 		{
 			fail("path: '" + path + "' does no exist for page: " +
-				Classes.simpleName(getLastRenderedPage().getClass()));
+				getLastRenderedPage().getClass().getSimpleName());
 		}
 		else if (component instanceof FormComponent == false)
 		{
@@ -1975,6 +1987,7 @@ public class BaseWicketTester
 		{
 			private static final long serialVersionUID = 1L;
 
+			@Override
 			public boolean accept(FeedbackMessage message)
 			{
 				return message.getLevel() == level;
@@ -2118,6 +2131,7 @@ public class BaseWicketTester
 	{
 		container.visitChildren(MarkupContainer.class, new IVisitor<MarkupContainer, Void>()
 		{
+			@Override
 			public void component(final MarkupContainer component, final IVisit<Void> visit)
 			{
 				// get the AbstractAjaxBehaviour which is responsible for
@@ -2261,6 +2275,7 @@ public class BaseWicketTester
 
 		form.visitFormComponents(new IVisitor<FormComponent<?>, Void>()
 		{
+			@Override
 			public void component(final FormComponent<?> formComponent, final IVisit<Void> visit)
 			{
 				final String inputName = formComponent.getInputName();
@@ -2327,7 +2342,7 @@ public class BaseWicketTester
 	 */
 	public void applyRequest()
 	{
-		ServletWebRequest req = newServletWebRequest();
+		Request req = newServletWebRequest();
 		requestCycle.setRequest(req);
 		if (useRequestUrlAsBase)
 		{
@@ -2529,14 +2544,15 @@ public class BaseWicketTester
 			this.delegate = delegate;
 		}
 
+		@Override
 		public PageRenderer get(RenderPageRequestHandler handler)
 		{
 			Page newPage = (Page)handler.getPageProvider().getPageInstance();
-			if (startComponent != null && lastPage != null &&
+			if (componentInPage != null && lastPage != null &&
 				lastPage.getPageClass() != newPage.getPageClass())
 			{
 				// WICKET-3913: reset startComponent if a new page type is rendered
-				startComponent = null;
+				componentInPage = null;
 			}
 			lastRenderedPage = lastPage = newPage;
 			return delegate.get(handler);
@@ -2555,6 +2571,7 @@ public class BaseWicketTester
 			this.delegate = delegate;
 		}
 
+		@Override
 		public IRequestHandler map(Exception e)
 		{
 			if (exposeExceptions)
@@ -2587,6 +2604,7 @@ public class BaseWicketTester
 			this.delegate = delegate;
 		}
 
+		@Override
 		public RequestCycle get(RequestCycleContext context)
 		{
 			context.setRequestMapper(new TestRequestMapper(context.getRequestMapper()));
@@ -2608,16 +2626,19 @@ public class BaseWicketTester
 			this.delegate = delegate;
 		}
 
+		@Override
 		public int getCompatibilityScore(Request request)
 		{
 			return delegate.getCompatibilityScore(request);
 		}
 
+		@Override
 		public Url mapHandler(IRequestHandler requestHandler)
 		{
 			return delegate.mapHandler(requestHandler);
 		}
 
+		@Override
 		public IRequestHandler mapRequest(Request request)
 		{
 			if (forcedHandler != null)
@@ -2642,6 +2663,7 @@ public class BaseWicketTester
 	 */
 	private static class TestPageManagerProvider implements IPageManagerProvider
 	{
+		@Override
 		public IPageManager get(IPageManagerContext pageManagerContext)
 		{
 			return new MockPageManager();
@@ -2660,21 +2682,25 @@ public class BaseWicketTester
 			initParameters.put(WicketFilter.FILTER_MAPPING_PARAM, "/servlet/*");
 		}
 
+		@Override
 		public String getFilterName()
 		{
 			return getClass().getName();
 		}
 
+		@Override
 		public ServletContext getServletContext()
 		{
 			return servletContext;
 		}
 
+		@Override
 		public String getInitParameter(String s)
 		{
 			return initParameters.get(s);
 		}
 
+		@Override
 		public Enumeration<String> getInitParameterNames()
 		{
 			throw new UnsupportedOperationException("Not implemented");
@@ -2703,6 +2729,7 @@ public class BaseWicketTester
 			cookies.add(cookie);
 		}
 
+		@Override
 		public void writeMetaData(WebResponse webResponse)
 		{
 			for (Cookie cookie : cookies)

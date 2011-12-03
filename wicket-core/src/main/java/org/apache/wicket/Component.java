@@ -17,6 +17,7 @@
 package org.apache.wicket;
 
 import java.io.Serializable;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -67,7 +68,6 @@ import org.apache.wicket.settings.IDebugSettings;
 import org.apache.wicket.util.IHierarchical;
 import org.apache.wicket.util.convert.IConverter;
 import org.apache.wicket.util.lang.Args;
-import org.apache.wicket.util.lang.Classes;
 import org.apache.wicket.util.lang.WicketObjects;
 import org.apache.wicket.util.string.ComponentStrings;
 import org.apache.wicket.util.string.PrependingStringBuffer;
@@ -292,6 +292,7 @@ public abstract class Component
 	{
 		private static final long serialVersionUID = 1L;
 
+		@Override
 		public boolean compare(Component component, Object b)
 		{
 			final Object a = component.getDefaultModelObject();
@@ -1029,6 +1030,7 @@ public abstract class Component
 				((MarkupContainer)this).visitChildren(IFeedback.class,
 					new IVisitor<Component, Void>()
 					{
+						@Override
 						public void component(Component component, IVisit<Void> visit)
 						{
 							component.beforeRender();
@@ -1085,19 +1087,40 @@ public abstract class Component
 					behavior.onConfigure(this);
 				}
 			}
+
+			// check authorization
+			setRenderAllowed();
+
 			setRequestFlag(RFLAG_CONFIGURED, true);
 		}
 	}
 
 	/**
 	 * Redirects to any intercept page previously specified by a call to redirectToInterceptPage.
+	 * The redirect is done by throwing an exception. If there is no intercept page no exception
+	 * will be thrown and the program flow will continue uninterrupted.
 	 * 
-	 * @return True if an original destination was redirected to
+	 * Example:
+	 * 
+	 * <pre>
+	 * add(new Link(&quot;login&quot;)
+	 * {
+	 * 	protected void onClick()
+	 * 	{
+	 * 		if (authenticate())
+	 * 		{
+	 * 			continueToOriginalDestination();
+	 * 			// if we reach this line there was no intercept page, so go to home page
+	 * 			setResponsePage(WelcomePage.class);
+	 * 		}
+	 * 	}
+	 * });
+	 * 
 	 * @see Component#redirectToInterceptPage(Page)
 	 */
-	public final boolean continueToOriginalDestination()
+	public final void continueToOriginalDestination()
 	{
-		return RestartResponseAtInterceptPageException.continueToOriginalDestination();
+		RestartResponseAtInterceptPageException.continueToOriginalDestination();
 	}
 
 	/**
@@ -1133,6 +1156,7 @@ public abstract class Component
 	 * Detaches the component. This is called at the end of the request for all the pages that are
 	 * touched in that request.
 	 */
+	@Override
 	public final void detach()
 	{
 		// if the component has been previously attached via attach()
@@ -1307,6 +1331,7 @@ public abstract class Component
 	 * 
 	 * @return The converter that should be used by this component
 	 */
+	@Override
 	public <C> IConverter<C> getConverter(Class<C> type)
 	{
 		return getApplication().getConverterLocator().getConverter(type);
@@ -1344,6 +1369,7 @@ public abstract class Component
 	 * 
 	 * @return The id of this component
 	 */
+	@Override
 	public String getId()
 	{
 		return id;
@@ -1640,8 +1666,9 @@ public abstract class Component
 			}
 			catch (RuntimeException ex)
 			{
-				log.error("Error while getting default model object for Component: " +
-					this.toString(true));
+				log.error(
+					"Error while getting default model object for Component: " +
+						this.toString(true), ex);
 
 				throw ex;
 			}
@@ -1735,6 +1762,7 @@ public abstract class Component
 	 * @throws IllegalStateException
 	 *             Thrown if component is not yet attached to a Page.
 	 */
+	@Override
 	public final Page getPage()
 	{
 		// Search for nearest Page
@@ -1755,6 +1783,7 @@ public abstract class Component
 	 * 
 	 * @return The path to this component relative to the page it is in
 	 */
+	@Override
 	public final String getPageRelativePath()
 	{
 		return Strings.afterFirstPathComponent(getPath(), PATH_SEPARATOR);
@@ -1765,6 +1794,7 @@ public abstract class Component
 	 * 
 	 * @return Any parent container, or null if there is none
 	 */
+	@Override
 	public final MarkupContainer getParent()
 	{
 		return parent;
@@ -2169,13 +2199,13 @@ public abstract class Component
 	 * THIS METHOD IS NOT PART OF THE WICKET PUBLIC API. DO NOT USE IT!
 	 * <p>
 	 * Prepares the component and it's children for rendering. On whole page render this method must
-	 * be called on the page. On AJAX request, this method must be called on updated component.
+	 * be called on the page. On AJAX request, this method must be called on the updated component.
 	 * 
 	 * @param setRenderingFlag
 	 *            Whether to set the rendering flag. This must be true if the page is about to be
 	 *            rendered. However, there are usecases to call this method without an immediate
-	 *            render (e.g. on stateless listner request target to build the component
-	 *            hierarchy), in that case setRenderingFlag should be false
+	 *            render (e.g. on stateless listener request target to build the component
+	 *            hierarchy), in that case setRenderingFlag should be false.
 	 */
 	public void internalPrepareForRender(boolean setRenderingFlag)
 	{
@@ -2201,11 +2231,6 @@ public abstract class Component
 		}
 
 		markRendering(setRenderingFlag);
-
-		// check authorization
-		// first the component itself
-		// (after attach as otherwise list views etc wont work)
-		setRenderAllowed();
 	}
 
 	/**
@@ -3218,7 +3243,7 @@ public abstract class Component
 					buffer.append(", page = <No Page>, path = ")
 						.append(getPath())
 						.append('.')
-						.append(Classes.simpleName(getClass()));
+						.append(getClass().getSimpleName());
 				}
 				else
 				{
@@ -3227,7 +3252,7 @@ public abstract class Component
 						.append(", path = ")
 						.append(getPath())
 						.append('.')
-						.append(Classes.simpleName(getClass()))
+						.append(getClass().getSimpleName())
 						.append(", isVisible = ")
 						.append((determineVisibility()))
 						.append(", isVersioned = ")
@@ -4079,6 +4104,7 @@ public abstract class Component
 	 *            Path to component
 	 * @return The component at the path
 	 */
+	@Override
 	public Component get(final String path)
 	{
 		// Path to this component is an empty path
@@ -4213,7 +4239,7 @@ public abstract class Component
 			}
 		}
 
-		if ((id != null) && (id.indexOf(':') != -1|| id.indexOf('~') != -1))
+		if ((id != null) && (id.indexOf(':') != -1 || id.indexOf('~') != -1))
 		{
 			throw new WicketRuntimeException("The component ID must not contain ':' or '~' chars.");
 		}
@@ -4334,9 +4360,30 @@ public abstract class Component
 		return state;
 	}
 
-
-	/** TODO WICKET-NG javadoc */
-	public final boolean canCallListenerInterface()
+	/**
+	 * Checks whether or not a listener method can be invoked on this component. Usually components
+	 * deny these invocations if they are either invisible or disabled in hierarchy. Components can
+	 * examine which listener interface is being invoked by examining the declaring class of the
+	 * passed in {@literal method} parameter.
+	 * <p>
+	 * WARNING: be careful when overriding this method because it may open security holes - such as
+	 * allowing a user to click on a link that should be disabled.
+	 * </p>
+	 * <p>
+	 * Example usecase for overriding: Suppose you are building an component that displays images.
+	 * The component generates a callback to itself using {@link IRequestListener} interface and
+	 * uses this callback to stream image data. If such a component is placed inside a disable
+	 * webmarkupcontainer we still want to allow the invocation of the request listener callback
+	 * method so that image data can be streamed. Such a component would override this method and
+	 * return {@literal true} if the listener method belongs to {@link IRequestListener}.
+	 * </p>
+	 * 
+	 * @param method
+	 *            listener method about to be invoked on this component
+	 * 
+	 * @return {@literal true} iff the listener method can be invoked on this component
+	 */
+	public boolean canCallListenerInterface(Method method)
 	{
 		return isEnabledInHierarchy() && isVisibleInHierarchy();
 	}
@@ -4366,17 +4413,20 @@ public abstract class Component
 	 * @param response
 	 *            Response object
 	 */
+	@Override
 	public void renderHead(IHeaderResponse response)
 	{
 		// noop
 	}
 
 	/** {@inheritDoc} */
+	@Override
 	public void onEvent(IEvent<?> event)
 	{
 	}
 
 	/** {@inheritDoc} */
+	@Override
 	public final <T> void send(IEventSink sink, Broadcast type, T payload)
 	{
 		new ComponentEventSender(this, getApplication().getFrameworkSettings()).send(sink, type,
@@ -4402,12 +4452,14 @@ public abstract class Component
 	}
 
 	/** {@inheritDoc} */
+	@Override
 	public final Behavior getBehaviorById(int id)
 	{
 		return new Behaviors(this).getBehaviorById(id);
 	}
 
 	/** {@inheritDoc} */
+	@Override
 	public final int getBehaviorId(Behavior behavior)
 	{
 		return new Behaviors(this).getBehaviorId(behavior);

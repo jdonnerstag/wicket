@@ -16,6 +16,9 @@
  */
 package org.apache.wicket.behavior;
 
+import java.lang.reflect.Method;
+
+import org.apache.wicket.Application;
 import org.apache.wicket.Component;
 import org.apache.wicket.IClusterable;
 import org.apache.wicket.IComponentAwareEventSink;
@@ -51,6 +54,17 @@ public abstract class Behavior
 		IComponentAwareHeaderContributor
 {
 	private static final long serialVersionUID = 1L;
+
+	/**
+	 * Constructor
+	 */
+	public Behavior()
+	{
+		if (Application.exists())
+		{
+			Application.get().getBehaviorInstantiationListeners().onInstantiation(this);
+		}
+	}
 
 	/**
 	 * Called when a component is about to render.
@@ -183,15 +197,24 @@ public abstract class Behavior
 	}
 
 	/**
-	 * Checks if a listener can be invoked on this behavior
+	 * Checks whether or not a listener interface can be invoked on this behavior. For further
+	 * information please read the javadoc on {@link Component#canCallListenerInterface(Method)},
+	 * this method has the same semantics.
+	 * 
+	 * WARNING: Read the javadoc of {@link Component#canCallListenerInterface(Method)} for important
+	 * security-related information.
 	 * 
 	 * @param component
-	 * @return true if a listener interface can be invoked on this behavior
+	 *            component this behavior is attached to
+	 * @param method
+	 *            listener method being invoked
+	 * @return {@literal true} iff the listener method can be invoked
 	 */
-	public boolean canCallListenerInterface(Component component)
+	public boolean canCallListenerInterface(Component component, Method method)
 	{
-		return isEnabled(component) && component.canCallListenerInterface();
+		return isEnabled(component) && component.canCallListenerInterface(method);
 	}
+
 
 	/**
 	 * Render to the web response whatever the component wants to contribute to the head section.
@@ -201,6 +224,7 @@ public abstract class Behavior
 	 * @param response
 	 *            Response object
 	 */
+	@Override
 	public void renderHead(Component component, IHeaderResponse response)
 	{
 	}
@@ -223,6 +247,7 @@ public abstract class Behavior
 	 * @see org.apache.wicket.IComponentAwareEventSink#onEvent(org.apache.wicket.Component,
 	 *      org.apache.wicket.event.IEvent)
 	 */
+	@Override
 	public void onEvent(Component component, IEvent<?> event)
 	{
 	}

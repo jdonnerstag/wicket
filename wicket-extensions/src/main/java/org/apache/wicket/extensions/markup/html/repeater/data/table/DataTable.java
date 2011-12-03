@@ -33,6 +33,7 @@ import org.apache.wicket.markup.repeater.RefreshingView;
 import org.apache.wicket.markup.repeater.RepeatingView;
 import org.apache.wicket.markup.repeater.data.IDataProvider;
 import org.apache.wicket.model.IModel;
+import org.apache.wicket.util.lang.Args;
 import org.apache.wicket.util.string.Strings;
 import org.apache.wicket.util.visit.IVisit;
 import org.apache.wicket.util.visit.IVisitor;
@@ -131,14 +132,12 @@ public class DataTable<T> extends Panel implements IPageableItems
 	 *            number of rows per page
 	 */
 	public DataTable(final String id, final List<IColumn<T>> columns,
-		final IDataProvider<T> dataProvider, final int rowsPerPage)
+		final IDataProvider<T> dataProvider, final long rowsPerPage)
 	{
 		super(id);
 
-		if ((columns == null) || (columns.size() < 1))
-		{
-			throw new IllegalArgumentException("Argument `columns` cannot be null or empty");
-		}
+		Args.notEmpty(columns, "columns");
+
 
 		this.columns = columns;
 		this.caption = new Caption("caption", getCaptionModel());
@@ -263,7 +262,7 @@ public class DataTable<T> extends Panel implements IPageableItems
 	/**
 	 * @see org.apache.wicket.markup.html.navigation.paging.IPageable#getCurrentPage()
 	 */
-	public final int getCurrentPage()
+	public final long getCurrentPage()
 	{
 		return datagrid.getCurrentPage();
 	}
@@ -271,7 +270,7 @@ public class DataTable<T> extends Panel implements IPageableItems
 	/**
 	 * @see org.apache.wicket.markup.html.navigation.paging.IPageable#getPageCount()
 	 */
-	public final int getPageCount()
+	public final long getPageCount()
 	{
 		return datagrid.getPageCount();
 	}
@@ -279,7 +278,7 @@ public class DataTable<T> extends Panel implements IPageableItems
 	/**
 	 * @return total number of rows in this table
 	 */
-	public final int getRowCount()
+	public final long getRowCount()
 	{
 		return datagrid.getRowCount();
 	}
@@ -287,7 +286,7 @@ public class DataTable<T> extends Panel implements IPageableItems
 	/**
 	 * @return number of rows per page
 	 */
-	public final int getItemsPerPage()
+	public final long getItemsPerPage()
 	{
 		return datagrid.getItemsPerPage();
 	}
@@ -295,7 +294,7 @@ public class DataTable<T> extends Panel implements IPageableItems
 	/**
 	 * @see org.apache.wicket.markup.html.navigation.paging.IPageable#setCurrentPage(int)
 	 */
-	public final void setCurrentPage(final int page)
+	public final void setCurrentPage(final long page)
 	{
 		datagrid.setCurrentPage(page);
 		onPageChanged();
@@ -325,7 +324,7 @@ public class DataTable<T> extends Panel implements IPageableItems
 	 *            number of items to display per page
 	 * 
 	 */
-	public void setItemsPerPage(final int items)
+	public void setItemsPerPage(final long items)
 	{
 		datagrid.setItemsPerPage(items);
 	}
@@ -333,17 +332,14 @@ public class DataTable<T> extends Panel implements IPageableItems
 	/**
 	 * @see org.apache.wicket.markup.html.navigation.paging.IPageableItems#getItemCount()
 	 */
-	public int getItemCount()
+	public long getItemCount()
 	{
 		return datagrid.getItemCount();
 	}
 
 	private void addToolbar(final AbstractToolbar toolbar, final ToolbarsContainer container)
 	{
-		if (toolbar == null)
-		{
-			throw new IllegalArgumentException("argument [toolbar] cannot be null");
-		}
+		Args.notNull(toolbar, "toolbar");
 
 		container.getRepeatingView().add(toolbar);
 	}

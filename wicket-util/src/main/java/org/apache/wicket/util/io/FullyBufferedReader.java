@@ -228,6 +228,7 @@ public final class FullyBufferedReader
 	 *            The index to start at
 	 * @return -1 if not found
 	 */
+	// TODO Wicket 1.6 - remove 'throws ParseException' because it is not thrown
 	public int findOutOfQuotes(final char ch, int startPos) throws ParseException
 	{
 		return findOutOfQuotes(ch, startPos, (char)0);
@@ -247,11 +248,11 @@ public final class FullyBufferedReader
 	 *            Indicates if we are inside quotes or not.
 	 * @return -1 if not found
 	 */
+	// TODO Wicket 1.6 - remove 'throws ParseException' because it is not thrown
 	public int findOutOfQuotes(final char ch, int startPos, char quotationChar)
 		throws ParseException
 	{
 		int closeBracketIndex = find(ch, startPos + 1);
-		char nextChar = closeBracketIndex == -1 ? nextChar = (char)0 : input.charAt(startPos + 1);
 
 		if (closeBracketIndex != -1)
 		{
@@ -273,8 +274,16 @@ public final class FullyBufferedReader
 				}
 				// I've found character but I'm inside quotes
 				if (currentChar == ch && quotationChar != 0)
+				{
 					return findOutOfQuotes(ch, closeBracketIndex + 1, quotationChar);
+				}
 			}
+		}
+		else if (quotationChar != 0)
+		{
+			// quotes not balanced!
+			throw new ParseException("Opening/closing quote not found for quote at " + "(line " +
+				getLineNumber() + ", column " + getColumnNumber() + ")", startPos);
 		}
 
 		return closeBracketIndex;

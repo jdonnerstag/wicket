@@ -26,6 +26,8 @@ import org.apache.wicket.page.IManageablePage;
 import org.apache.wicket.serialize.ISerializer;
 import org.apache.wicket.util.lang.Args;
 import org.apache.wicket.util.lang.Objects;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The {@link IPageStore} that converts {@link IManageablePage} instances to {@link SerializedPage}s
@@ -35,6 +37,8 @@ import org.apache.wicket.util.lang.Objects;
  */
 public class DefaultPageStore implements IPageStore
 {
+	private static final Logger LOG = LoggerFactory.getLogger(DefaultPageStore.class);
+
 	private final SerializedPagesCache serializedPagesCache;
 
 	private final IDataStore pageDataStore;
@@ -69,6 +73,7 @@ public class DefaultPageStore implements IPageStore
 	/**
 	 * @see org.apache.wicket.pageStore.IPageStore#destroy()
 	 */
+	@Override
 	public void destroy()
 	{
 		pageDataStore.destroy();
@@ -115,6 +120,7 @@ public class DefaultPageStore implements IPageStore
 		pageDataStore.storeData(sessionId, pageId, data);
 	}
 
+	@Override
 	public IManageablePage getPage(final String sessionId, final int id)
 	{
 		SerializedPage fromCache = serializedPagesCache.getPage(sessionId, id);
@@ -131,25 +137,32 @@ public class DefaultPageStore implements IPageStore
 		return null;
 	}
 
+	@Override
 	public void removePage(final String sessionId, final int id)
 	{
 		serializedPagesCache.removePage(sessionId, id);
 		removePageData(sessionId, id);
 	}
 
+	@Override
 	public void storePage(final String sessionId, final IManageablePage page)
 	{
 		SerializedPage serialized = serializePage(sessionId, page);
-		serializedPagesCache.storePage(serialized);
-		storePageData(sessionId, serialized.getPageId(), serialized.getData());
+		if (serialized != null)
+		{
+			serializedPagesCache.storePage(serialized);
+			storePageData(sessionId, serialized.getPageId(), serialized.getData());
+		}
 	}
 
+	@Override
 	public void unbind(final String sessionId)
 	{
 		removePageData(sessionId);
 		serializedPagesCache.removePages(sessionId);
 	}
 
+	@Override
 	public IManageablePage convertToPage(final Object object)
 	{
 		if (object == null)
@@ -200,6 +213,7 @@ public class DefaultPageStore implements IPageStore
 		return new SerializedPage(serializedPage.getSessionId(), serializedPage.getPageId(), data);
 	}
 
+	@Override
 	public Serializable prepareForSerialization(final String sessionId, final Object object)
 	{
 		if (pageDataStore.isReplicated())
@@ -216,7 +230,10 @@ public class DefaultPageStore implements IPageStore
 			if (result == null)
 			{
 				result = serializePage(sessionId, page);
-				serializedPagesCache.storePage(result);
+				if (result != null)
+				{
+					serializedPagesCache.storePage(result);
+				}
 			}
 		}
 		else if (object instanceof SerializedPage)
@@ -248,6 +265,7 @@ public class DefaultPageStore implements IPageStore
 		return true;
 	}
 
+	@Override
 	public Object restoreAfterSerialization(final Serializable serializable)
 	{
 		if (serializable == null)
@@ -353,8 +371,19 @@ public class DefaultPageStore implements IPageStore
 		Args.notNull(sessionId, "sessionId");
 		Args.notNull(page, "page");
 
+		SerializedPage serializedPage = null;
+
 		byte[] data = pageSerializer.serialize(page);
-		return new SerializedPage(sessionId, page.getPageId(), data);
+
+		if (data != null)
+		{
+			serializedPage = new SerializedPage(sessionId, page.getPageId(), data);
+		}
+		else
+		{
+			LOG.warn("Page {} cannot be serialized. See previous logs for possible reasons.", page);
+		}
+		return serializedPage;
 	}
 
 	/**

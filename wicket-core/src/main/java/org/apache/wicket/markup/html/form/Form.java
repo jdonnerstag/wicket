@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import javax.servlet.http.HttpServletRequest;
+
 import org.apache.wicket.Component;
 import org.apache.wicket.Page;
 import org.apache.wicket.WicketRuntimeException;
@@ -151,6 +153,7 @@ public class Form<T> extends WebMarkupContainer implements IFormSubmitListener
 	 */
 	public abstract static class ValidationVisitor implements IVisitor<FormComponent<?>, Void>
 	{
+		@Override
 		public void component(final FormComponent<?> formComponent, final IVisit<Void> visit)
 		{
 
@@ -202,6 +205,7 @@ public class Form<T> extends WebMarkupContainer implements IFormSubmitListener
 		}
 
 		/** {@inheritDoc} */
+		@Override
 		public void component(final Component component, final IVisit<Void> visit)
 		{
 			if (component instanceof IFormModelUpdateListener)
@@ -381,6 +385,7 @@ public class Form<T> extends WebMarkupContainer implements IFormSubmitListener
 		// Visit all the (visible) form components and clear the input on each.
 		visitFormComponentsPostOrder(new IVisitor<FormComponent<?>, Void>()
 		{
+			@Override
 			public void component(final FormComponent<?> formComponent, IVisit<Void> visit)
 			{
 				if (formComponent.isVisibleInHierarchy())
@@ -417,6 +422,7 @@ public class Form<T> extends WebMarkupContainer implements IFormSubmitListener
 		IFormSubmittingComponent submittingComponent = getPage().visitChildren(
 			IFormSubmittingComponent.class, new IVisitor<Component, IFormSubmittingComponent>()
 			{
+				@Override
 				public void component(final Component component,
 					final IVisit<IFormSubmittingComponent> visit)
 				{
@@ -565,6 +571,7 @@ public class Form<T> extends WebMarkupContainer implements IFormSubmitListener
 		{
 			visitChildren(Form.class, new IVisitor<Form<?>, Bytes>()
 			{
+				@Override
 				public void component(Form<?> component, IVisit<Bytes> visit)
 				{
 					maxSize[0] = LongValue.maxNullSafe(maxSize[0], component.maxSize);
@@ -665,11 +672,44 @@ public class Form<T> extends WebMarkupContainer implements IFormSubmitListener
 	 * 
 	 * @see #onFormSubmitted(IFormSubmitter)
 	 */
+	@Override
 	public final void onFormSubmitted()
 	{
+		// check methods match
+		if (getRequest().getContainerRequest() instanceof HttpServletRequest)
+		{
+			String desiredMethod = getMethod();
+			String actualMethod = ((HttpServletRequest)getRequest().getContainerRequest()).getMethod();
+			if (!actualMethod.equalsIgnoreCase(getMethod()))
+			{
+				MethodMismatchResponse response = onMethodMismatch();
+				switch (response)
+				{
+					case ABORT :
+						return;
+					case CONTINUE :
+						break;
+					default :
+						throw new IllegalStateException("Invalid " +
+							MethodMismatchResponse.class.getName() + " value: " + response);
+				}
+			}
+		}
 		onFormSubmitted(null);
 	}
 
+	/**
+	 * Called when a form has been submitted using a method differing from return value of
+	 * {@link #getMethod()}. For example, someone can copy and paste the action url and invoke the
+	 * form using a {@code GET} instead of the desired {@code POST}. This method allows the user to
+	 * react to this situation.
+	 * 
+	 * @return response that can either abort or continue the processing of the form
+	 */
+	protected MethodMismatchResponse onMethodMismatch()
+	{
+		return MethodMismatchResponse.CONTINUE;
+	}
 
 	/**
 	 * THIS METHOD IS NOT PART OF THE WICKET API. DO NOT ATTEMPT TO OVERRIDE OR CALL IT.
@@ -811,6 +851,7 @@ public class Form<T> extends WebMarkupContainer implements IFormSubmitListener
 		{
 			visitFormComponents(new IVisitor<FormComponent<?>, Void>()
 			{
+				@Override
 				public void component(final FormComponent<?> formComponent, final IVisit<Void> visit)
 				{
 					parameters.remove(formComponent.getInputName());
@@ -841,6 +882,7 @@ public class Form<T> extends WebMarkupContainer implements IFormSubmitListener
 		// call onError on nested forms
 		visitChildren(Form.class, new IVisitor<Component, Void>()
 		{
+			@Override
 			public void component(final Component component, final IVisit<Void> visit)
 			{
 				final Form<?> form = (Form<?>)component;
@@ -867,6 +909,7 @@ public class Form<T> extends WebMarkupContainer implements IFormSubmitListener
 
 		visitChildren(Form.class, new IVisitor<Component, Void>()
 		{
+			@Override
 			public void component(final Component component, final IVisit<Void> visit)
 			{
 				Form<?> form = (Form<?>)component;
@@ -950,6 +993,7 @@ public class Form<T> extends WebMarkupContainer implements IFormSubmitListener
 		// Search for FormComponents like TextField etc.
 		visitFormComponents(new IVisitor<FormComponent<?>, Void>()
 		{
+			@Override
 			public void component(final FormComponent<?> formComponent, IVisit<Void> visit)
 			{
 				formComponent.setVersioned(isVersioned);
@@ -998,6 +1042,7 @@ public class Form<T> extends WebMarkupContainer implements IFormSubmitListener
 		// Check ALL children for error messages irrespective of FormComponents or not
 		Boolean error = visitChildren(Component.class, new IVisitor<Component, Boolean>()
 		{
+			@Override
 			public void component(final Component component, final IVisit<Boolean> visit)
 			{
 				if (component.hasErrorMessage())
@@ -1046,6 +1091,7 @@ public class Form<T> extends WebMarkupContainer implements IFormSubmitListener
 	{
 		visitFormComponentsPostOrder(new IVisitor<FormComponent<?>, Void>()
 		{
+			@Override
 			public void component(final FormComponent<?> formComponent, IVisit<Void> visit)
 			{
 				formComponent.inputChanged();
@@ -1083,7 +1129,7 @@ public class Form<T> extends WebMarkupContainer implements IFormSubmitListener
 		buffer.append(defaultSubmittingComponent.getInputName());
 		buffer.append("\" onclick=\" var b=document.getElementById('");
 		buffer.append(submittingComponent.getMarkupId());
-		buffer.append("'); if (b!=null&amp;&amp;b.onclick!=null&amp;&amp;typeof(b.onclick) != 'undefined') {  var r = b.onclick.bind(b)(); if (r != false) b.click(); } else { b.click(); };  return false;\" ");
+		buffer.append("'); if (b!=null&amp;&amp;b.onclick!=null&amp;&amp;typeof(b.onclick) != 'undefined') {  var r = Wicket.bind(b.onclick, b)(); if (r != false) b.click(); } else { b.click(); };  return false;\" ");
 		buffer.append(" />");
 
 		// close div
@@ -1147,6 +1193,7 @@ public class Form<T> extends WebMarkupContainer implements IFormSubmitListener
 		// invoke Form#onSubmit(..) going from innermost to outermost
 		Visits.visitPostOrder(processingForm, new IVisitor<Form<?>, Void>()
 		{
+			@Override
 			public void component(Form<?> form, IVisit<Void> visit)
 			{
 				if (form.isEnabledInHierarchy() && form.isVisibleInHierarchy())
@@ -1208,6 +1255,7 @@ public class Form<T> extends WebMarkupContainer implements IFormSubmitListener
 		Boolean anyEmbeddedMultipart = visitChildren(Component.class,
 			new IVisitor<Component, Boolean>()
 			{
+				@Override
 				public void component(final Component component, final IVisit<Boolean> visit)
 				{
 					boolean isMultiPart = false;
@@ -1325,6 +1373,7 @@ public class Form<T> extends WebMarkupContainer implements IFormSubmitListener
 		// Visit all the form components and validate each
 		visitFormComponentsPostOrder(new IVisitor<FormComponent<?>, Void>()
 		{
+			@Override
 			public void component(final FormComponent<?> formComponent, IVisit<Void> visit)
 			{
 				// If form component is using form model
@@ -1344,6 +1393,7 @@ public class Form<T> extends WebMarkupContainer implements IFormSubmitListener
 		// call invalidate methods of all nested form components
 		visitFormComponentsPostOrder(new IVisitor<FormComponent<?>, Void>()
 		{
+			@Override
 			public void component(final FormComponent<?> formComponent, IVisit<Void> visit)
 			{
 				if (formComponent.isVisibleInHierarchy())
@@ -1370,6 +1420,7 @@ public class Form<T> extends WebMarkupContainer implements IFormSubmitListener
 	{
 		visitChildren(Form.class, new IVisitor<Form<?>, Void>()
 		{
+			@Override
 			public void component(final Form<?> form, final IVisit<Void> visit)
 			{
 				if (form.isEnabledInHierarchy() && form.isVisibleInHierarchy())
@@ -1392,6 +1443,7 @@ public class Form<T> extends WebMarkupContainer implements IFormSubmitListener
 		// call valid methods of all nested form components
 		visitFormComponentsPostOrder(new IVisitor<FormComponent<?>, Void>()
 		{
+			@Override
 			public void component(final FormComponent<?> formComponent, IVisit<Void> visit)
 			{
 				if (formComponent.getForm() == Form.this && formComponent.isVisibleInHierarchy())
@@ -1662,6 +1714,7 @@ public class Form<T> extends WebMarkupContainer implements IFormSubmitListener
 	{
 		visitChildren(Form.class, new IVisitor<Form<?>, Void>()
 		{
+			@Override
 			public void component(final Form<?> form, final IVisit<Void> visit)
 			{
 				if (form.isEnabledInHierarchy() && form.isVisibleInHierarchy())
@@ -1839,6 +1892,7 @@ public class Form<T> extends WebMarkupContainer implements IFormSubmitListener
 	{
 		Visits.visitPostOrder(this, new IVisitor<Form<?>, Void>()
 		{
+			@Override
 			public void component(final Form<?> form, final IVisit<Void> visit)
 			{
 				if (form == Form.this)
@@ -1981,5 +2035,16 @@ public class Form<T> extends WebMarkupContainer implements IFormSubmitListener
 			inputName.prepend(Component.PATH_SEPARATOR);
 		}
 		return inputName.toString();
+	}
+
+	/**
+	 * Response when a submission method mismatch is detected
+	 * 
+	 * @see Form#getMethod()
+	 * 
+	 * @author igor
+	 */
+	public static enum MethodMismatchResponse {
+		CONTINUE, ABORT;
 	}
 }

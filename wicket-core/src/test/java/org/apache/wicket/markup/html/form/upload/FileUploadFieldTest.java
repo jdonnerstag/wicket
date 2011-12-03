@@ -30,6 +30,7 @@ import org.apache.wicket.util.tester.FormTester;
 import org.apache.wicket.validation.IValidatable;
 import org.apache.wicket.validation.IValidator;
 import org.apache.wicket.validation.ValidationError;
+import org.junit.Test;
 
 
 /**
@@ -42,20 +43,13 @@ public class FileUploadFieldTest extends WicketTestCase
 	private static final String TEST_FILE_NAME = FileUploadFieldTest.class.getName();
 
 	/**
-	 * Construct.
-	 */
-	public FileUploadFieldTest()
-	{
-		super("Test of FileUploadField");
-	}
-
-	/**
 	 * Test that detach closes the streams
 	 * 
 	 * @throws IOException
 	 *             '
 	 */
-	public void testInternalDetach() throws IOException
+	@Test
+	public void internalDetach() throws IOException
 	{
 		tester.startPage(MockPageWithFormAndUploadField.class);
 
@@ -118,7 +112,8 @@ public class FileUploadFieldTest extends WicketTestCase
 	/**
 	 * @throws IOException
 	 */
-	public void testFileUploadCanBeValidated() throws IOException
+	@Test
+	public void fileUploadCanBeValidated() throws IOException
 	{
 		tester.startPage(TestValidationPage.class);
 		// creating the file expected by form validators
@@ -143,21 +138,23 @@ public class FileUploadFieldTest extends WicketTestCase
 			fileUploadField.add(new TestValidator());
 		}
 	}
+
 	private static class TestValidator implements IValidator<List<FileUpload>>
 	{
 		/** */
 		private static final long serialVersionUID = 1L;
 
+		@Override
 		public void validate(IValidatable<List<FileUpload>> validatable)
 		{
 			if (validatable.getValue() instanceof List == false)
 			{
-				validatable.error(new ValidationError().addMessageKey("validatable value type not expected"));
+				validatable.error(new ValidationError().addKey("validatable value type not expected"));
 			}
 			FileUpload upload = validatable.getValue().get(0);
 			if (!upload.getClientFileName().contains(TEST_FILE_NAME))
 			{
-				validatable.error(new ValidationError().addMessageKey("uploaded file name not expected"));
+				validatable.error(new ValidationError().addKey("uploaded file name not expected"));
 			}
 			File tmpFile = null;
 			try
@@ -165,7 +162,7 @@ public class FileUploadFieldTest extends WicketTestCase
 				tmpFile = writeTestFile(1);
 				if (!new String(read(tmpFile)).equals(new String(upload.getBytes())))
 				{
-					validatable.error(new ValidationError().addMessageKey("uploaded content not expected"));
+					validatable.error(new ValidationError().addKey("uploaded content not expected"));
 				}
 			}
 			catch (IOException e)

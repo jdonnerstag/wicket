@@ -16,14 +16,18 @@
  */
 package org.apache.wicket.request.handler.resource;
 
+import org.apache.wicket.request.ILoggableRequestHandler;
 import org.apache.wicket.request.IRequestCycle;
 import org.apache.wicket.request.IRequestHandler;
+import org.apache.wicket.request.handler.logger.ResourceStreamLogData;
 import org.apache.wicket.request.resource.ContentDisposition;
 import org.apache.wicket.request.resource.IResource.Attributes;
 import org.apache.wicket.request.resource.ResourceStreamResource;
+import org.apache.wicket.settings.IResourceSettings;
 import org.apache.wicket.util.lang.Args;
 import org.apache.wicket.util.resource.IResourceStream;
 import org.apache.wicket.util.string.Strings;
+import org.apache.wicket.util.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +36,7 @@ import org.slf4j.LoggerFactory;
  * 
  * @author Eelco Hillenius
  */
-public class ResourceStreamRequestHandler implements IRequestHandler
+public class ResourceStreamRequestHandler implements IRequestHandler, ILoggableRequestHandler
 {
 	/** Logger */
 	private static final Logger log = LoggerFactory.getLogger(ResourceStreamRequestHandler.class);
@@ -44,8 +48,18 @@ public class ResourceStreamRequestHandler implements IRequestHandler
 	private String fileName;
 	private ContentDisposition contentDisposition;
 
+	/**
+	 * The duration fow which the resource will be cached by the browser.
+	 * <p>
+	 * By default is {@code null} and {@link IResourceSettings#getDefaultCacheDuration()} is used.
+	 * </p>
+	 */
+	private Duration cacheDuration;
+
 	/** the resource stream for the response. */
 	private final IResourceStream resourceStream;
+
+	private ResourceStreamLogData logData;
 
 	/**
 	 * Construct.
@@ -73,8 +87,19 @@ public class ResourceStreamRequestHandler implements IRequestHandler
 		this.fileName = fileName;
 	}
 
+	@Override
 	public void detach(IRequestCycle requestCycle)
 	{
+		if (logData == null)
+			logData = getResourceStream() == null ? new ResourceStreamLogData(this)
+				: new ResourceStreamLogData(this, getResourceStream());
+	}
+
+	/** {@inheritDoc} */
+	@Override
+	public ResourceStreamLogData getLogData()
+	{
+		return logData;
 	}
 
 	/**
@@ -101,6 +126,7 @@ public class ResourceStreamRequestHandler implements IRequestHandler
 	 * 
 	 * @see org.apache.wicket.request.IRequestHandler#respond(org.apache.wicket.request.IRequestCycle)
 	 */
+	@Override
 	public void respond(IRequestCycle requestCycle)
 	{
 		Attributes attributes = new Attributes(requestCycle.getRequest(),
@@ -109,10 +135,20 @@ public class ResourceStreamRequestHandler implements IRequestHandler
 		ResourceStreamResource resource = new ResourceStreamResource(resourceStream);
 		resource.setFileName(fileName);
 		if (contentDisposition != null)
+		{
 			resource.setContentDisposition(contentDisposition);
+		}
 		else
+		{
 			resource.setContentDisposition(Strings.isEmpty(fileName) ? ContentDisposition.INLINE
 				: ContentDisposition.ATTACHMENT);
+		}
+
+		final Duration cacheDuration = getCacheDuration();
+		if (cacheDuration != null)
+		{
+			resource.setCacheDuration(cacheDuration);
+		}
 
 		resource.respond(attributes);
 	}
@@ -194,4 +230,24 @@ public class ResourceStreamRequestHandler implements IRequestHandler
 		this.contentDisposition = contentDisposition;
 		return this;
 	}
+
+	/**
+	 * @return the duration for which the resource will be cached by the browser
+	 */
+	public Duration getCacheDuration()
+	{
+		return cacheDuration;
+	}
+
+	/**
+	 * @param cacheDuration
+	 *            the duration for which the resource will be cached by the browser
+	 * @return this component
+	 */
+	public ResourceStreamRequestHandler setCacheDuration(Duration cacheDuration)
+	{
+		this.cacheDuration = cacheDuration;
+		return this;
+	}
+
 }

@@ -26,34 +26,39 @@ import org.apache.wicket.util.resource.IResourceStream;
 import org.apache.wicket.util.resource.StringResourceStream;
 import org.apache.wicket.validation.INullAcceptingValidator;
 import org.apache.wicket.validation.IValidatable;
+import org.junit.Test;
 
 /**
  * 
  */
 public class FormComponentTest extends WicketTestCase
 {
-	public void testArrayType()
+	@Test
+	public void arrayType()
 	{
 		final FormComponent<?> fc = new TextField<String>("foo");
 		fc.setType(String[].class);
 		Assert.assertSame(String[].class, fc.getType());
 	}
 
-	public void testMultiDimentionalArrayType()
+	@Test
+	public void multiDimentionalArrayType()
 	{
 		final FormComponent<?> fc = new TextField<String>("foo");
 		fc.setType(String[][][].class);
 		Assert.assertSame(String[][][].class, fc.getType());
 	}
 
-	public void testPrimitiveArrayType()
+	@Test
+	public void primitiveArrayType()
 	{
 		final FormComponent<?> fc = new TextField<String>("foo");
 		fc.setType(boolean[].class);
 		Assert.assertSame(boolean[].class, fc.getType());
 	}
 
-	public void testGetDefaultlabel()
+	@Test
+	public void getDefaultlabel()
 	{
 		tester.startPage(TestPage1.class);
 		TestPage1 page = (TestPage1)tester.getLastRenderedPage();
@@ -61,12 +66,14 @@ public class FormComponentTest extends WicketTestCase
 		assertEquals("field2", page.field2.getDefaultLabel());
 	}
 
-	public void testNullAcceptingValidators()
+	@Test
+	public void nullAcceptingValidators()
 	{
 		class MyValidator implements INullAcceptingValidator
 		{
 			boolean called = false;
 
+			@Override
 			public void validate(IValidatable validatable)
 			{
 				called = true;
@@ -94,6 +101,7 @@ public class FormComponentTest extends WicketTestCase
 			form.add(field2 = new TextField("field2"));
 		}
 
+		@Override
 		public IResourceStream getMarkupResourceStream(MarkupContainer container,
 			Class<?> containerClass)
 		{

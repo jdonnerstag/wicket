@@ -48,12 +48,14 @@ public class DefaultPageManagerProvider implements IPageManagerProvider
 		this.application = application;
 	}
 
+	@Override
 	public IPageManager get(IPageManagerContext pageManagerContext)
 	{
 		IDataStore dataStore = newDataStore();
 
 		IStoreSettings storeSettings = getStoreSettings();
-		if (storeSettings.isAsynchronous())
+
+		if (dataStore.canBeAsynchronous())
 		{
 			int capacity = storeSettings.getAsynchronousQueueCapacity();
 			dataStore = new AsynchronousDataStore(dataStore, capacity);

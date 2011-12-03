@@ -181,11 +181,12 @@ public class SubmitLink extends AbstractSubmitLink
 	}
 
 	/**
-	 * The javascript which triggers this link.
+	 * The JavaScript which triggers this link. Method is non-final so that subclasses can decorate
+	 * the provided script by wrapping their own JS around a call to super.getTriggerJavaScript().
 	 * 
-	 * @return The javascript
+	 * @return The JavaScript to be executed when the link is clicked.
 	 */
-	protected final String getTriggerJavaScript()
+	protected String getTriggerJavaScript()
 	{
 		if (getForm() != null)
 		{
@@ -226,6 +227,7 @@ public class SubmitLink extends AbstractSubmitLink
 	/**
 	 * @see org.apache.wicket.markup.html.form.IFormSubmittingComponent#onSubmit()
 	 */
+	@Override
 	public void onSubmit()
 	{
 	}
@@ -233,6 +235,7 @@ public class SubmitLink extends AbstractSubmitLink
 	/**
 	 * @see org.apache.wicket.markup.html.form.IFormSubmittingComponent#onError()
 	 */
+	@Override
 	public void onError()
 	{
 	}

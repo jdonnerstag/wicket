@@ -281,7 +281,10 @@ public abstract class Session implements IClusterable, IEventSink
 	 */
 	public final void clear()
 	{
-		// TODO:
+		if (isTemporary() == false)
+		{
+			getPageManager().sessionExpired(getId());
+		}
 	}
 
 	/**
@@ -428,7 +431,7 @@ public abstract class Session implements IClusterable, IEventSink
 	 */
 	public IPageFactory getPageFactory()
 	{
-		return getApplication().getSessionSettings().getPageFactory();
+		return getApplication().getPageFactory();
 	}
 
 	/**
@@ -850,6 +853,7 @@ public abstract class Session implements IClusterable, IEventSink
 	}
 
 	/** {@inheritDoc} */
+	@Override
 	public void onEvent(IEvent<?> event)
 	{
 	}

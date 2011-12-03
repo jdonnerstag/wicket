@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.wicket.util.lang.Args;
-import org.apache.wicket.util.lang.Classes;
+import org.apache.wicket.util.string.Strings;
 
 /**
  * A versatile implementation of {@link IValidationError} that supports message resolution from
@@ -34,7 +34,7 @@ import org.apache.wicket.util.lang.Classes;
  * 
  * The final error message is constructed via the following process:
  * <ol>
- * <li>Try all keys added by calls to {@link #addMessageKey(String)} via the provided
+ * <li>Try all keys added by calls to {@link #addKey(String)} via the provided
  * <code>IErrorMessageSource</code>.</li>
  * <li>If none of the keys yielded a message, use the message set by {@link #setMessage(String)}, if
  * any.</li>
@@ -44,7 +44,7 @@ import org.apache.wicket.util.lang.Classes;
  * @author Igor Vaynberg (ivaynberg)
  * @since 1.2.6
  */
-public class ValidationError implements IValidationError
+public final class ValidationError implements IValidationError
 {
 	private static final long serialVersionUID = 1L;
 
@@ -60,11 +60,66 @@ public class ValidationError implements IValidationError
 	private String message;
 
 	/**
-	 * Constructor.
+	 * Constructs an empty error
 	 */
 	public ValidationError()
 	{
 
+	}
+
+	/**
+	 * Constructs a validation error with the validator's standard key. Equivalent to calling
+	 * {@link #addKey(IValidator)}
+	 * 
+	 * @param validator
+	 *            validator
+	 */
+	public ValidationError(IValidator<?> validator)
+	{
+		addKey(validator);
+	}
+
+	/**
+	 * Constructs a validation error with a variation of validator's standard key. Equivalent to
+	 * calling {@link #addKey(IValidator, String)}
+	 * 
+	 * @param validator
+	 *            validator
+	 * @param variation
+	 *            key variation
+	 * 
+	 * 
+	 */
+	public ValidationError(IValidator<?> validator, String variation)
+	{
+		addKey(validator, variation);
+	}
+
+	/**
+	 * Constructs a validation error with the specified message. Equivalent to calling
+	 * {@link #setMessage(String)}
+	 * 
+	 * @param message
+	 *            message
+	 */
+	public ValidationError(String message)
+	{
+		setMessage(message);
+	}
+
+	/**
+	 * Adds a key to the list of keys that will be tried against <code>IErrorMessageSource</code> to
+	 * locate the error message string.
+	 * 
+	 * @deprecated use {@link #addKey(String)}
+	 * 
+	 * @param key
+	 * @return this <code>ValidationError</code> for chaining purposes
+	 */
+	@Deprecated
+	public ValidationError addMessageKey(String key)
+	{
+		return addKey(key);
 	}
 
 	/**
@@ -75,7 +130,7 @@ public class ValidationError implements IValidationError
 	 *            a message key to be added
 	 * @return this <code>ValidationError</code> for chaining purposes
 	 */
-	public ValidationError addMessageKey(String key)
+	public ValidationError addKey(String key)
 	{
 		Args.notEmpty(key, "key");
 
@@ -84,6 +139,46 @@ public class ValidationError implements IValidationError
 			keys = new ArrayList<String>(1);
 		}
 		keys.add(key);
+		return this;
+	}
+
+
+	/**
+	 * Shortcut for adding a standard message key which is the simple name of the validator' class
+	 * 
+	 * @param validator
+	 *            validator
+	 * @return {@code this}
+	 */
+	public ValidationError addKey(IValidator<?> validator)
+	{
+		Args.notNull(validator, "validator");
+		addKey(validator.getClass().getSimpleName());
+		return this;
+	}
+
+	/**
+	 * Shortcut for adding a standard message key variation which is the simple name of the
+	 * validator class followed by a dot and the {@literal variation}
+	 * <p>
+	 * If the variation is empty only the validator's simple class name is used
+	 * </p>
+	 * 
+	 * @param validator
+	 *            validator
+	 * @param variation
+	 *            key variation
+	 * @return {@code this}
+	 */
+	public ValidationError addKey(IValidator<?> validator, String variation)
+	{
+		Args.notNull(validator, "validator");
+		String key = validator.getClass().getSimpleName();
+		if (!Strings.isEmpty(variation))
+		{
+			key = key + "." + variation.trim();
+		}
+		addKey(key);
 		return this;
 	}
 
@@ -99,7 +194,6 @@ public class ValidationError implements IValidationError
 	public ValidationError setVariable(String name, Object value)
 	{
 		Args.notEmpty(name, "name");
-		Args.notNull(value, "value");
 
 		getVariables().put(name, value);
 
@@ -138,6 +232,7 @@ public class ValidationError implements IValidationError
 	/**
 	 * @see IValidationError#getErrorMessage(IErrorMessageSource)
 	 */
+	@Override
 	public final String getErrorMessage(IErrorMessageSource messageSource)
 	{
 		String errorMessage = null;
@@ -198,7 +293,7 @@ public class ValidationError implements IValidationError
 
 
 	/**
-	 * Gets error keys.
+	 * Gets error keys
 	 * 
 	 * @return keys
 	 */
@@ -206,12 +301,19 @@ public class ValidationError implements IValidationError
 	{
 		if (keys == null)
 		{
-			return Collections.emptyList();
+			keys = new ArrayList<String>();
 		}
-		else
-		{
-			return Collections.unmodifiableList(keys);
-		}
+		return keys;
+	}
+
+	/**
+	 * Sets error keys
+	 * 
+	 * @param keys
+	 */
+	public void setKeys(List<String> keys)
+	{
+		this.keys = keys;
 	}
 
 	/**
@@ -221,7 +323,7 @@ public class ValidationError implements IValidationError
 	public String toString()
 	{
 		StringBuilder tostring = new StringBuilder();
-		tostring.append("[").append(Classes.simpleName(getClass()));
+		tostring.append("[").append(getClass().getSimpleName());
 
 		tostring.append(" message=[").append(message);
 

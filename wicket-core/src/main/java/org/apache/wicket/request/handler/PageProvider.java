@@ -54,6 +54,7 @@ public class PageProvider implements IPageProvider
 	private IPageSource pageSource;
 
 	private IRequestablePage pageInstance;
+	private boolean pageInstanceIsFresh;
 
 	private Class<? extends IRequestablePage> pageClass;
 
@@ -157,11 +158,12 @@ public class PageProvider implements IPageProvider
 	/**
 	 * @see org.apache.wicket.request.handler.IPageProvider#getPageInstance()
 	 */
+	@Override
 	public IRequestablePage getPageInstance()
 	{
 		if (pageInstance == null)
 		{
-			pageInstance = getPageInstance(pageId, pageClass, pageParameters, renderCount);
+			resolvePageInstance(pageId, pageClass, pageParameters, renderCount);
 
 			if (pageInstance == null)
 			{
@@ -174,6 +176,7 @@ public class PageProvider implements IPageProvider
 	/**
 	 * @see org.apache.wicket.request.handler.IPageProvider#getPageParameters()
 	 */
+	@Override
 	public PageParameters getPageParameters()
 	{
 		if (pageParameters != null)
@@ -196,6 +199,7 @@ public class PageProvider implements IPageProvider
 	 * 
 	 * @see org.apache.wicket.request.handler.IPageProvider#isNewPageInstance()
 	 */
+	@Override
 	public boolean isNewPageInstance()
 	{
 		boolean isNew = pageInstance == null;
@@ -208,12 +212,14 @@ public class PageProvider implements IPageProvider
 				isNew = false;
 			}
 		}
+
 		return isNew;
 	}
 
 	/**
 	 * @see org.apache.wicket.request.handler.IPageProvider#getPageClass()
 	 */
+	@Override
 	public Class<? extends IRequestablePage> getPageClass()
 	{
 		if (pageClass != null)
@@ -243,9 +249,8 @@ public class PageProvider implements IPageProvider
 		}
 	}
 
-	private IRequestablePage getPageInstance(Integer pageId,
-		Class<? extends IRequestablePage> pageClass, PageParameters pageParameters,
-		Integer renderCount)
+	private void resolvePageInstance(Integer pageId, Class<? extends IRequestablePage> pageClass,
+		PageParameters pageParameters, Integer renderCount)
 	{
 		IRequestablePage page = null;
 
@@ -273,7 +278,8 @@ public class PageProvider implements IPageProvider
 			}
 		}
 
-		return page;
+		pageInstanceIsFresh = freshCreated;
+		pageInstance = page;
 	}
 
 	/**
@@ -292,12 +298,14 @@ public class PageProvider implements IPageProvider
 			(pageClass == null || pageClass.equals(storedPageInstance.getClass())))
 		{
 			pageInstance = storedPageInstance;
-
-			if (pageParameters != null)
+			pageInstanceIsFresh = false;
+			if (pageInstance != null)
 			{
-				storedPageInstance.getPageParameters().overwriteWith(pageParameters);
+				if (renderCount != null && pageInstance.getRenderCount() != renderCount)
+				{
+					throw new StalePageException(pageInstance);
+				}
 			}
-
 		}
 		return storedPageInstance;
 	}
@@ -307,6 +315,7 @@ public class PageProvider implements IPageProvider
 	 * {@link #PageProvider(IRequestablePage)} constructor has been used or
 	 * {@link #getPageInstance()} has been called).
 	 */
+	@Override
 	public void detach()
 	{
 		if (pageInstance != null)
@@ -351,13 +360,53 @@ public class PageProvider implements IPageProvider
 	 * 
 	 * @return page id
 	 */
+	@Override
 	public Integer getPageId()
 	{
 		return pageId;
 	}
 
+	@Override
 	public Integer getRenderCount()
 	{
 		return renderCount;
+	}
+
+	/**
+	 * Checks whether or not the provider has a page instance. This page instance might have been
+	 * passed to this page provider directly or it may have been instantiated or retrieved from the
+	 * page store.
+	 * 
+	 * @return {@code true} iff page instance has been created or retrieved
+	 */
+	@Override
+	public final boolean hasPageInstance()
+	{
+		if (pageInstance == null && pageId != null)
+		{
+			// attempt to load a stored page instance from the page store
+			getStoredPage(pageId);
+		}
+		return pageInstance != null;
+	}
+
+	/**
+	 * Returns whether or not the page instance held by this provider has been instantiated by the
+	 * provider.
+	 * 
+	 * @throws IllegalStateException
+	 *             if this method is called and the provider does not yet have a page instance, ie
+	 *             if {@link #getPageInstance()} has never been called on this provider
+	 * @return {@code true} iff the page instance held by this provider was instantiated by the
+	 *         provider
+	 */
+	@Override
+	public final boolean isPageInstanceFresh()
+	{
+		if (!hasPageInstance())
+		{
+			throw new IllegalStateException("Page instance not yet resolved");
+		}
+		return pageInstanceIsFresh;
 	}
 }

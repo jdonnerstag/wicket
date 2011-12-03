@@ -2,7 +2,8 @@
 <head>
 <link href="../../test"/>
 <script type="text/javascript" src="../../javascripturl"></script>
-<script type="text/javascript" src="../resource/org.apache.wicket.markup.html.WicketEventReference/wicket-event.js"></script>
+<script type="text/javascript" src="../resource/org.apache.wicket.ajax.AbstractDefaultAjaxBehavior/res/js/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../resource/org.apache.wicket.ajax.AbstractDefaultAjaxBehavior/res/js/wicket-event-jquery.js"></script>
 <script type="text/javascript" >
 /*<![CDATA[*/
 Wicket.Event.add(window, "domready", function(event) { domReady();;});
@@ -13,11 +14,11 @@ Wicket.Event.add(window, "domready", function(event) { domReady();;});
 Wicket.Event.add(window, "load", function(event) { onLoad();;});
 /*]]>*/
 </script>
-<script type="text/javascript" src="../resource/org.apache.wicket.ajax.WicketAjaxReference/wicket-ajax.js"></script>
-<script type="text/javascript" src="../resource/org.apache.wicket.ajax.AbstractDefaultAjaxBehavior/wicket-ajax-debug.js"></script>
+<script type="text/javascript" src="../resource/org.apache.wicket.ajax.AbstractDefaultAjaxBehavior/res/js/wicket-ajax-jquery.js"></script>
+<script type="text/javascript" src="../resource/org.apache.wicket.ajax.AbstractDefaultAjaxBehavior/res/js/wicket-ajax-jquery-debug.js"></script>
 <script type="text/javascript" id="wicket-ajax-debug-enable">
 /*<![CDATA[*/
-wicketAjaxDebugEnable=true;
+Wicket.Ajax.DebugWindow.enabled=true;
 /*]]>*/
 </script>
 <script type="text/javascript" id="wicket-ajax-base-url">
@@ -35,6 +36,6 @@ test
 <span wicket:id="test3" id="test33"><wicket:panel>
 test
 </wicket:panel></span>
-<a href="../page?0-1.ILinkListener-link" wicket:id="link" id="link4" onclick="var wcall=wicketAjaxGet(&#039;../page?0-1.IBehaviorListener.0-link&#039;,function() { }.bind(this),function() { }.bind(this), function() {return Wicket.$(&#039;link4&#039;) != null;}.bind(this));return !wcall;">Test</a>
+<a href="../page?0-1.ILinkListener-link" wicket:id="link" id="link4" onclick="var wcall=Wicket.Ajax.get(&#039;../page?0-1.IBehaviorListener.0-link&#039;, Wicket.bind(function() { }, this), Wicket.bind(function() { }, this), Wicket.bind(function() {return Wicket.$(&#039;link4&#039;) != null;}, this));return !wcall;">Test</a>
 </body>
 </html>

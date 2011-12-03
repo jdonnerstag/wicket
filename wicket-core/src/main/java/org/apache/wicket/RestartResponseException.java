@@ -62,7 +62,7 @@ public class RestartResponseException extends ResetResponseException
 	public <C extends Page> RestartResponseException(final Class<C> pageClass,
 		final PageParameters params)
 	{
-		this(new PageProvider(pageClass, params), RedirectPolicy.AUTO_REDIRECT);
+		this(new PageProvider(pageClass, params), RedirectPolicy.ALWAYS_REDIRECT);
 	}
 
 	/**
@@ -73,8 +73,7 @@ public class RestartResponseException extends ResetResponseException
 	 */
 	public RestartResponseException(final IRequestablePage page)
 	{
-		this(new PageProvider(page.getPageId(), page.getClass(), page.getPageParameters(),
-			page.getRenderCount()), RedirectPolicy.AUTO_REDIRECT);
+		this(new PageProvider(page), RedirectPolicy.AUTO_REDIRECT);
 	}
 
 	/**

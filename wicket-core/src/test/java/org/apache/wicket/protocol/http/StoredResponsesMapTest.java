@@ -16,17 +16,14 @@
  */
 package org.apache.wicket.protocol.http;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
 import java.security.SecureRandom;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.wicket.util.time.Duration;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -34,7 +31,7 @@ import org.junit.experimental.categories.Category;
 /**
  * @see <a href="https://issues.apache.org/jira/browse/WICKET-3209">WICKET-3209</a>
  */
-public class StoredResponsesMapTest
+public class StoredResponsesMapTest extends Assert
 {
 	/**
 	 * Verifies that {@link StoredResponsesMap} will expire the oldest entry if it is older than 2
@@ -98,16 +95,17 @@ public class StoredResponsesMapTest
 	@Ignore
 	public void heavyLoad() throws InterruptedException
 	{
-		int numberOfThreads = 100;
-		final int iterations = 10000;
+		final int numberOfThreads = 100;
+		final int iterations = 1000;
 		final CountDownLatch startLatch = new CountDownLatch(numberOfThreads);
 		final CountDownLatch endLatch = new CountDownLatch(numberOfThreads);
 		final SecureRandom rnd = new SecureRandom();
 		final StoredResponsesMap map = new StoredResponsesMap(1000, Duration.seconds(60));
-		final List<String> keys = new ArrayList<String>();
+		final List<String> keys = new CopyOnWriteArrayList<String>();
 
-		Runnable r = new Runnable()
+		final Runnable r = new Runnable()
 		{
+			@Override
 			public void run()
 			{
 				startLatch.countDown();

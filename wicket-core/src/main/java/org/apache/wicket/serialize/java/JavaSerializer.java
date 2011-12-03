@@ -64,6 +64,7 @@ public class JavaSerializer implements ISerializer
 		this.applicationKey = applicationKey;
 	}
 
+	@Override
 	public byte[] serialize(final Object object)
 	{
 		try
@@ -97,6 +98,7 @@ public class JavaSerializer implements ISerializer
 		return null;
 	}
 
+	@Override
 	public Object deserialize(final byte[] data)
 	{
 		ThreadContext old = ThreadContext.get(false);
@@ -104,11 +106,12 @@ public class JavaSerializer implements ISerializer
 		ObjectInputStream ois = null;
 		try
 		{
+			Application oldApplication = ThreadContext.getApplication();
 			try
 			{
 				ois = newObjectInputStream(in);
 				String applicationName = (String)ois.readObject();
-				if (applicationName != null && !Application.exists())
+				if (applicationName != null)
 				{
 					Application app = Application.get(applicationName);
 					if (app != null)
@@ -122,6 +125,7 @@ public class JavaSerializer implements ISerializer
 			{
 				try
 				{
+					ThreadContext.setApplication(oldApplication);
 					IOUtils.close(ois);
 				}
 				finally
@@ -233,17 +237,19 @@ public class JavaSerializer implements ISerializer
 	 */
 	private static class CheckerObjectOutputStream extends ObjectOutputStream
 	{
+		private final ObjectOutputStream oos;
+
 		public CheckerObjectOutputStream(OutputStream out) throws IOException
 		{
-			super(out);
+			oos = new ObjectOutputStream(out);
 		}
 
 		@Override
-		protected final void writeObjectOverride(final Object obj) throws IOException
+		protected final void writeObjectOverride(Object obj) throws IOException
 		{
 			try
 			{
-				super.writeObject(obj);
+				oos.writeObject(obj);
 			}
 			catch (NotSerializableException nsx)
 			{
@@ -268,13 +274,13 @@ public class JavaSerializer implements ISerializer
 		@Override
 		public void flush() throws IOException
 		{
-			super.flush();
+			oos.flush();
 		}
 
 		@Override
 		public void close() throws IOException
 		{
-			super.close();
+			oos.close();
 		}
 	}
 }

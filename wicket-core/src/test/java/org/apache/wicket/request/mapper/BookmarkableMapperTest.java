@@ -31,19 +31,13 @@ import org.apache.wicket.request.handler.PageAndComponentProvider;
 import org.apache.wicket.request.handler.PageProvider;
 import org.apache.wicket.request.handler.RenderPageRequestHandler;
 import org.apache.wicket.request.mapper.parameter.PageParameters;
+import org.junit.Test;
 
 /**
  * @author Matej Knopp
  */
 public class BookmarkableMapperTest extends AbstractMapperTest
 {
-
-	/**
-	 * Construct.
-	 */
-	public BookmarkableMapperTest()
-	{
-	}
 
 	private final BookmarkableMapper encoder = new BookmarkableMapper()
 	{
@@ -59,7 +53,8 @@ public class BookmarkableMapperTest extends AbstractMapperTest
 	/**
 	 * 
 	 */
-	public void testDecode1()
+	@Test
+	public void decode1()
 	{
 		Url url = Url.parse("wicket/bookmarkable/" + PAGE_CLASS_NAME);
 		IRequestHandler handler = encoder.mapRequest(getRequest(url));
@@ -74,7 +69,8 @@ public class BookmarkableMapperTest extends AbstractMapperTest
 	/**
 	 * 
 	 */
-	public void testDecode2()
+	@Test
+	public void decode2()
 	{
 		Url url = Url.parse("wicket/bookmarkable/" + PAGE_CLASS_NAME + "/indexed1?a=b&b=c");
 		IRequestHandler handler = encoder.mapRequest(getRequest(url));
@@ -95,7 +91,8 @@ public class BookmarkableMapperTest extends AbstractMapperTest
 	/**
 	 * 
 	 */
-	public void testDecode3()
+	@Test
+	public void decode3()
 	{
 		Url url = Url.parse("wicket/bookmarkable/" + PAGE_CLASS_NAME + "?15");
 		IRequestHandler handler = encoder.mapRequest(getRequest(url));
@@ -108,7 +105,8 @@ public class BookmarkableMapperTest extends AbstractMapperTest
 	/**
 	 * 
 	 */
-	public void testDecode4()
+	@Test
+	public void decode4()
 	{
 		Url url = Url.parse("wicket/bookmarkable/" + PAGE_CLASS_NAME + "/i1/i2?15&a=b&b=c");
 		IRequestHandler handler = encoder.mapRequest(getRequest(url));
@@ -118,19 +116,16 @@ public class BookmarkableMapperTest extends AbstractMapperTest
 		checkPage(page, 15);
 
 		PageParameters p = page.getPageParameters();
-		assertEquals(2, p.getIndexedCount());
-		assertEquals("i1", p.get(0).toString());
-		assertEquals("i2", p.get(1).toString());
+		assertEquals(0, p.getIndexedCount());
 
-		assertEquals(2, p.getNamedKeys().size());
-		assertEquals("b", p.get("a").toString());
-		assertEquals("c", p.get("b").toString());
+		assertEquals(0, p.getNamedKeys().size());
 	}
 
 	/**
 	 * 
 	 */
-	public void testDecode5()
+	@Test
+	public void decode5()
 	{
 		Url url = Url.parse("wicket/bookmarkable/" + PAGE_CLASS_NAME + "?15-ILinkListener-foo-bar");
 		IRequestHandler handler = encoder.mapRequest(getRequest(url));
@@ -150,7 +145,8 @@ public class BookmarkableMapperTest extends AbstractMapperTest
 	/**
 	 * 
 	 */
-	public void testDecode6()
+	@Test
+	public void decode6()
 	{
 		Url url = Url.parse("wicket/bookmarkable/" + PAGE_CLASS_NAME +
 			"/i1/i2?15-ILinkListener-foo-bar&a=b&b=c");
@@ -166,19 +162,16 @@ public class BookmarkableMapperTest extends AbstractMapperTest
 		assertEquals("foo:bar", h.getComponent().getPageRelativePath());
 
 		PageParameters p = page.getPageParameters();
-		assertEquals(2, p.getIndexedCount());
-		assertEquals("i1", p.get(0).toString());
-		assertEquals("i2", p.get(1).toString());
+		assertEquals(0, p.getIndexedCount());
 
-		assertEquals(2, p.getNamedKeys().size());
-		assertEquals("b", p.get("a").toString());
-		assertEquals("c", p.get("b").toString());
+		assertEquals(0, p.getNamedKeys().size());
 	}
 
 	/**
 	 * 
 	 */
-	public void testDecode7()
+	@Test
+	public void decode7()
 	{
 		Url url = Url.parse("wicket/bookmarkable/" + PAGE_CLASS_NAME +
 			"?15-ILinkListener.4-foo-bar");
@@ -199,7 +192,8 @@ public class BookmarkableMapperTest extends AbstractMapperTest
 	/**
 	 * 
 	 */
-	public void testDecode8()
+	@Test
+	public void decode8()
 	{
 		Url url = Url.parse("wicket/bookmarkable/" + PAGE_CLASS_NAME +
 			"/i1/i2?15-5.ILinkListener-foo-bar&a=b&b=c");
@@ -218,32 +212,23 @@ public class BookmarkableMapperTest extends AbstractMapperTest
 	/**
 	 * 
 	 */
-	public void testDecode9()
+	@Test(expected = StalePageException.class)
+	public void decode9()
 	{
 		Url url = Url.parse("wicket/bookmarkable/" + PAGE_CLASS_NAME +
 			"/i1/i2?15-5.ILinkListener-foo-bar&a=b&b=c");
 
 		context.setNextPageRenderCount(6);
+		IRequestHandler handler = encoder.mapRequest(getRequest(url));
 
-		try
-		{
-			IRequestHandler handler = encoder.mapRequest(getRequest(url));
-
-			((IPageRequestHandler)handler).getPage();
-
-			// should never get here
-			assertFalse(true);
-		}
-		catch (StalePageException e)
-		{
-
-		}
+		((IPageRequestHandler)handler).getPage();
 	}
 
 	/**
 	 * WICKET-2993
 	 */
-	public void testDecode10()
+	@Test
+	public void decode10()
 	{
 		// use String.class but any other non-Page will do the job as well
 		Url url = Url.parse("wicket/bookmarkable/" + String.class.getName());
@@ -255,7 +240,8 @@ public class BookmarkableMapperTest extends AbstractMapperTest
 	/**
 	 * 
 	 */
-	public void testEncode1()
+	@Test
+	public void encode1()
 	{
 		PageProvider provider = new PageProvider(MockPage.class, new PageParameters());
 		provider.setPageSource(context);
@@ -267,7 +253,8 @@ public class BookmarkableMapperTest extends AbstractMapperTest
 	/**
 	 * 
 	 */
-	public void testEncode2()
+	@Test
+	public void encode2()
 	{
 		PageParameters parameters = new PageParameters();
 		parameters.set(0, "i1");
@@ -284,7 +271,8 @@ public class BookmarkableMapperTest extends AbstractMapperTest
 	/**
 	 * 
 	 */
-	public void testEncode3()
+	@Test
+	public void encode3()
 	{
 		PageParameters parameters = new PageParameters();
 		parameters.set(0, "i1");
@@ -303,7 +291,8 @@ public class BookmarkableMapperTest extends AbstractMapperTest
 	/**
 	 * 
 	 */
-	public void testEncode4()
+	@Test
+	public void encode4()
 	{
 		MockPage page = new MockPage(15);
 		page.getPageParameters().set(0, "i1");
@@ -322,7 +311,8 @@ public class BookmarkableMapperTest extends AbstractMapperTest
 	/**
 	 * 
 	 */
-	public void testEncode5()
+	@Test
+	public void encode5()
 	{
 		MockPage page = new MockPage(15);
 		page.getPageParameters().set(0, "i1");
@@ -345,7 +335,8 @@ public class BookmarkableMapperTest extends AbstractMapperTest
 	/**
 	 * 
 	 */
-	public void testEncode6()
+	@Test
+	public void encode6()
 	{
 		MockPage page = new MockPage(15);
 		page.getPageParameters().set(0, "i1");
@@ -372,7 +363,8 @@ public class BookmarkableMapperTest extends AbstractMapperTest
 	/**
 	 * 
 	 */
-	public void testEncode7()
+	@Test
+	public void encode7()
 	{
 		MockPage page = new MockPage(15);
 		page.getPageParameters().set(0, "i1");
@@ -399,7 +391,8 @@ public class BookmarkableMapperTest extends AbstractMapperTest
 	/**
 	 * 
 	 */
-	public void testEncode8()
+	@Test
+	public void encode8()
 	{
 		MockPage page = new MockPage(15);
 		page.setBookmarkable(true);

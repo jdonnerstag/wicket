@@ -21,8 +21,11 @@ import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import org.apache.wicket.Application;
+import org.apache.wicket.settings.IExceptionSettings.ThreadDumpStrategy;
 import org.apache.wicket.util.IProvider;
 import org.apache.wicket.util.LazyInitializer;
+import org.apache.wicket.util.lang.Threads;
 import org.apache.wicket.util.time.Duration;
 import org.apache.wicket.util.time.Time;
 import org.slf4j.Logger;
@@ -88,6 +91,8 @@ public class PageAccessSynchronizer implements Serializable
 
 		final boolean isDebugEnabled = logger.isDebugEnabled();
 
+		PageLock previous = null;
+
 		while (!locked && start.elapsedSince().lessThan(timeout))
 		{
 			if (isDebugEnabled)
@@ -96,7 +101,8 @@ public class PageAccessSynchronizer implements Serializable
 					thread.getName(), pageId);
 			}
 
-			PageLock previous = locks.get().putIfAbsent(pageId, lock);
+			previous = locks.get().putIfAbsent(pageId, lock);
+
 			if (previous == null || previous.thread == thread)
 			{
 				// first thread to acquire lock or lock is already owned by this thread
@@ -140,8 +146,27 @@ public class PageAccessSynchronizer implements Serializable
 			if (logger.isWarnEnabled())
 			{
 				logger.warn(
-					"{} failed to acquire lock to page {}, attempted for {} out of allowed {}",
-					new Object[] { thread.getName(), pageId, start.elapsedSince(), timeout });
+					"Thread '{}' failed to acquire lock to page with id '{}', attempted for {} out of allowed {}. The thread that holds the lock has name '{}'.",
+					new Object[] { thread.getName(), pageId, start.elapsedSince(), timeout,
+							previous.thread.getName() });
+				if (Application.exists())
+				{
+					ThreadDumpStrategy strategy = Application.get()
+						.getExceptionSettings()
+						.getThreadDumpStrategy();
+					switch (strategy)
+					{
+						case ALL_THREADS :
+							Threads.dumpAllThreads(logger);
+							break;
+						case THREAD_HOLDING_LOCK :
+							Threads.dumpSingleThread(logger, previous.thread);
+							break;
+						case NO_THREADS :
+						default :
+							// do nothing
+					}
+				}
 			}
 			throw new CouldNotLockPageException(pageId, thread.getName(), timeout);
 		}

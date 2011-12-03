@@ -22,7 +22,10 @@ import java.nio.charset.Charset;
 
 import org.apache.wicket.WicketRuntimeException;
 import org.apache.wicket.markup.html.IHeaderResponse;
+import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.apache.wicket.request.resource.ResourceReference;
+import org.apache.wicket.resource.aggregation.ResourceReferenceAndStringData;
+import org.apache.wicket.resource.dependencies.AbstractResourceDependentResourceReference.ResourceType;
 import org.apache.wicket.util.io.IOUtils;
 import org.apache.wicket.util.resource.IResourceStream;
 import org.apache.wicket.util.resource.ResourceStreamNotFoundException;
@@ -53,7 +56,9 @@ public class ResourceUtil
 	 * @param string
 	 *            the string argument to pass to those methods that accept it (js = id / css =
 	 *            media)
+	 * @deprecated Will be removed in the next major release
 	 */
+	@Deprecated
 	public static void renderTo(IHeaderResponse resp, ResourceReference ref, boolean css,
 		String string)
 	{
@@ -78,6 +83,63 @@ public class ResourceUtil
 			{
 				resp.renderJavaScriptReference(ref, string);
 			}
+		}
+	}
+
+	/**
+	 * Helper that calls the proper IHeaderResponse.render*Reference method based on the input.
+	 * 
+	 * @param resp
+	 *            the response to call render*Reference methods on
+	 * @param data
+	 */
+	// TODO Wicket.next - make this method work with an improved version of
+// ResourceReferenceAndStringData
+	public static void renderTo(IHeaderResponse resp, ResourceReferenceAndStringData data)
+	{
+		ResourceType resourceType = data.getResourceType();
+		ResourceReference reference = data.getReference();
+		PageParameters parameters = data.getParameters();
+		String idOrMedia = data.getIdOrMedia();
+		CharSequence content = data.getContent();
+
+		switch (resourceType)
+		{
+			case CSS :
+				String condition = data.getCssCondition();
+
+				if (Strings.isEmpty(content) == false)
+				{
+					resp.renderCSS(content, idOrMedia);
+				}
+				else if (reference == null)
+				{
+					resp.renderCSSReference(data.getUrl(), idOrMedia, condition);
+				}
+				else
+				{
+					resp.renderCSSReference(reference, parameters, idOrMedia, condition);
+				}
+				break;
+			case JS :
+				boolean defer = data.isJsDefer();
+				String charset = data.getCharset();
+
+				if (Strings.isEmpty(content) == false)
+				{
+					resp.renderJavaScript(content, idOrMedia);
+				}
+				else if (reference == null)
+				{
+					resp.renderJavaScriptReference(data.getUrl(), idOrMedia, defer, charset);
+				}
+				else
+				{
+					resp.renderJavaScriptReference(reference, parameters, idOrMedia, defer, charset);
+				}
+				break;
+			case PLAIN :
+				resp.renderString(content);
 		}
 	}
 

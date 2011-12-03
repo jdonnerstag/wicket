@@ -22,6 +22,7 @@ import org.apache.wicket.Page;
 import org.apache.wicket.WicketRuntimeException;
 import org.apache.wicket.ajax.AbstractDefaultAjaxBehavior;
 import org.apache.wicket.ajax.AjaxRequestTarget;
+import org.apache.wicket.ajax.CoreLibrariesContributor;
 import org.apache.wicket.ajax.IAjaxCallDecorator;
 import org.apache.wicket.ajax.calldecorator.CancelEventIfNoAjaxDecorator;
 import org.apache.wicket.markup.ComponentTag;
@@ -259,6 +260,8 @@ public class ModalWindow extends Panel
 	public void renderHead(final IHeaderResponse response)
 	{
 		super.renderHead(response);
+
+		CoreLibrariesContributor.contributeAjax(getApplication(), response);
 		response.renderJavaScriptReference(JAVASCRIPT);
 
 		ResourceReference cssResource = newCssResource();
@@ -1046,17 +1049,23 @@ public class ModalWindow extends Panel
 				throw new WicketRuntimeException("Error creating page for modal dialog.");
 			}
 			CharSequence pageUrl = null;
+			RequestCycle requestCycle = RequestCycle.get();
+
 			if (page.isPageStateless())
 			{
-				pageUrl = RequestCycle.get().urlFor(page.getClass(), page.getPageParameters());
+				pageUrl = requestCycle.urlFor(page.getClass(), page.getPageParameters());
+				appendAssignment(buffer, "settings.ie8_src", pageUrl);
 			}
 			else
 			{
 				IRequestHandler handler = new RenderPageRequestHandler(new PageProvider(page));
-				pageUrl = RequestCycle.get().urlFor(handler);
-				String ie8_pageUrl = RequestCycle.get().mapUrlFor(handler).toString();
+
+				pageUrl = requestCycle.urlFor(handler);
+				String ie8_pageUrl = requestCycle.getUrlRenderer().renderRelativeUrl(
+					requestCycle.mapUrlFor(handler));
 				appendAssignment(buffer, "settings.ie8_src", ie8_pageUrl);
 			}
+
 			appendAssignment(buffer, "settings.src", pageUrl);
 		}
 		else

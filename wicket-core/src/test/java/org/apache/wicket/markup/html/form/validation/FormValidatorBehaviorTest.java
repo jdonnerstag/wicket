@@ -30,6 +30,7 @@ import org.apache.wicket.model.Model;
 import org.apache.wicket.util.resource.IResourceStream;
 import org.apache.wicket.util.resource.StringResourceStream;
 import org.apache.wicket.util.tester.FormTester;
+import org.junit.Test;
 
 /**
  */
@@ -38,7 +39,8 @@ public class FormValidatorBehaviorTest extends WicketTestCase
 	/**
 	 * Tests validators are treated as behaviors
 	 */
-	public void testActAsBehavior()
+	@Test
+	public void actAsBehavior()
 	{
 		TestPage page = new TestPage();
 
@@ -60,7 +62,8 @@ public class FormValidatorBehaviorTest extends WicketTestCase
 	/**
 	 * Tests validators are treated as validators
 	 */
-	public void testActAsValidator()
+	@Test
+	public void actAsValidator()
 	{
 		TestPage page = new TestPage();
 
@@ -97,7 +100,7 @@ public class FormValidatorBehaviorTest extends WicketTestCase
 		ft.setValue("name", "22");
 		ft.submit();
 		assertEquals(1, tester.getSession().getFeedbackMessages().size());
-		assertEquals("MIN", tester.getSession()
+		assertEquals("MINIMUM", tester.getSession()
 			.getFeedbackMessages()
 			.iterator()
 			.next()
@@ -149,11 +152,13 @@ public class FormValidatorBehaviorTest extends WicketTestCase
 			tag.put("foo", "bar");
 		}
 
+		@Override
 		public FormComponent<?>[] getDependentFormComponents()
 		{
 			return new FormComponent[] { field };
 		}
 
+		@Override
 		public void validate(Form<?> form)
 		{
 			String value = field.getConvertedInput();
@@ -182,17 +187,19 @@ public class FormValidatorBehaviorTest extends WicketTestCase
 			this.field = field;
 		}
 
+		@Override
 		public FormComponent<?>[] getDependentFormComponents()
 		{
 			return new FormComponent[] { field };
 		}
 
+		@Override
 		public void validate(Form<?> form)
 		{
 			String value = field.getConvertedInput();
 			if (value.length() < len)
 			{
-				form.error("MIN");
+				form.error("MINIMUM");
 			}
 		}
 	}
@@ -218,6 +225,7 @@ public class FormValidatorBehaviorTest extends WicketTestCase
 			form.add(name);
 		}
 
+		@Override
 		public IResourceStream getMarkupResourceStream(MarkupContainer container,
 			Class<?> containerClass)
 		{

@@ -21,6 +21,7 @@ import java.text.ParseException;
 
 import org.apache.wicket.MarkupContainer;
 import org.apache.wicket.MockPage;
+import org.apache.wicket.Page;
 import org.apache.wicket.RestartResponseAtInterceptPageException;
 import org.apache.wicket.WicketTestCase;
 import org.apache.wicket.ajax.AjaxRequestTarget;
@@ -177,6 +178,48 @@ public class PageProviderTest extends WicketTestCase
 		assertTrue(tester.getLastResponse().isRedirect());
 	}
 
+	public void testPageProperties_provided()
+	{
+		PageProvider provider = new PageProvider(new StatelessPageTest());
+		assertTrue(provider.hasPageInstance());
+		assertFalse(provider.isPageInstanceFresh());
+	}
+
+	public void testPageProperties_bookmarkable()
+	{
+		PageProvider provider = new PageProvider(StatelessPageTest.class);
+		assertFalse(provider.hasPageInstance());
+		try
+		{
+			provider.isPageInstanceFresh();
+			fail("expected illegal state exception");
+		}
+		catch (IllegalStateException e)
+		{
+			// expected
+		}
+
+		provider.getPageInstance();
+
+		assertTrue(provider.hasPageInstance());
+		assertTrue(provider.isPageInstanceFresh());
+	}
+
+	public void testPageProperties_stored()
+	{
+		TestMapperContext mapperContext = new TestMapperContext();
+		Page page = new TestPage();
+		mapperContext.getPageManager().touchPage(page);
+		mapperContext.getPageManager().commitRequest();
+
+		// by cleaning session cache we make sure of not being testing the same in-memory instance
+		mapperContext.cleanSessionCache();
+
+		PageProvider provider = mapperContext.new TestPageProvider(page.getPageId(), 0);
+		assertTrue(provider.hasPageInstance());
+		assertFalse(provider.isPageInstanceFresh());
+	}
+
 	/** */
 	public static class TestPage extends WebPage implements IMarkupResourceStreamProvider
 	{
@@ -217,6 +260,7 @@ public class PageProviderTest extends WicketTestCase
 			});
 		}
 
+		@Override
 		public IResourceStream getMarkupResourceStream(MarkupContainer container,
 			Class<?> containerClass)
 		{
@@ -231,6 +275,7 @@ public class PageProviderTest extends WicketTestCase
 	{
 		private static final long serialVersionUID = 1L;
 
+		@Override
 		public IResourceStream getMarkupResourceStream(MarkupContainer container,
 			Class<?> containerClass)
 		{

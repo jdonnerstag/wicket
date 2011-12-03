@@ -30,7 +30,7 @@ if (typeof (Wicket.CheckboxSelector.Group) == "undefined") {
 	Wicket.CheckboxSelector.Group.findCheckboxesFunction = function(formId, groupName) {
 		return function() {
 			var result = new Array();
-			var parentForm = wicketGet(formId);
+			var parentForm = Wicket.$(formId);
 			var parentGroup = parentForm[groupName];
 			for ( var i = 0; i < parentGroup.length; i++) {
 				var checkbox = parentGroup[i];

@@ -37,6 +37,7 @@ import org.apache.wicket.markup.html.internal.HeaderResponse;
 import org.apache.wicket.markup.html.internal.HtmlHeaderContainer;
 import org.apache.wicket.markup.parser.filter.HtmlHeaderSectionHandler;
 import org.apache.wicket.markup.repeater.AbstractRepeater;
+import org.apache.wicket.request.ILoggableRequestHandler;
 import org.apache.wicket.request.IRequestCycle;
 import org.apache.wicket.request.IRequestHandler;
 import org.apache.wicket.request.Response;
@@ -45,6 +46,7 @@ import org.apache.wicket.request.cycle.RequestCycle;
 import org.apache.wicket.request.handler.IPageRequestHandler;
 import org.apache.wicket.request.handler.PageProvider;
 import org.apache.wicket.request.handler.RenderPageRequestHandler;
+import org.apache.wicket.request.handler.logger.PageLogData;
 import org.apache.wicket.request.http.WebRequest;
 import org.apache.wicket.request.http.WebResponse;
 import org.apache.wicket.request.mapper.parameter.PageParameters;
@@ -88,7 +90,7 @@ import org.slf4j.LoggerFactory;
  * @author Igor Vaynberg (ivaynberg)
  * @author Eelco Hillenius
  */
-public class AjaxRequestTarget implements IPageRequestHandler
+public class AjaxRequestTarget implements IPageRequestHandler, ILoggableRequestHandler
 {
 	/**
 	 * An {@link AjaxRequestTarget} listener that can be used to respond to various target-related
@@ -276,6 +278,8 @@ public class AjaxRequestTarget implements IPageRequestHandler
 	private transient boolean listenersFrozen;
 	private transient boolean respondersFrozen;
 
+	private PageLogData logData;
+
 	/**
 	 * Constructor
 	 * 
@@ -293,6 +297,7 @@ public class AjaxRequestTarget implements IPageRequestHandler
 	/**
 	 * @see org.apache.wicket.request.handler.IPageRequestHandler#getPage()
 	 */
+	@Override
 	public Page getPage()
 	{
 		return page;
@@ -363,6 +368,7 @@ public class AjaxRequestTarget implements IPageRequestHandler
 
 		parent.visitChildren(childCriteria, new IVisitor<Component, Void>()
 		{
+			@Override
 			public void component(final Component component, final IVisit<Void> visit)
 			{
 				add(component);
@@ -508,8 +514,12 @@ public class AjaxRequestTarget implements IPageRequestHandler
 	/**
 	 * @see org.apache.wicket.request.handler.IPageRequestHandler#detach(org.apache.wicket.request.IRequestCycle)
 	 */
+	@Override
 	public void detach(final IRequestCycle requestCycle)
 	{
+		if (logData == null)
+			logData = new PageLogData(page);
+
 		// detach the page if it was updated
 		if (markupIdToComponent.size() > 0)
 		{
@@ -596,6 +606,7 @@ public class AjaxRequestTarget implements IPageRequestHandler
 	/**
 	 * @see org.apache.wicket.request.handler.IPageRequestHandler#respond(org.apache.wicket.request.IRequestCycle)
 	 */
+	@Override
 	public final void respond(final IRequestCycle requestCycle)
 	{
 		final RequestCycle rc = (RequestCycle)requestCycle;
@@ -664,18 +675,20 @@ public class AjaxRequestTarget implements IPageRequestHandler
 		// invoke onbeforerespond event on listeners
 		fireOnBeforeRespondListeners();
 
-		// normal behavior
-		Iterator<CharSequence> it = prependJavaScripts.iterator();
-		while (it.hasNext())
-		{
-			CharSequence js = it.next();
-			respondInvocation(bodyResponse, js);
-		}
-
 		// process added components
 		respondComponents(bodyResponse);
 
 		fireOnAfterRespondListeners(bodyResponse);
+
+		// queue up prepend javascripts. unlike other steps these are executed out of order so that
+		// components can contribute them from inside their onbeforerender methods.
+		Iterator<CharSequence> it = prependJavaScripts.iterator();
+		while (it.hasNext())
+		{
+			CharSequence js = it.next();
+			respondPriorityInvocation(bodyResponse, js);
+		}
+
 
 		// execute the dom ready javascripts as first javascripts
 		// after component replacement
@@ -761,6 +774,7 @@ public class AjaxRequestTarget implements IPageRequestHandler
 			// javascript
 			final IJavaScriptResponse jsresponse = new IJavaScriptResponse()
 			{
+				@Override
 				public void addJavaScript(String script)
 				{
 					respondInvocation(response, script);
@@ -1255,6 +1269,7 @@ public class AjaxRequestTarget implements IPageRequestHandler
 		{
 			((MarkupContainer)component).visitChildren(new IVisitor<Component, Void>()
 			{
+				@Override
 				public void component(final Component component, final IVisit<Void> visit)
 				{
 					if (component.isVisibleInHierarchy())
@@ -1277,12 +1292,26 @@ public class AjaxRequestTarget implements IPageRequestHandler
 		headerRendering = false;
 	}
 
+	private void respondInvocation(final Response response, final CharSequence js)
+	{
+		respondJavascriptInvocation("evaluate", response, js);
+	}
+
+	private void respondPriorityInvocation(final Response response, final CharSequence js)
+	{
+		respondJavascriptInvocation("priority-evaluate", response, js);
+	}
+
+
 	/**
-	 * 
+	 * @param invocation
+	 *            type of invocation tag, usually {@literal evaluate} or
+	 *            {@literal priority-evaluate}
 	 * @param response
 	 * @param js
 	 */
-	private void respondInvocation(final Response response, final CharSequence js)
+	private void respondJavascriptInvocation(final String invocation, final Response response,
+		final CharSequence js)
 	{
 		boolean encoded = false;
 		CharSequence javascript = js;
@@ -1294,7 +1323,8 @@ public class AjaxRequestTarget implements IPageRequestHandler
 			javascript = encode(js);
 		}
 
-		response.write("<evaluate");
+		response.write("<");
+		response.write(invocation);
 		if (encoded)
 		{
 			response.write(" encoding=\"");
@@ -1302,10 +1332,14 @@ public class AjaxRequestTarget implements IPageRequestHandler
 			response.write("\"");
 		}
 		response.write(">");
+
 		response.write("<![CDATA[");
 		response.write(javascript);
 		response.write("]]>");
-		response.write("</evaluate>");
+
+		response.write("</");
+		response.write(invocation);
+		response.write(">");
 
 		encodingBodyResponse.reset();
 	}
@@ -1349,6 +1383,7 @@ public class AjaxRequestTarget implements IPageRequestHandler
 	/**
 	 * @see org.apache.wicket.request.handler.IPageRequestHandler#getPageClass()
 	 */
+	@Override
 	public Class<? extends IRequestablePage> getPageClass()
 	{
 		return page.getPageClass();
@@ -1357,6 +1392,7 @@ public class AjaxRequestTarget implements IPageRequestHandler
 	/**
 	 * @see org.apache.wicket.request.handler.IPageRequestHandler#getPageId()
 	 */
+	@Override
 	public Integer getPageId()
 	{
 		return page.getPageId();
@@ -1365,18 +1401,28 @@ public class AjaxRequestTarget implements IPageRequestHandler
 	/**
 	 * @see org.apache.wicket.request.handler.IPageRequestHandler#getPageParameters()
 	 */
+	@Override
 	public PageParameters getPageParameters()
 	{
 		return page.getPageParameters();
 	}
 
+	@Override
 	public final boolean isPageInstanceCreated()
 	{
 		return true;
 	}
 
+	@Override
 	public final Integer getRenderCount()
 	{
 		return page.getRenderCount();
+	}
+
+	/** {@inheritDoc} */
+	@Override
+	public PageLogData getLogData()
+	{
+		return logData;
 	}
 }

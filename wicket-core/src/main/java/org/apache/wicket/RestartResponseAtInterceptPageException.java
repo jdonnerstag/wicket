@@ -76,7 +76,7 @@ public class RestartResponseAtInterceptPageException extends ResetResponseExcept
 		PageParameters parameters)
 	{
 		super(new RenderPageRequestHandler(new PageProvider(interceptPageClass, parameters),
-			RedirectPolicy.AUTO_REDIRECT));
+			RedirectPolicy.ALWAYS_REDIRECT));
 		InterceptData.set();
 	}
 
@@ -122,10 +122,9 @@ public class RestartResponseAtInterceptPageException extends ResetResponseExcept
 
 		public static InterceptData get()
 		{
-			Session session = Session.get();
-			if (session != null)
+			if (Session.exists())
 			{
-				return session.getMetaData(key);
+				return Session.get().getMetaData(key);
 			}
 			else
 			{
@@ -135,10 +134,9 @@ public class RestartResponseAtInterceptPageException extends ResetResponseExcept
 
 		public static void clear()
 		{
-			Session session = Session.get();
-			if (session != null)
+			if (Session.exists())
 			{
-				session.setMetaData(key, null);
+				Session.get().setMetaData(key, null);
 			}
 		}
 
@@ -148,7 +146,7 @@ public class RestartResponseAtInterceptPageException extends ResetResponseExcept
 		};
 	}
 
-	static boolean continueToOriginalDestination()
+	static void continueToOriginalDestination()
 	{
 		InterceptData data = InterceptData.get();
 		if (data != null)
@@ -156,23 +154,24 @@ public class RestartResponseAtInterceptPageException extends ResetResponseExcept
 			data.continueOk = true;
 			String url = RequestCycle.get().getUrlRenderer().renderUrl(data.originalUrl);
 			RequestCycle.get().replaceAllRequestHandlers(new RedirectRequestHandler(url));
-			return true;
 		}
-		return false;
 	}
 
 	static IRequestMapper MAPPER = new IRequestMapper()
 	{
+		@Override
 		public int getCompatibilityScore(Request request)
 		{
 			return matchedData(request) != null ? Integer.MAX_VALUE : 0;
 		}
 
+		@Override
 		public Url mapHandler(IRequestHandler requestHandler)
 		{
 			return null;
 		}
 
+		@Override
 		public IRequestHandler mapRequest(Request request)
 		{
 			InterceptData data = matchedData(request);
@@ -192,11 +191,11 @@ public class RestartResponseAtInterceptPageException extends ResetResponseExcept
 			}
 			return null;
 		}
-		
+
 		private InterceptData matchedData(Request request)
 		{
 			InterceptData data = InterceptData.get();
-			if(data != null && data.originalUrl.equals(request.getOriginalUrl()))
+			if (data != null && data.originalUrl.equals(request.getOriginalUrl()))
 			{
 				return data;
 			}
