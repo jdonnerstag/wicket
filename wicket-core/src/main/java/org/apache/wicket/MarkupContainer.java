@@ -256,7 +256,6 @@ public abstract class MarkupContainer extends Component implements Iterable<Comp
 
 			// TODO this should be get or resolve so transparent things work
 			Component child = parent.get(tag.getId());
-
 			if (child == null)
 			{
 				// try to deque a child component if one has not been found
@@ -301,12 +300,19 @@ public abstract class MarkupContainer extends Component implements Iterable<Comp
 				}
 			}
 
-			if (child != null)
+			if (child != null && child.getParent() == null)
 			{
 				lateAdd(parent, child);
 				// TODO do we need to continue unqueuing or can we skip this component
 				// and all its children if it has been deemed invisible? - dont think we can because
 				// that will leave components in the queue and ondetach() will bomb
+			}
+
+			if (child != null && child.isAuto())
+			{
+				// TODO this is yet another hack, need to figure out how auto components fit into
+				// this and why they dont get correctly resolved second time around
+				child.setAuto(false);
 			}
 
 			if (child == null)
@@ -316,7 +322,7 @@ public abstract class MarkupContainer extends Component implements Iterable<Comp
 				// TODO make the mesage less queue-dependent. should be the same message that we
 				// throw during render when we cant resolve a child
 
-				String error = "Could not dequeue child: `" + tag.getId() + "`. ";
+				String error = "Could not dequeue or resolve child: `" + tag.getId() + "`. ";
 				error += "Parent search stack: [";
 				for (int j = stack.size() - 1; j >= 0; j--)
 				{
@@ -355,10 +361,6 @@ public abstract class MarkupContainer extends Component implements Iterable<Comp
 				markup.skipToMatchingCloseTag(tag);
 			}
 		}
-
-		// TODO do this in component deatach
-		// if queue is not empty - error
-		// setMetaData(QUEUE, null);
 	}
 
 	private void lateAdd(MarkupContainer parent, Component queued)
@@ -1922,6 +1924,28 @@ public abstract class MarkupContainer extends Component implements Iterable<Comp
 				Component component = (Component)child;
 				component.internalOnRemove();
 			}
+		}
+	}
+
+	@Override
+	protected void onDetach()
+	{
+		super.onDetach();
+		detachQueue();
+	}
+
+	private void detachQueue()
+	{
+		List<Component> queue = getMetaData(QUEUE);
+		if (queue != null)
+		{
+
+			if (!queue.isEmpty())
+			{
+				// FIXME QUEUEING error message
+				throw new RuntimeException("SOME COMPONENTS WERE NOT DEQUEUED");
+			}
+			setMetaData(QUEUE, null);
 		}
 	}
 

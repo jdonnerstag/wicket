@@ -913,7 +913,6 @@ public abstract class Component
 		{
 			setFlag(FLAG_INITIALIZED, true);
 			setRequestFlag(RFLAG_INITIALIZE_SUPER_CALL_VERIFIED, false);
-			completeHierarchy();
 			onInitialize();
 			if (!getRequestFlag(RFLAG_INITIALIZE_SUPER_CALL_VERIFIED))
 			{

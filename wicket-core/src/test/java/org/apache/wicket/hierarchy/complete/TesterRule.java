@@ -67,11 +67,6 @@ class TesterRule implements MethodRule
 				{
 					base.evaluate();
 				}
-				catch (Throwable e)
-				{
-					throw new RuntimeException(e);
-					// FIXME Exceptions.throwAny(e);
-				}
 				finally
 				{
 					tester.destroy();

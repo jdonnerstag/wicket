@@ -29,6 +29,7 @@ import org.apache.wicket.WicketRuntimeException;
 import org.apache.wicket.markup.IMarkupResourceStreamProvider;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.WebPage;
+import org.apache.wicket.markup.html.link.Link;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.markup.html.panel.Panel;
@@ -38,7 +39,7 @@ import org.apache.wicket.util.resource.StringResourceStream;
 import org.junit.Rule;
 import org.junit.Test;
 
-public class HieararchyCompletionTest
+public class HierarchyCompletionTest
 {
 	@Rule
 	public TesterRule tester = new TesterRule();
@@ -225,10 +226,10 @@ public class HieararchyCompletionTest
 	public void dequeueWithRepeater1()
 	{
 		TestPage p = new TestPage();
-		p.setPageMarkup("<p wicket:id='a'><p wicket:id='l'><p wicket:id='b'><p wicket:id='c'></p></p></p></p>");
+		p.setPageMarkup("<p wicket:id='a'><p wicket:id='lv'><p wicket:id='b'><p wicket:id='c'></p></p></p></p>");
 
 		MarkupContainer a = new A();
-		L l = new L(3)
+		LV l = new LV(3)
 		{
 			@Override
 			protected void populateItem(ListItem<Integer> item)
@@ -253,10 +254,10 @@ public class HieararchyCompletionTest
 	public void dequeueWithRepeater2()
 	{
 		TestPage p = new TestPage();
-		p.setPageMarkup("<p wicket:id='a'><p wicket:id='l'><p wicket:id='b'><p wicket:id='q'></p></p></p></p>");
+		p.setPageMarkup("<p wicket:id='a'><p wicket:id='lv'><p wicket:id='b'><p wicket:id='q'></p></p></p></p>");
 
 		MarkupContainer a = new A();
-		L l = new L(3)
+		LV l = new LV(3)
 		{
 			@Override
 			protected void populateItem(ListItem<Integer> item)
@@ -280,6 +281,26 @@ public class HieararchyCompletionTest
 		}
 	}
 
+	/** dequeue, then rerender the page instance after a callback is executed */
+	@Test
+	public void dequeueWithCallback()
+	{
+		TestPage p = new TestPage();
+		p.setPageMarkup("<p wicket:id='a'><a wicket:id='l'><p wicket:id='b'></p></a></p>");
+		MarkupContainer a = new A(), b = new B();
+		L l = new L();
+		p.queue(a, b, l);
+
+		tester.startPage(p);
+
+		assertThat(p, hasPath(new Path(a, l, b)));
+		assertThat(l.isClicked(), is(false));
+
+		tester.getTester().clickLink(l);
+
+		assertThat(l.isClicked(), is(true));
+	}
+
 
 	/** queuing two components with the same id */
 	@Test
@@ -294,6 +315,48 @@ public class HieararchyCompletionTest
 		{
 			// expected
 		}
+	}
+
+	@Test
+	public void resolveHeader1()
+	{
+		TestPage p = new TestPage();
+		p.setPageMarkup("<html><head><wicket:head></wicket:head></head><body></body></html>");
+
+		tester.startPage(p);
+	}
+
+	/** resolve header, then rerender the page instance after a callback is executed */
+	@Test
+	public void resolveHeaderWithCallback()
+	{
+		TestPage p = new TestPage();
+		p.setPageMarkup("<html><head><wicket:head><wicket:link><a href='Foo.html'>foo</a></wicket:link></wicket:head></head>"
+			+ "<body><p wicket:id='a'><a wicket:id='l'><p wicket:id='b'></p></a></p></body></html>");
+		MarkupContainer a = new A(), b = new B();
+		L l = new L();
+		p.queue(a, b, l);
+
+		tester.startPage(p);
+
+		assertThat(p, hasPath(new Path(a, l, b)));
+		assertThat(l.isClicked(), is(false));
+
+		tester.getTester().clickLink(l);
+
+		assertThat(l.isClicked(), is(true));
+	}
+
+	@Test
+	public void resolveHeaderWithRepeatedRender()
+	{
+		TestPage p = new TestPage();
+		p.setPageMarkup("<html><head><wicket:head></wicket:head></head><body></body></html>");
+
+		System.out.println("RENDER 1");
+		tester.startPage(p);
+		System.out.println("RENDER 2");
+		tester.startPage(p);
 	}
 
 	private static class A extends WebMarkupContainer
@@ -336,15 +399,36 @@ public class HieararchyCompletionTest
 		}
 	}
 
-	private static abstract class L extends ListView<Integer>
+	private static abstract class LV extends ListView<Integer>
 	{
-		public L(int size)
+		public LV(int size)
 		{
-			super("l");
+			super("lv");
 			ArrayList<Integer> values = new ArrayList<Integer>();
 			for (int i = 0; i < size; i++)
 				values.add(i);
 			setModel(new Model<ArrayList<Integer>>(values));
+		}
+	}
+
+	private static class L extends Link<Void>
+	{
+		private boolean clicked = false;
+
+		public L()
+		{
+			super("l");
+		}
+
+		@Override
+		public void onClick()
+		{
+			clicked = true;
+		}
+
+		public boolean isClicked()
+		{
+			return clicked;
 		}
 	}
 
