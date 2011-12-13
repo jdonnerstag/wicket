@@ -166,8 +166,8 @@ public abstract class MarkupContainer extends Component implements Iterable<Comp
 	{
 		/*
 		 * WARNING: THIS CODE IS EXTREMELY ROUGH AND DOES NOT FUNCTION IN THE SAME WAY THAT FINAL
-		 * CODE WILL. IT IS HERE ONLY SO VARIOUS TESTS CAN BE WRITTEIN IN HieararchyCompletionTest
-		 * TO EXPLORE THIS IDEA
+		 * CODE WILL. IT IS HERE ONLY SO VARIOUS TESTS CAN BE WRITTEN IN HierarchyCompletionTest TO
+		 * EXPLORE THIS IDEA
 		 */
 
 		class ComponentAndTag
@@ -1943,7 +1943,7 @@ public abstract class MarkupContainer extends Component implements Iterable<Comp
 			if (!queue.isEmpty())
 			{
 				// FIXME QUEUEING error message
-				throw new RuntimeException("SOME COMPONENTS WERE NOT DEQUEUED");
+				throw new WicketRuntimeException("SOME COMPONENTS WERE NOT DEQUEUED");
 			}
 			setMetaData(QUEUE, null);
 		}

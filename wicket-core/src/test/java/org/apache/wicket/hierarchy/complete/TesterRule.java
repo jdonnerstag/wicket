@@ -63,6 +63,7 @@ class TesterRule implements MethodRule
 					application = new MockApplication();
 				}
 				tester = new WicketTester(application);
+				tester.setExposeExceptions(true);
 				try
 				{
 					base.evaluate();

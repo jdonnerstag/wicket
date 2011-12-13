@@ -348,16 +348,31 @@ public class HierarchyCompletionTest
 	}
 
 	@Test
-	public void resolveHeaderWithRepeatedRender()
+	public void resolveHeaderWithRepeatedRenderOfSameInstance()
 	{
 		TestPage p = new TestPage();
-		p.setPageMarkup("<html><head><wicket:head></wicket:head></head><body></body></html>");
+		p.setPageMarkup("<html><head><wicket:head><wicket:link></wicket:link></wicket:head></head><body></body></html>");
 
-		System.out.println("RENDER 1");
 		tester.startPage(p);
-		System.out.println("RENDER 2");
 		tester.startPage(p);
 	}
+
+	@Test
+	public void resolveHeaderWithRepeatedRenderOfNewInstances()
+	{
+		class MyPage extends TestPage
+		{
+			public MyPage()
+			{// <wicket:head><wicket:link></wicket:link></wicket:head>
+				setPageMarkup("<html><head></head><body></body></html>");
+			}
+		}
+		System.out.println("FIRST RENDER");
+		tester.startPage(new MyPage());
+		System.out.println("SECOND RENDER");
+		tester.startPage(new MyPage());
+	}
+
 
 	private static class A extends WebMarkupContainer
 	{
