@@ -258,8 +258,12 @@ public abstract class MarkupContainer extends Component implements Iterable<Comp
 			Component child = parent.get(tag.getId());
 			if (child == null)
 			{
-				// try to deque a child component if one has not been found
+				child = findComponentByMarkup(tag);
+			}
 
+			if (child == null)
+			{
+				// try to deque a child component if one has not been found
 
 				for (int j = stack.size() - 1; j >= 0; j--)
 				{
@@ -291,11 +295,11 @@ public abstract class MarkupContainer extends Component implements Iterable<Comp
 			if (child == null)
 			{
 				// if we didnt find a queued child we could use try the resolvers
-
 				child = ComponentResolvers.resolve(parent, markup, tag, null);
 				if (child != null)
 				{
-					tag.setId(child.getId());
+					child.setMarkup(markup.getMarkupFragment());
+					child.setAuto(true);
 					tag.setModified(true);
 				}
 			}
@@ -308,12 +312,12 @@ public abstract class MarkupContainer extends Component implements Iterable<Comp
 				// that will leave components in the queue and ondetach() will bomb
 			}
 
-			if (child != null && child.isAuto())
-			{
-				// TODO this is yet another hack, need to figure out how auto components fit into
-				// this and why they dont get correctly resolved second time around
-				child.setAuto(false);
-			}
+// if (child != null && child.isAuto())
+// {
+// // TODO this is yet another hack, need to figure out how auto components fit into
+// // this and why they dont get correctly resolved second time around
+// child.setAuto(false);
+// }
 
 			if (child == null)
 			{
@@ -361,6 +365,22 @@ public abstract class MarkupContainer extends Component implements Iterable<Comp
 				markup.skipToMatchingCloseTag(tag);
 			}
 		}
+	}
+
+	private Component findComponentByMarkup(final ComponentTag tag)
+	{
+		for (Component comp : this)
+		{
+			IMarkupFragment markup2 = comp.getMarkup();
+
+			// By purpose compare the object ids
+			if ((markup2 != null) && (markup2.get(0) == tag))
+			{
+				return comp;
+			}
+		}
+
+		return null;
 	}
 
 	private void lateAdd(MarkupContainer parent, Component queued)
