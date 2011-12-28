@@ -235,9 +235,7 @@ public abstract class MarkupContainer extends Component implements Iterable<Comp
 			}
 
 			// the current markup tag
-			tag = (ComponentTag)markup.get();
-
-
+			tag = markup.getTag();
 			if (tag.isClose())
 			{
 				if (stack.isEmpty())
@@ -270,7 +268,7 @@ public abstract class MarkupContainer extends Component implements Iterable<Comp
 					// we try to find a queued component from the deepest nested parent all the way
 					// to the owner of the markup
 					ComponentAndTag cat = stack.get(j);
-					ArrayList<Component> queue = cat.component.getMetaData(QUEUE);
+					List<Component> queue = cat.component.getMetaData(QUEUE);
 					if (queue == null)
 					{
 						continue;
@@ -284,6 +282,7 @@ public abstract class MarkupContainer extends Component implements Iterable<Comp
 							break;
 						}
 					}
+
 					if (child != null)
 					{
 						queue.remove(child);
@@ -299,8 +298,8 @@ public abstract class MarkupContainer extends Component implements Iterable<Comp
 				if (child != null)
 				{
 					child.setMarkup(markup.getMarkupFragment());
-					child.setAuto(true);
-					tag.setModified(true);
+// child.setAuto(true);
+// tag.setModified(true);
 				}
 			}
 
@@ -550,36 +549,36 @@ public abstract class MarkupContainer extends Component implements Iterable<Comp
 	 *            stream to be used to render the component.
 	 * @return True, if component has been added
 	 */
-	public final boolean autoAdd(final Component component, MarkupStream markupStream)
-	{
-		if (component == null)
-		{
-			throw new IllegalArgumentException("argument component may not be null");
-		}
-
-		// Replace strategy
-		component.setAuto(true);
-
-		if (markupStream != null)
-		{
-			component.setMarkup(markupStream.getMarkupFragment());
-		}
-
-		// Add the child to the parent.
-
-		// Arguably child.setParent() can be used as well. It connects the child to the parent and
-		// that's all what most auto-components need. Unfortunately child.onDetach() will not / can
-		// not be invoked, since the parent doesn't known its one of his children. Hence we need to
-		// properly add it.
-		int index = children_indexOf(component);
-		if (index >= 0)
-		{
-			children_remove(index);
-		}
-		add(component);
-
-		return true;
-	}
+// public final boolean autoAdd(final Component component, MarkupStream markupStream)
+// {
+// if (component == null)
+// {
+// throw new IllegalArgumentException("argument component may not be null");
+// }
+//
+// // Replace strategy
+// component.setAuto(true);
+//
+// if (markupStream != null)
+// {
+// component.setMarkup(markupStream.getMarkupFragment());
+// }
+//
+// // Add the child to the parent.
+//
+// // Arguably child.setParent() can be used as well. It connects the child to the parent and
+// // that's all what most auto-components need. Unfortunately child.onDetach() will not / can
+// // not be invoked, since the parent doesn't known its one of his children. Hence we need to
+// // properly add it.
+// int index = children_indexOf(component);
+// if (index >= 0)
+// {
+// children_remove(index);
+// }
+// add(component);
+//
+// return true;
+// }
 
 	/**
 	 * @param component
@@ -1707,16 +1706,21 @@ public abstract class MarkupContainer extends Component implements Iterable<Comp
 			Component component = get(id);
 			if (component == null)
 			{
-				component = ComponentResolvers.resolve(this, markupStream, tag, null);
-				if ((component != null) && (component.getParent() == null))
-				{
-					autoAdd(component, markupStream);
-				}
-				else if (component != null)
-				{
-					component.setMarkup(markupStream.getMarkupFragment());
-				}
+				component = findComponentByMarkup(tag);
 			}
+// if (component == null)
+// {
+// component = ComponentResolvers.resolve(this, markupStream, tag, null);
+// if ((component != null) && (component.getParent() == null))
+// {
+// throw new WicketRuntimeException("Still need autoAdd(): " + tag.toString());
+// // autoAdd(component, markupStream);
+// }
+// else if (component != null)
+// {
+// component.setMarkup(markupStream.getMarkupFragment());
+// }
+// }
 
 			// Failed to find it?
 			if (component != null)
